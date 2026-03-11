@@ -1,0 +1,58 @@
+project:
+  name: EC Order System
+  description: E-commerce order management system
+  sourceRoot: tests/fixtures/sample-project/src
+
+layers:
+  - name: Domain
+    nameJa: ドメイン層
+    path: tests/fixtures/sample-project/src/domain
+    type: domain
+    description: |
+      Business rules and domain model definitions.
+      Core layer with no external technology dependencies.
+    responsibility: Define business rules and domain models
+    forbiddenImports:
+      - tests/fixtures/sample-project/src/infrastructure
+      - tests/fixtures/sample-project/src/presentation
+    categories:
+      entities: Entity
+      valueObjects: Value Object
+      repositories: Repository Interface
+      services: Domain Service
+
+  - name: Application
+    nameJa: アプリケーション層
+    path: tests/fixtures/sample-project/src/application
+    type: application
+    description: |
+      Application use cases and orchestration logic.
+    responsibility: Orchestrate domain operations through use cases
+    forbiddenImports:
+      - tests/fixtures/sample-project/src/infrastructure
+      - tests/fixtures/sample-project/src/presentation
+    categories:
+      usecases: Use Case
+
+  - name: Infrastructure
+    nameJa: インフラストラクチャ層
+    path: tests/fixtures/sample-project/src/infrastructure
+    type: infrastructure
+    description: |
+      Technical implementations and external system integrations.
+    responsibility: Implement persistence and external service integration
+    forbiddenImports: []
+    categories:
+      repositories: Repository Implementation
+
+  - name: Presentation
+    nameJa: プレゼンテーション層
+    path: tests/fixtures/sample-project/src/presentation
+    type: presentation
+    description: |
+      HTTP controllers and API endpoint handlers.
+    responsibility: Handle HTTP requests and responses
+    forbiddenImports:
+      - tests/fixtures/sample-project/src/infrastructure
+    categories:
+      controllers: Controller

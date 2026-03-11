@@ -1,0 +1,57 @@
+{
+  "name": "archdoc",
+  "version": "0.1.0",
+  "description": "Generate DDD layered architecture API documentation from TypeScript source code",
+  "type": "module",
+  "bin": {
+    "archdoc": "./dist/bin/archdoc.js"
+  },
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/src/index.js",
+      "types": "./dist/src/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "tsx bin/archdoc.ts",
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "architecture",
+    "documentation",
+    "ddd",
+    "typescript",
+    "api-docs",
+    "ts-morph"
+  ],
+  "author": "imagepit",
+  "license": "MIT",
+  "packageManager": "pnpm@10.23.0",
+  "dependencies": {
+    "chalk": "^5.6.2",
+    "commander": "^14.0.3",
+    "fast-glob": "^3.3.3",
+    "js-yaml": "^4.1.1",
+    "ts-morph": "^27.0.2",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^25.4.0",
+    "tsup": "^8.5.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}
