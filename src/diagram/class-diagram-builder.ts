@@ -4,8 +4,7 @@ import type {
   InterfaceInfo,
 } from "../types/extracted.js";
 
-const MAX_MEMBERS_PER_CLASS = 6;
-const MAX_CLASSES_PER_DIAGRAM = 5;
+const MAX_CLASSES_PER_DIAGRAM = 3;
 
 export function buildClassDiagram(extraction: LayerExtraction): string {
   const classes = extraction.classes.filter((c) => c.isExported);
@@ -208,25 +207,12 @@ function renderInterfaceMembers(lines: string[], iface: InterfaceInfo): void {
   lines.push(`  class ${iface.name} {`);
   lines.push(`    <<interface>>`);
 
-  let count = 0;
-  const total = iface.properties.length + iface.methods.length;
-
   for (const prop of iface.properties) {
-    if (count >= MAX_MEMBERS_PER_CLASS) {
-      lines.push(`    +... ${total - count} more`);
-      break;
-    }
     lines.push(`    +${prop.name}: ${sanitizeType(prop.type)}`);
-    count++;
   }
 
   for (const method of iface.methods) {
-    if (count >= MAX_MEMBERS_PER_CLASS) {
-      lines.push(`    +... ${total - count} more`);
-      break;
-    }
     lines.push(`    +${method.name}(${formatParams(method.parameters)}) ${sanitizeType(method.returnType)}`);
-    count++;
   }
 
   lines.push("  }");
@@ -235,27 +221,14 @@ function renderInterfaceMembers(lines: string[], iface: InterfaceInfo): void {
 function renderClassMembers(lines: string[], cls: ClassInfo): void {
   lines.push(`  class ${cls.name} {`);
 
-  let count = 0;
-  const total = cls.properties.length + cls.methods.length;
-
   for (const prop of cls.properties) {
-    if (count >= MAX_MEMBERS_PER_CLASS) {
-      lines.push(`    ... ${total - count} more`);
-      break;
-    }
     const vis = visibilityPrefix(prop.visibility);
     lines.push(`    ${vis}${prop.name}: ${sanitizeType(prop.type)}`);
-    count++;
   }
 
   for (const method of cls.methods) {
-    if (count >= MAX_MEMBERS_PER_CLASS) {
-      lines.push(`    ... ${total - count} more`);
-      break;
-    }
     const vis = visibilityPrefix(method.visibility);
     lines.push(`    ${vis}${method.name}(${formatParams(method.parameters)}) ${sanitizeType(method.returnType)}`);
-    count++;
   }
 
   lines.push("  }");
