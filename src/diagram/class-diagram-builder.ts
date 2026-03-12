@@ -4,6 +4,9 @@ import type {
   InterfaceInfo,
 } from "../types/extracted.js";
 
+const MAX_MEMBERS_PER_CLASS = 6;
+const MAX_CLASSES_PER_DIAGRAM = 5;
+
 export function buildClassDiagram(extraction: LayerExtraction): string {
   const classes = extraction.classes.filter((c) => c.isExported);
   const interfaces = extraction.interfaces.filter((i) => i.isExported);
@@ -12,33 +15,168 @@ export function buildClassDiagram(extraction: LayerExtraction): string {
     return "";
   }
 
+  return buildDiagramFromItems(classes, interfaces);
+}
+
+export function buildCategoryClassDiagrams(
+  classes: ClassInfo[],
+  interfaces: InterfaceInfo[],
+): string[] {
+  const exportedClasses = classes.filter((c) => c.isExported);
+  const exportedInterfaces = interfaces.filter((i) => i.isExported);
+
+  const total = exportedClasses.length + exportedInterfaces.length;
+  if (total === 0) return [];
+
+  if (total <= MAX_CLASSES_PER_DIAGRAM) {
+    const diagram = buildDiagramFromItems(exportedClasses, exportedInterfaces);
+    return diagram ? [diagram] : [];
+  }
+
+  // Split into groups, keeping related items (via extends/implements) together
+  const groups = splitIntoRelatedGroups(exportedClasses, exportedInterfaces);
+  const diagrams: string[] = [];
+
+  for (const group of groups) {
+    const diagram = buildDiagramFromItems(group.classes, group.interfaces);
+    if (diagram) {
+      diagrams.push(diagram);
+    }
+  }
+
+  return diagrams;
+}
+
+interface ItemGroup {
+  classes: ClassInfo[];
+  interfaces: InterfaceInfo[];
+}
+
+function splitIntoRelatedGroups(
+  classes: ClassInfo[],
+  interfaces: InterfaceInfo[],
+): ItemGroup[] {
+  // Build a union-find to group related items
+  const nameToItem = new Map<string, ClassInfo | InterfaceInfo>();
+  for (const c of classes) nameToItem.set(c.name, c);
+  for (const i of interfaces) nameToItem.set(i.name, i);
+
+  const parent = new Map<string, string>();
+  const allNames = [...nameToItem.keys()];
+  for (const name of allNames) parent.set(name, name);
+
+  function find(x: string): string {
+    while (parent.get(x) !== x) {
+      parent.set(x, parent.get(parent.get(x)!)!);
+      x = parent.get(x)!;
+    }
+    return x;
+  }
+
+  function union(a: string, b: string): void {
+    const ra = find(a);
+    const rb = find(b);
+    if (ra !== rb) parent.set(ra, rb);
+  }
+
+  // Union related items
+  for (const cls of classes) {
+    if (cls.extendsClass && nameToItem.has(cls.extendsClass)) {
+      union(cls.name, cls.extendsClass);
+    }
+    for (const impl of cls.implementsInterfaces) {
+      if (nameToItem.has(impl)) {
+        union(cls.name, impl);
+      }
+    }
+  }
+
+  for (const iface of interfaces) {
+    for (const ext of iface.extendsInterfaces) {
+      if (nameToItem.has(ext)) {
+        union(iface.name, ext);
+      }
+    }
+  }
+
+  // Collect groups
+  const groupMap = new Map<string, ItemGroup>();
+  for (const name of allNames) {
+    const root = find(name);
+    if (!groupMap.has(root)) {
+      groupMap.set(root, { classes: [], interfaces: [] });
+    }
+    const item = nameToItem.get(name)!;
+    const group = groupMap.get(root)!;
+    if ("businessRules" in item) {
+      group.classes.push(item as ClassInfo);
+    } else {
+      group.interfaces.push(item as InterfaceInfo);
+    }
+  }
+
+  // Split large groups, then consolidate small groups into chunks
+  const splitGroups: ItemGroup[] = [];
+  for (const group of groupMap.values()) {
+    const size = group.classes.length + group.interfaces.length;
+    if (size <= MAX_CLASSES_PER_DIAGRAM) {
+      splitGroups.push(group);
+    } else {
+      const allItems: Array<{ type: "class" | "interface"; item: ClassInfo | InterfaceInfo }> = [
+        ...group.classes.map((c) => ({ type: "class" as const, item: c })),
+        ...group.interfaces.map((i) => ({ type: "interface" as const, item: i })),
+      ];
+      for (let i = 0; i < allItems.length; i += MAX_CLASSES_PER_DIAGRAM) {
+        const chunk = allItems.slice(i, i + MAX_CLASSES_PER_DIAGRAM);
+        splitGroups.push({
+          classes: chunk.filter((x) => x.type === "class").map((x) => x.item as ClassInfo),
+          interfaces: chunk.filter((x) => x.type === "interface").map((x) => x.item as InterfaceInfo),
+        });
+      }
+    }
+  }
+
+  // Merge small groups together until they reach MAX_CLASSES_PER_DIAGRAM
+  const result: ItemGroup[] = [];
+  let current: ItemGroup = { classes: [], interfaces: [] };
+  let currentSize = 0;
+
+  for (const group of splitGroups) {
+    const groupSize = group.classes.length + group.interfaces.length;
+    if (currentSize + groupSize > MAX_CLASSES_PER_DIAGRAM && currentSize > 0) {
+      result.push(current);
+      current = { classes: [], interfaces: [] };
+      currentSize = 0;
+    }
+    current.classes.push(...group.classes);
+    current.interfaces.push(...group.interfaces);
+    currentSize += groupSize;
+  }
+
+  if (currentSize > 0) {
+    result.push(current);
+  }
+
+  return result;
+}
+
+function buildDiagramFromItems(
+  classes: ClassInfo[],
+  interfaces: InterfaceInfo[],
+): string {
+  if (classes.length === 0 && interfaces.length === 0) return "";
+
   const lines: string[] = ["classDiagram"];
 
   for (const iface of interfaces) {
-    lines.push(`  class ${iface.name} {`);
-    lines.push(`    <<interface>>`);
-    for (const prop of iface.properties) {
-      lines.push(`    +${prop.name}: ${sanitizeType(prop.type)}`);
-    }
-    for (const method of iface.methods) {
-      lines.push(`    +${method.name}(${formatParams(method.parameters)}) ${sanitizeType(method.returnType)}`);
-    }
-    lines.push("  }");
+    renderInterfaceMembers(lines, iface);
   }
 
   for (const cls of classes) {
-    lines.push(`  class ${cls.name} {`);
-    for (const prop of cls.properties) {
-      const vis = visibilityPrefix(prop.visibility);
-      lines.push(`    ${vis}${prop.name}: ${sanitizeType(prop.type)}`);
-    }
-    for (const method of cls.methods) {
-      const vis = visibilityPrefix(method.visibility);
-      lines.push(`    ${vis}${method.name}(${formatParams(method.parameters)}) ${sanitizeType(method.returnType)}`);
-    }
-    lines.push("  }");
+    renderClassMembers(lines, cls);
   }
 
+  // Relationships
   const allNames = new Set([
     ...classes.map((c) => c.name),
     ...interfaces.map((i) => i.name),
@@ -66,69 +204,61 @@ export function buildClassDiagram(extraction: LayerExtraction): string {
   return lines.join("\n");
 }
 
-export function buildCategoryClassDiagram(
-  classes: ClassInfo[],
-  interfaces: InterfaceInfo[],
-): string {
-  const exported = [
-    ...classes.filter((c) => c.isExported),
-    ...interfaces.filter((i) => i.isExported),
-  ];
+function renderInterfaceMembers(lines: string[], iface: InterfaceInfo): void {
+  lines.push(`  class ${iface.name} {`);
+  lines.push(`    <<interface>>`);
 
-  if (exported.length === 0) return "";
+  let count = 0;
+  const total = iface.properties.length + iface.methods.length;
 
-  const lines: string[] = ["classDiagram"];
-
-  for (const item of exported) {
-    const isInterface = !("methods" in item && "businessRules" in item);
-    const iface = isInterface ? (item as InterfaceInfo) : null;
-    const cls = isInterface ? null : (item as ClassInfo);
-
-    lines.push(`  class ${item.name} {`);
-    if (iface) {
-      lines.push(`    <<interface>>`);
-      for (const prop of iface.properties) {
-        lines.push(`    +${prop.name}: ${sanitizeType(prop.type)}`);
-      }
-      for (const method of iface.methods) {
-        lines.push(`    +${method.name}(${formatParams(method.parameters)}) ${sanitizeType(method.returnType)}`);
-      }
+  for (const prop of iface.properties) {
+    if (count >= MAX_MEMBERS_PER_CLASS) {
+      lines.push(`    +... ${total - count} more`);
+      break;
     }
-    if (cls) {
-      for (const prop of cls.properties) {
-        const vis = visibilityPrefix(prop.visibility);
-        lines.push(`    ${vis}${prop.name}: ${sanitizeType(prop.type)}`);
-      }
-      for (const method of cls.methods) {
-        const vis = visibilityPrefix(method.visibility);
-        lines.push(`    ${vis}${method.name}(${formatParams(method.parameters)}) ${sanitizeType(method.returnType)}`);
-      }
-    }
-    lines.push("  }");
+    lines.push(`    +${prop.name}: ${sanitizeType(prop.type)}`);
+    count++;
   }
 
-  const allNames = new Set(exported.map((e) => e.name));
-
-  for (const cls of classes.filter((c) => c.isExported)) {
-    if (cls.extendsClass && allNames.has(cls.extendsClass)) {
-      lines.push(`  ${cls.extendsClass} <|-- ${cls.name}`);
+  for (const method of iface.methods) {
+    if (count >= MAX_MEMBERS_PER_CLASS) {
+      lines.push(`    +... ${total - count} more`);
+      break;
     }
-    for (const impl of cls.implementsInterfaces) {
-      if (allNames.has(impl)) {
-        lines.push(`  ${impl} <|.. ${cls.name}`);
-      }
-    }
+    lines.push(`    +${method.name}(${formatParams(method.parameters)}) ${sanitizeType(method.returnType)}`);
+    count++;
   }
 
-  for (const iface of interfaces.filter((i) => i.isExported)) {
-    for (const ext of iface.extendsInterfaces) {
-      if (allNames.has(ext)) {
-        lines.push(`  ${ext} <|-- ${iface.name}`);
-      }
+  lines.push("  }");
+}
+
+function renderClassMembers(lines: string[], cls: ClassInfo): void {
+  lines.push(`  class ${cls.name} {`);
+
+  let count = 0;
+  const total = cls.properties.length + cls.methods.length;
+
+  for (const prop of cls.properties) {
+    if (count >= MAX_MEMBERS_PER_CLASS) {
+      lines.push(`    ... ${total - count} more`);
+      break;
     }
+    const vis = visibilityPrefix(prop.visibility);
+    lines.push(`    ${vis}${prop.name}: ${sanitizeType(prop.type)}`);
+    count++;
   }
 
-  return lines.join("\n");
+  for (const method of cls.methods) {
+    if (count >= MAX_MEMBERS_PER_CLASS) {
+      lines.push(`    ... ${total - count} more`);
+      break;
+    }
+    const vis = visibilityPrefix(method.visibility);
+    lines.push(`    ${vis}${method.name}(${formatParams(method.parameters)}) ${sanitizeType(method.returnType)}`);
+    count++;
+  }
+
+  lines.push("  }");
 }
 
 function visibilityPrefix(vis: "public" | "protected" | "private"): string {
@@ -146,7 +276,6 @@ function sanitizeType(type: string): string {
   let result = type.replace(/\n/g, " ");
 
   // Collapse object literals like { foo: string; bar: number } → Object
-  // Must run before < > replacement to handle nested generics with objects
   result = collapseObjectLiterals(result);
 
   result = result
@@ -158,8 +287,6 @@ function sanitizeType(type: string): string {
 }
 
 function collapseObjectLiterals(type: string): string {
-  // Replace object type literals { ... } with "Object"
-  // Handle nested braces by iterating from inside out
   let result = type;
   let prev = "";
   while (prev !== result) {

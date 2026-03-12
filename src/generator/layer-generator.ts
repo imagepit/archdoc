@@ -8,7 +8,7 @@ import type {
   MethodInfo,
   MethodSignatureInfo,
 } from "../types/extracted.js";
-import { buildCategoryClassDiagram } from "../diagram/class-diagram-builder.js";
+import { buildCategoryClassDiagrams } from "../diagram/class-diagram-builder.js";
 import { buildSequenceDiagram } from "../diagram/sequence-diagram-builder.js";
 import type { CallChainEntry } from "../types/extracted.js";
 
@@ -57,8 +57,8 @@ export function generateLayerMd(
       .filter((i) => i.kind === "interface")
       .map((i) => i.data as InterfaceInfo);
 
-    const diagram = buildCategoryClassDiagram(catClasses, catInterfaces);
-    if (diagram) {
+    const diagrams = buildCategoryClassDiagrams(catClasses, catInterfaces);
+    for (const diagram of diagrams) {
       md.codeBlock(diagram, "mermaid");
     }
 
