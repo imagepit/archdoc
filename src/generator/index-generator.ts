@@ -47,26 +47,47 @@ export function generateIndexMd(
 
     md.heading(3, `${layer.name} (${layer.nameJa})`);
 
-    const components = [
-      ...extraction.classes.map((c) => [
-        `\`${getFilename(c.filePath)}\``,
+    const seen = new Set<string>();
+    const components: string[][] = [];
+
+    for (const c of extraction.classes) {
+      const key = `${c.name}:${c.category}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      components.push([
+        `\`${c.name}\``,
+        "class",
         c.category,
-        c.description || "—",
-      ]),
-      ...extraction.interfaces.map((i) => [
-        `\`${getFilename(i.filePath)}\``,
+        truncate(firstLine(c.description), 60),
+      ]);
+    }
+
+    for (const i of extraction.interfaces) {
+      const key = `${i.name}:${i.category}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      components.push([
+        `\`${i.name}\``,
+        "interface",
         i.category,
-        i.description || "—",
-      ]),
-      ...extraction.functions.map((f) => [
-        `\`${getFilename(f.filePath)}\``,
+        truncate(firstLine(i.description), 60),
+      ]);
+    }
+
+    for (const f of extraction.functions) {
+      const key = `${f.name}:${f.category}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      components.push([
+        `\`${f.name}()\``,
+        "function",
         f.category,
-        f.description || "—",
-      ]),
-    ];
+        truncate(firstLine(f.description), 60),
+      ]);
+    }
 
     if (components.length > 0) {
-      md.table(["File", "Type", "Description"], components);
+      md.table(["Component", "Kind", "Category", "Description"], components);
     } else {
       md.paragraph("*No exported components found.*");
     }
@@ -75,6 +96,13 @@ export function generateIndexMd(
   return md.build();
 }
 
-function getFilename(filePath: string): string {
-  return filePath.split("/").pop() ?? filePath;
+function firstLine(text: string): string {
+  if (!text) return "—";
+  const line = text.split("\n")[0].trim();
+  return line || "—";
+}
+
+function truncate(text: string, maxLen: number): string {
+  if (text.length <= maxLen) return text;
+  return text.slice(0, maxLen - 1) + "…";
 }

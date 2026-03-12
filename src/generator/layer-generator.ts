@@ -70,20 +70,30 @@ function groupByCategory(
   extraction: LayerExtraction,
 ): Map<string, CategorizedItem[]> {
   const map = new Map<string, CategorizedItem[]>();
+  const seen = new Set<string>();
 
   for (const cls of extraction.classes) {
+    const key = `class:${cls.name}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
     const items = map.get(cls.category) ?? [];
     items.push({ kind: "class", data: cls });
     map.set(cls.category, items);
   }
 
   for (const iface of extraction.interfaces) {
+    const key = `interface:${iface.name}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
     const items = map.get(iface.category) ?? [];
     items.push({ kind: "interface", data: iface });
     map.set(iface.category, items);
   }
 
   for (const func of extraction.functions) {
+    const key = `function:${func.name}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
     const items = map.get(func.category) ?? [];
     items.push({ kind: "function", data: func });
     map.set(func.category, items);
