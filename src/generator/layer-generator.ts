@@ -8,6 +8,9 @@ import type {
   MethodInfo,
   MethodSignatureInfo,
 } from "../types/extracted.js";
+import { buildCategoryClassDiagram } from "../diagram/class-diagram-builder.js";
+import { buildSequenceDiagram } from "../diagram/sequence-diagram-builder.js";
+import type { CallChainEntry } from "../types/extracted.js";
 
 export function generateLayerMd(
   layer: LayerConfig,
@@ -47,9 +50,23 @@ export function generateLayerMd(
   for (const [category, items] of categories) {
     md.heading(2, category);
 
+    const catClasses = items
+      .filter((i) => i.kind === "class")
+      .map((i) => i.data as ClassInfo);
+    const catInterfaces = items
+      .filter((i) => i.kind === "interface")
+      .map((i) => i.data as InterfaceInfo);
+
+    const diagram = buildCategoryClassDiagram(catClasses, catInterfaces);
+    if (diagram) {
+      md.codeBlock(diagram, "mermaid");
+    }
+
     for (const item of items) {
       if (item.kind === "class") {
-        renderClass(md, item.data as ClassInfo);
+        const cls = item.data as ClassInfo;
+        renderClass(md, cls);
+        renderSequenceDiagram(md, cls.name, extraction.callChains);
       } else if (item.kind === "interface") {
         renderInterface(md, item.data as InterfaceInfo);
       } else {
@@ -280,6 +297,21 @@ function renderMethodSignature(
     md.paragraph(
       `**Returns**: \`${method.returnType}\` ${method.returnDescription || ""}`,
     );
+  }
+}
+
+function renderSequenceDiagram(
+  md: MarkdownBuilder,
+  className: string,
+  callChains: CallChainEntry[],
+): void {
+  const chain = callChains.find((c) => c.className === className);
+  if (!chain || chain.methods.length === 0) return;
+
+  md.paragraph("**Sequence Diagram**");
+  const diagram = buildSequenceDiagram(chain);
+  if (diagram) {
+    md.codeBlock(diagram, "mermaid");
   }
 }
 

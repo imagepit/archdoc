@@ -5,6 +5,15 @@ import { parseJsDoc, mergeParamDescriptions } from "./jsdoc-parser.js";
 export function extractClass(classDecl: ClassDeclaration, category: string): ClassInfo {
   const jsdoc = parseJsDoc(classDecl);
 
+  const extendsExpr = classDecl.getExtends();
+  const extendsClass = extendsExpr
+    ? extendsExpr.getExpression().getText()
+    : undefined;
+
+  const implementsInterfaces = classDecl
+    .getImplements()
+    .map((impl) => impl.getExpression().getText());
+
   return {
     name: classDecl.getName() ?? "Anonymous",
     filePath: classDecl.getSourceFile().getFilePath(),
@@ -21,6 +30,8 @@ export function extractClass(classDecl: ClassDeclaration, category: string): Cla
     businessRules: jsdoc.businessRules,
     dependencies: jsdoc.see,
     isExported: classDecl.isExported(),
+    extendsClass,
+    implementsInterfaces,
   };
 }
 

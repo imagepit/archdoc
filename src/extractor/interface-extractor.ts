@@ -13,6 +13,10 @@ export function extractInterface(
 ): InterfaceInfo {
   const jsdoc = parseJsDoc(ifaceDecl);
 
+  const extendsInterfaces = ifaceDecl
+    .getExtends()
+    .map((ext) => ext.getExpression().getText());
+
   return {
     name: ifaceDecl.getName(),
     filePath: ifaceDecl.getSourceFile().getFilePath(),
@@ -21,6 +25,7 @@ export function extractInterface(
     properties: ifaceDecl.getProperties().map(extractProperty),
     methods: ifaceDecl.getMethods().map(extractMethodSignature),
     isExported: ifaceDecl.isExported(),
+    extendsInterfaces,
   };
 }
 

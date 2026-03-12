@@ -7,6 +7,7 @@ import { extractClass } from "./class-extractor.js";
 import { extractInterface } from "./interface-extractor.js";
 import { extractFunction } from "./function-extractor.js";
 import { analyzeImports } from "./import-analyzer.js";
+import { analyzeCallChains } from "./call-chain-analyzer.js";
 
 export function createExtractorProject(
   sourceRoot: string,
@@ -41,6 +42,7 @@ export function extractLayer(
     interfaces: [],
     functions: [],
     dependencies: [],
+    callChains: [],
   };
 
   for (const sourceFile of sourceFiles) {
@@ -64,6 +66,8 @@ export function extractLayer(
       }
     }
   }
+
+  result.callChains = analyzeCallChains(sourceFiles);
 
   return result;
 }

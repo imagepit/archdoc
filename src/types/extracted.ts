@@ -57,6 +57,8 @@ export interface ClassInfo {
   businessRules: string[];
   dependencies: DependencyInfo[];
   isExported: boolean;
+  extendsClass?: string;
+  implementsInterfaces: string[];
 }
 
 export interface InterfaceInfo {
@@ -67,6 +69,7 @@ export interface InterfaceInfo {
   properties: PropertyInfo[];
   methods: MethodSignatureInfo[];
   isExported: boolean;
+  extendsInterfaces: string[];
 }
 
 export interface FunctionInfo {
@@ -83,10 +86,21 @@ export interface FunctionInfo {
   isExported: boolean;
 }
 
+export interface CallChainEntry {
+  className: string;
+  filePath: string;
+  constructorDeps: { paramName: string; typeName: string }[];
+  methods: {
+    methodName: string;
+    calls: { target: string; method: string }[];
+  }[];
+}
+
 export interface LayerExtraction {
   layerName: string;
   classes: ClassInfo[];
   interfaces: InterfaceInfo[];
   functions: FunctionInfo[];
   dependencies: DependencyInfo[];
+  callChains: CallChainEntry[];
 }
