@@ -143,11 +143,30 @@ function visibilityPrefix(vis: "public" | "protected" | "private"): string {
 }
 
 function sanitizeType(type: string): string {
-  return type
+  let result = type.replace(/\n/g, " ");
+
+  // Collapse object literals like { foo: string; bar: number } → Object
+  // Must run before < > replacement to handle nested generics with objects
+  result = collapseObjectLiterals(result);
+
+  result = result
     .replace(/</g, "~")
     .replace(/>/g, "~")
-    .replace(/\|/g, " or ")
-    .replace(/\n/g, " ");
+    .replace(/\|/g, " or ");
+
+  return result;
+}
+
+function collapseObjectLiterals(type: string): string {
+  // Replace object type literals { ... } with "Object"
+  // Handle nested braces by iterating from inside out
+  let result = type;
+  let prev = "";
+  while (prev !== result) {
+    prev = result;
+    result = result.replace(/\{[^{}]*\}/g, "Object");
+  }
+  return result;
 }
 
 function formatParams(
