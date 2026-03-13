@@ -42,6 +42,9 @@ const CATEGORY_BORDER_COLORS = [
  * Build a compact overview DOT diagram for the entire layer.
  * Nodes show only class/interface name (no members) for readability.
  * Detailed member info is in the Markdown text.
+ *
+ * Groups by category. If all items share a single category,
+ * falls back to subDirectory-based grouping.
  */
 export function buildLayerDotDiagram(extraction: LayerExtraction): string {
   const classes = extraction.classes.filter((c) => c.isExported);
@@ -60,21 +63,21 @@ export function buildLayerDotDiagram(extraction: LayerExtraction): string {
   lines.push('  edge [fontname="Helvetica", fontsize=9]');
   lines.push("");
 
-  // Group by category
-  const categories = groupByCategory(classes, interfaces);
+  // Smart grouping: category first, fall back to subDirectory
+  const groups = smartGroup(classes, interfaces);
   let colorIdx = 0;
 
   // Track anchor nodes per subgraph for inter-subgraph grid
   const subgraphAnchors: string[] = [];
 
-  for (const [category, items] of categories) {
-    const clusterId = sanitizeId(category);
+  for (const [groupLabel, items] of groups) {
+    const clusterId = sanitizeId(groupLabel);
     const bgColor = CATEGORY_COLORS[colorIdx % CATEGORY_COLORS.length];
     const borderColor = CATEGORY_BORDER_COLORS[colorIdx % CATEGORY_BORDER_COLORS.length];
     colorIdx++;
 
     lines.push(`  subgraph cluster_${clusterId} {`);
-    lines.push(`    label="${escapeLabel(category)}"`);
+    lines.push(`    label="${escapeLabel(groupLabel)}"`);
     lines.push(`    style="rounded,filled"`);
     lines.push(`    color="${borderColor}"`);
     lines.push(`    fillcolor="${bgColor}"`);
@@ -165,9 +168,154 @@ export function buildLayerDotDiagram(extraction: LayerExtraction): string {
   return lines.join("\n");
 }
 
+/**
+ * Build a DOT diagram with full member details for a group of classes/interfaces.
+ * Uses the same visual style as the overview (colored subgraph, 2-column grid, rounded nodes).
+ */
+export function buildDetailDotDiagram(
+  classes: ClassInfo[],
+  interfaces: InterfaceInfo[],
+): string {
+  if (classes.length === 0 && interfaces.length === 0) return "";
+
+  const lines: string[] = [];
+  lines.push("digraph {");
+  lines.push("  rankdir=TB");
+  lines.push("  newrank=true");
+  lines.push("  compound=true");
+  lines.push("  nodesep=0.4");
+  lines.push("  ranksep=0.6");
+  lines.push('  node [shape=Mrecord, style="filled", fillcolor=white, fontname="Helvetica", fontsize=10]');
+  lines.push('  edge [fontname="Helvetica", fontsize=9]');
+  lines.push("");
+
+  // Wrap in a colored subgraph
+  const bgColor = CATEGORY_COLORS[0];
+  const borderColor = CATEGORY_BORDER_COLORS[0];
+
+  lines.push(`  subgraph cluster_detail {`);
+  lines.push(`    label=""`);
+  lines.push(`    style="rounded,filled"`);
+  lines.push(`    color="${borderColor}"`);
+  lines.push(`    fillcolor="${bgColor}"`);
+  lines.push("");
+
+  const nodeIds: string[] = [];
+
+  for (const iface of interfaces) {
+    const id = sanitizeId(iface.name);
+    nodeIds.push(id);
+    const props = iface.properties
+      .map((p) => `+ ${escapeLabel(p.name)}: ${escapeLabel(p.type)}`)
+      .join("\\l");
+    const methods = iface.methods
+      .map((m) => `+ ${escapeLabel(m.name)}()`)
+      .join("\\l");
+    const sections = [
+      `{\\<\\<interface\\>\\>\\n${escapeLabel(iface.name)}}`,
+      props ? `${props}\\l` : "",
+      methods ? `${methods}\\l` : "",
+    ]
+      .filter(Boolean)
+      .join("|");
+    lines.push(`    ${id} [label="{${sections}}", style="filled,dashed"]`);
+  }
+
+  for (const cls of classes) {
+    const id = sanitizeId(cls.name);
+    nodeIds.push(id);
+    const props = cls.properties
+      .map((p) => {
+        const vis = p.visibility === "public" ? "+" : p.visibility === "protected" ? "#" : "-";
+        return `${vis} ${escapeLabel(p.name)}: ${escapeLabel(p.type)}`;
+      })
+      .join("\\l");
+    const methods = cls.methods
+      .map((m) => {
+        const vis = m.visibility === "public" ? "+" : m.visibility === "protected" ? "#" : "-";
+        return `${vis} ${escapeLabel(m.name)}()`;
+      })
+      .join("\\l");
+    const sections = [
+      escapeLabel(cls.name),
+      props ? `${props}\\l` : "",
+      methods ? `${methods}\\l` : "",
+    ]
+      .filter(Boolean)
+      .join("|");
+    lines.push(`    ${id} [label="{${sections}}"]`);
+  }
+
+  // 2-column grid within subgraph
+  if (nodeIds.length > COLS_IN_SUBGRAPH) {
+    lines.push("");
+    for (let r = 0; r < nodeIds.length; r += COLS_IN_SUBGRAPH) {
+      const row = nodeIds.slice(r, r + COLS_IN_SUBGRAPH);
+      lines.push(`    { rank=same; ${row.join("; ")} }`);
+    }
+    for (let r = 0; r + COLS_IN_SUBGRAPH < nodeIds.length; r += COLS_IN_SUBGRAPH) {
+      lines.push(`    ${nodeIds[r]} -> ${nodeIds[r + COLS_IN_SUBGRAPH]} [style=invis]`);
+    }
+  }
+
+  lines.push("  }");
+  lines.push("");
+
+  // Relationships
+  const allNames = new Set([
+    ...classes.map((c) => c.name),
+    ...interfaces.map((i) => i.name),
+  ]);
+
+  for (const cls of classes) {
+    if (cls.extendsClass && allNames.has(cls.extendsClass)) {
+      lines.push(`  ${sanitizeId(cls.name)} -> ${sanitizeId(cls.extendsClass)} [arrowhead=empty]`);
+    }
+    for (const impl of cls.implementsInterfaces) {
+      if (allNames.has(impl)) {
+        lines.push(`  ${sanitizeId(cls.name)} -> ${sanitizeId(impl)} [style=dashed, arrowhead=empty]`);
+      }
+    }
+  }
+
+  for (const iface of interfaces) {
+    for (const ext of iface.extendsInterfaces) {
+      if (allNames.has(ext)) {
+        lines.push(`  ${sanitizeId(iface.name)} -> ${sanitizeId(ext)} [arrowhead=empty]`);
+      }
+    }
+  }
+
+  lines.push("}");
+  return lines.join("\n");
+}
+
+// --- Internal types and helpers ---
+
 interface CategorizedItem {
   kind: "class" | "interface";
   data: ClassInfo | InterfaceInfo;
+}
+
+/**
+ * Smart grouping: use category by default.
+ * If all items share a single category, fall back to subDirectory grouping.
+ */
+function smartGroup(
+  classes: ClassInfo[],
+  interfaces: InterfaceInfo[],
+): Map<string, CategorizedItem[]> {
+  const categoryGroups = groupByCategory(classes, interfaces);
+
+  // If only one category, try subDirectory-based grouping
+  if (categoryGroups.size <= 1) {
+    const subDirGroups = groupBySubDirectory(classes, interfaces);
+    if (subDirGroups.size > 1) {
+      return subDirGroups;
+    }
+  }
+
+  return categoryGroups;
 }
 
 function groupByCategory(
@@ -189,6 +337,42 @@ function groupByCategory(
   }
 
   return map;
+}
+
+function groupBySubDirectory(
+  classes: ClassInfo[],
+  interfaces: InterfaceInfo[],
+): Map<string, CategorizedItem[]> {
+  const map = new Map<string, CategorizedItem[]>();
+
+  for (const cls of classes) {
+    const label = formatSubDirLabel(cls.subDirectory);
+    const items = map.get(label) ?? [];
+    items.push({ kind: "class", data: cls });
+    map.set(label, items);
+  }
+
+  for (const iface of interfaces) {
+    const label = formatSubDirLabel(iface.subDirectory);
+    const items = map.get(label) ?? [];
+    items.push({ kind: "interface", data: iface });
+    map.set(label, items);
+  }
+
+  return map;
+}
+
+function formatSubDirLabel(subDir: string): string {
+  if (!subDir) return "General";
+  return subDir
+    .split("/")
+    .map((segment) =>
+      segment
+        .split("-")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" "),
+    )
+    .join(" / ");
 }
 
 function renderCompactClassNode(cls: ClassInfo): string {
@@ -213,5 +397,8 @@ function escapeLabel(text: string): string {
   return text
     .replace(/"/g, '\\"')
     .replace(/</g, "\\<")
-    .replace(/>/g, "\\>");
+    .replace(/>/g, "\\>")
+    .replace(/\{/g, "\\{")
+    .replace(/\}/g, "\\}")
+    .replace(/\|/g, "\\|");
 }
