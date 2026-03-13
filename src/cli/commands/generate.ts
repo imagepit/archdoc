@@ -2,6 +2,7 @@ import type { Command } from "commander";
 import chalk from "chalk";
 import { loadConfig } from "../../config/loader.js";
 import { createExtractorProject, extractLayer } from "../../extractor/project.js";
+import { analyzeCallerReferences } from "../../extractor/caller-analyzer.js";
 import { generateIndexMd } from "../../generator/index-generator.js";
 import { generateLayerMd } from "../../generator/layer-generator.js";
 import { MermaidRenderer } from "../../diagram/mermaid-renderer.js";
@@ -48,6 +49,10 @@ export function registerGenerateCommand(program: Command): void {
         console.log(chalk.gray(`  Extracting ${layer.name} (${layer.nameJa})...`));
         return extractLayer(project, layer, config.layers);
       });
+
+      // Post-process: analyze caller references across all layers
+      console.log(chalk.gray("  Analyzing caller references..."));
+      analyzeCallerReferences(project, extractions, config.layers);
 
       // Create renderer based on diagram format
       const renderer: DiagramRenderer = diagramFormat === "svg"

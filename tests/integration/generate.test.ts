@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { loadConfig } from "../../src/config/loader.js";
 import { createExtractorProject, extractLayer } from "../../src/extractor/project.js";
+import { analyzeCallerReferences } from "../../src/extractor/caller-analyzer.js";
 import { generateIndexMd } from "../../src/generator/index-generator.js";
 import { generateLayerMd } from "../../src/generator/layer-generator.js";
 import { MermaidRenderer } from "../../src/diagram/mermaid-renderer.js";
@@ -20,6 +21,7 @@ describe("generate integration", () => {
     config = loadConfig(join(FIXTURES, "layers.yaml"));
     project = createExtractorProject(config.project.sourceRoot);
     extractions = config.layers.map((layer) => extractLayer(project, layer, config.layers));
+    analyzeCallerReferences(project, extractions, config.layers);
   });
 
   it("extracts all 4 layers", () => {
@@ -62,6 +64,16 @@ describe("generate integration", () => {
     expect(domainDeps[0].importPath).toBeDefined();
     // Application → Domain is allowed, so none should be forbidden
     expect(domainDeps.every((d) => !d.isForbidden)).toBe(true);
+  });
+
+  it("analyzes caller references for domain methods", () => {
+    const domain = extractions.find((e) => e.layerName === "Domain")!;
+    const orderClass = domain.classes.find((c) => c.name === "Order")!;
+    const addItemMethod = orderClass.methods.find((m) => m.name === "addItem");
+    // CreateOrderUseCase calls Order.addItem()
+    expect(addItemMethod?.calledBy).toBeDefined();
+    expect(addItemMethod!.calledBy!.length).toBeGreaterThan(0);
+    expect(addItemMethod!.calledBy!.some((c) => c.callerName.includes("CreateOrderUseCase"))).toBe(true);
   });
 
   it("generates index.md with all layers", async () => {

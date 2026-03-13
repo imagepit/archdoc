@@ -20,6 +20,12 @@ export interface ThrowInfo {
   description: string;
 }
 
+export interface CallerReference {
+  callerName: string;
+  filePath: string;
+  layerName?: string;
+}
+
 export interface MethodInfo {
   name: string;
   description: string;
@@ -30,6 +36,7 @@ export interface MethodInfo {
   throws: ThrowInfo[];
   businessRules: string[];
   visibility: "public" | "protected" | "private";
+  calledBy?: CallerReference[];
 }
 
 export interface MethodSignatureInfo {
@@ -90,6 +97,7 @@ export interface FunctionInfo {
   throws: ThrowInfo[];
   businessRules: string[];
   isExported: boolean;
+  calledBy?: CallerReference[];
 }
 
 export interface CallChainEntry {

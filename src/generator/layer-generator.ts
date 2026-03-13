@@ -7,6 +7,7 @@ import type {
   FunctionInfo,
   MethodInfo,
   MethodSignatureInfo,
+  CallerReference,
 } from "../types/extracted.js";
 import type { CallChainEntry } from "../types/extracted.js";
 import type { DiagramRenderer } from "../diagram/diagram-renderer.js";
@@ -331,10 +332,27 @@ function renderFunction(
     );
   }
 
+  renderCalledBy(md, func.calledBy);
+
   if (func.businessRules.length > 0) {
     md.paragraph("**Business Rules**");
     md.list(func.businessRules);
   }
+}
+
+function renderCalledBy(
+  md: MarkdownBuilder,
+  calledBy?: CallerReference[],
+): void {
+  if (!calledBy || calledBy.length === 0) return;
+  md.paragraph("**Called By**");
+  md.list(
+    calledBy.map((c) => {
+      const file = getFilename(c.filePath);
+      const layer = c.layerName ? ` — ${c.layerName}` : "";
+      return `\`${c.callerName}\`${layer} (\`${file}\`)`;
+    }),
+  );
 }
 
 function renderMethod(
@@ -372,6 +390,8 @@ function renderMethod(
       method.throws.map((t) => [t.type ? `\`${t.type}\`` : "—", t.description]),
     );
   }
+
+  renderCalledBy(md, method.calledBy);
 
   if (method.businessRules.length > 0) {
     md.paragraph("**Business Rules**");
