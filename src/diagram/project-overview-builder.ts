@@ -7,6 +7,7 @@ interface ProjectNode {
   name: string;
   layerName: string;
   kind: "class" | "interface" | "function";
+  category: string;
 }
 
 interface ProjectRelationship {
@@ -23,6 +24,22 @@ const LAYER_COLORS = [
   { bg: "#fce4ec", border: "#ef9a9a" }, // pink
   { bg: "#e0f7fa", border: "#80deea" }, // cyan
   { bg: "#f3e5f5", border: "#ce93d8" }, // purple
+];
+
+// Colorful pastel palette for category sub-clusters
+const CATEGORY_COLORS = [
+  { bg: "#e3f2fd", border: "#90caf9" }, // light blue
+  { bg: "#f1f8e9", border: "#aed581" }, // light green
+  { bg: "#fff8e1", border: "#ffe082" }, // light amber
+  { bg: "#fce4ec", border: "#f48fb1" }, // light pink
+  { bg: "#e8eaf6", border: "#9fa8da" }, // light indigo
+  { bg: "#e0f2f1", border: "#80cbc4" }, // light teal
+  { bg: "#f3e5f5", border: "#ce93d8" }, // light purple
+  { bg: "#fff3e0", border: "#ffb74d" }, // light orange
+  { bg: "#e1f5fe", border: "#4fc3f7" }, // lighter blue
+  { bg: "#f9fbe7", border: "#dce775" }, // light lime
+  { bg: "#fbe9e7", border: "#ff8a65" }, // light deep orange
+  { bg: "#ede7f6", border: "#b39ddb" }, // light deep purple
 ];
 
 // --- Public API ---
@@ -45,24 +62,28 @@ export function buildProjectOverviewMermaid(
 
   const lines: string[] = ["classDiagram", "  direction LR"];
 
-  // All nodes grouped by layer
+  // All nodes grouped by layer, then by category
   const layerGroups = groupByLayer(nodes);
   for (const [layerName, items] of layerGroups) {
-    lines.push(`  namespace ${layerName} {`);
-    for (const node of items) {
-      if (node.kind === "interface") {
-        lines.push(`    class ${node.name} {`);
-        lines.push(`      <<interface>>`);
-        lines.push(`    }`);
-      } else if (node.kind === "function") {
-        lines.push(`    class ${node.name} {`);
-        lines.push(`      <<function>>`);
-        lines.push(`    }`);
-      } else {
-        lines.push(`    class ${node.name}`);
+    const categoryGroups = groupByCategory(items);
+    for (const [categoryName, catItems] of categoryGroups) {
+      const nsName = `${layerName}__${categoryName.replace(/[^a-zA-Z0-9]/g, "_")}`;
+      lines.push(`  namespace ${nsName} {`);
+      for (const node of catItems) {
+        if (node.kind === "interface") {
+          lines.push(`    class ${node.name} {`);
+          lines.push(`      <<interface>>`);
+          lines.push(`    }`);
+        } else if (node.kind === "function") {
+          lines.push(`    class ${node.name} {`);
+          lines.push(`      <<function>>`);
+          lines.push(`    }`);
+        } else {
+          lines.push(`    class ${node.name}`);
+        }
       }
+      lines.push(`  }`);
     }
-    lines.push(`  }`);
   }
 
   // Only violation relationships
@@ -102,7 +123,7 @@ export function buildProjectOverviewDot(
   const allowedDeps = buildAllowedDependencyMap(extractions, layers);
   const violations = filterViolations(relationships, nodeMap, allowedDeps);
 
-  const COLS = 3;
+  const COLS = 2;
 
   const lines: string[] = [];
   lines.push("digraph {");
@@ -132,35 +153,71 @@ export function buildProjectOverviewDot(
     lines.push(`    fontsize=13`);
     lines.push("");
 
-    const nodeIds: string[] = [];
-    for (const node of items) {
-      const id = sanitizeId(node.name);
-      nodeIds.push(id);
-      if (node.kind === "interface") {
-        const label = `\\<\\<interface\\>\\>\\n${escapeLabel(node.name)}`;
-        lines.push(`    ${id} [label="${label}", style="rounded,filled,dashed"]`);
-      } else if (node.kind === "function") {
-        const label = `\\<\\<function\\>\\>\\n${escapeLabel(node.name)}`;
-        lines.push(`    ${id} [label="${label}", shape=ellipse]`);
-      } else {
-        lines.push(`    ${id} [label="${escapeLabel(node.name)}"]`);
-      }
-    }
+    const allNodeIds: string[] = [];
+    const categoryGroups = groupByCategory(items);
+    let catColorIdx = 0;
+    const catAnchors: string[] = []; // first node of each category for vertical stacking
 
-    // N-column grid within cluster
-    if (nodeIds.length > COLS) {
+    for (const [categoryName, catItems] of categoryGroups) {
+      const catColor = CATEGORY_COLORS[catColorIdx % CATEGORY_COLORS.length];
+      catColorIdx++;
+      const catClusterId = `cluster_${sanitizeId(layerName)}_${sanitizeId(categoryName)}`;
+
+      lines.push(`    subgraph ${catClusterId} {`);
+      lines.push(`      label="${escapeLabel(categoryName)}"`);
+      lines.push(`      style="rounded,filled"`);
+      lines.push(`      color="${catColor.border}"`);
+      lines.push(`      fillcolor="${catColor.bg}"`);
+      lines.push(`      fontname="Helvetica"`);
+      lines.push(`      fontsize=10`);
       lines.push("");
-      for (let r = 0; r < nodeIds.length; r += COLS) {
-        const row = nodeIds.slice(r, r + COLS);
-        lines.push(`    { rank=same; ${row.join("; ")} }`);
+
+      const nodeIds: string[] = [];
+      for (const node of catItems) {
+        const id = sanitizeId(node.name);
+        nodeIds.push(id);
+        allNodeIds.push(id);
+        if (node.kind === "interface") {
+          const label = `\\<\\<interface\\>\\>\\n${escapeLabel(node.name)}`;
+          lines.push(`      ${id} [label="${label}", style="rounded,filled,dashed"]`);
+        } else if (node.kind === "function") {
+          const label = `\\<\\<function\\>\\>\\n${escapeLabel(node.name)}`;
+          lines.push(`      ${id} [label="${label}", shape=ellipse]`);
+        } else {
+          lines.push(`      ${id} [label="${escapeLabel(node.name)}"]`);
+        }
       }
-      for (let r = 0; r + COLS < nodeIds.length; r += COLS) {
-        lines.push(`    ${nodeIds[r]} -> ${nodeIds[r + COLS]} [style=invis]`);
+
+      // 2-column grid within category sub-cluster
+      if (nodeIds.length > COLS) {
+        lines.push("");
+        for (let r = 0; r < nodeIds.length; r += COLS) {
+          const row = nodeIds.slice(r, r + COLS);
+          lines.push(`      { rank=same; ${row.join("; ")} }`);
+        }
+        for (let r = 0; r + COLS < nodeIds.length; r += COLS) {
+          lines.push(`      ${nodeIds[r]} -> ${nodeIds[r + COLS]} [style=invis]`);
+        }
       }
+
+      if (nodeIds.length > 0) {
+        catAnchors.push(nodeIds[0]);
+      }
+
+      lines.push("    }");
+      lines.push("");
     }
 
-    if (nodeIds.length > 0) {
-      layerAnchors.push(nodeIds[0]);
+    // Force vertical stacking of categories within layer
+    if (catAnchors.length > 1) {
+      for (let i = 0; i + 1 < catAnchors.length; i++) {
+        lines.push(`    ${catAnchors[i]} -> ${catAnchors[i + 1]} [style=invis]`);
+      }
+      lines.push("");
+    }
+
+    if (allNodeIds.length > 0) {
+      layerAnchors.push(allNodeIds[0]);
     }
 
     lines.push("  }");
@@ -305,17 +362,17 @@ function collectNodes(extractions: LayerExtraction[]): ProjectNode[] {
     for (const cls of ext.classes) {
       if (!cls.isExported || seen.has(cls.name)) continue;
       seen.add(cls.name);
-      nodes.push({ name: cls.name, layerName: ext.layerName, kind: "class" });
+      nodes.push({ name: cls.name, layerName: ext.layerName, kind: "class", category: cls.category });
     }
     for (const iface of ext.interfaces) {
       if (!iface.isExported || seen.has(iface.name)) continue;
       seen.add(iface.name);
-      nodes.push({ name: iface.name, layerName: ext.layerName, kind: "interface" });
+      nodes.push({ name: iface.name, layerName: ext.layerName, kind: "interface", category: iface.category });
     }
     for (const func of ext.functions) {
       if (!func.isExported || seen.has(func.name)) continue;
       seen.add(func.name);
-      nodes.push({ name: func.name, layerName: ext.layerName, kind: "function" });
+      nodes.push({ name: func.name, layerName: ext.layerName, kind: "function", category: func.category });
     }
   }
 
@@ -428,6 +485,17 @@ function groupByLayer(nodes: ProjectNode[]): Map<string, ProjectNode[]> {
     const items = map.get(node.layerName) ?? [];
     items.push(node);
     map.set(node.layerName, items);
+  }
+  return map;
+}
+
+function groupByCategory(nodes: ProjectNode[]): Map<string, ProjectNode[]> {
+  const map = new Map<string, ProjectNode[]>();
+  for (const node of nodes) {
+    const key = node.category || "(uncategorized)";
+    const items = map.get(key) ?? [];
+    items.push(node);
+    map.set(key, items);
   }
   return map;
 }
