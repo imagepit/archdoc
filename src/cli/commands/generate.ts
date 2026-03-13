@@ -9,6 +9,8 @@ import { renderDotToSvg } from "../../diagram/svg-renderer.js";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
+type DiagramFormat = "mermaid" | "svg";
+
 export function registerGenerateCommand(program: Command): void {
   program
     .command("generate")
@@ -16,13 +18,20 @@ export function registerGenerateCommand(program: Command): void {
     .option("-c, --config <path>", "Path to layers.yaml", "layers.yaml")
     .option("-o, --output <dir>", "Output directory", "docs/architecture")
     .option("--layer <name>", "Generate only a specific layer")
-    .option("--svg", "Generate SVG class diagrams using Graphviz")
-    .action(async (options: { config: string; output: string; layer?: string; svg?: boolean }) => {
+    .option("-d, --diagram <format>", "Diagram format: mermaid or svg (default: mermaid)", "mermaid")
+    .action(async (options: { config: string; output: string; layer?: string; diagram: string }) => {
+      const diagramFormat = options.diagram as DiagramFormat;
+      if (diagramFormat !== "mermaid" && diagramFormat !== "svg") {
+        console.error(chalk.red(`Invalid diagram format "${options.diagram}". Use "mermaid" or "svg".`));
+        process.exit(1);
+      }
+
       const config = loadConfig(options.config);
       const outputDir = options.output;
       mkdirSync(outputDir, { recursive: true });
 
       console.log(chalk.blue(`Generating documentation for ${config.project.name}...`));
+      console.log(chalk.gray(`  Diagram format: ${diagramFormat}`));
 
       const project = createExtractorProject(config.project.sourceRoot);
       const targetLayers = options.layer
@@ -43,8 +52,8 @@ export function registerGenerateCommand(program: Command): void {
       writeFileSync(join(outputDir, "index.md"), indexMd);
       console.log(chalk.green(`  Created index.md`));
 
-      // Generate SVG diagrams if --svg flag is set
-      if (options.svg) {
+      // Generate SVG diagrams
+      if (diagramFormat === "svg") {
         const diagramDir = join(outputDir, "diagrams");
         mkdirSync(diagramDir, { recursive: true });
 
@@ -61,7 +70,7 @@ export function registerGenerateCommand(program: Command): void {
 
       for (const extraction of extractions) {
         const layerConfig = config.layers.find((l) => l.name === extraction.layerName)!;
-        const layerMd = generateLayerMd(layerConfig, extraction, { svg: !!options.svg });
+        const layerMd = generateLayerMd(layerConfig, extraction, { svg: diagramFormat === "svg" });
         const filename = `${layerConfig.name.toLowerCase()}.md`;
         writeFileSync(join(outputDir, filename), layerMd);
         console.log(chalk.green(`  Created ${filename}`));

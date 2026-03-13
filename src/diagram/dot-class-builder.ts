@@ -4,6 +4,9 @@ import type {
   InterfaceInfo,
 } from "../types/extracted.js";
 
+const COLS_IN_SUBGRAPH = 2;
+const COLS_OF_SUBGRAPHS = 3;
+
 // Category colors for subgraph backgrounds
 const CATEGORY_COLORS = [
   "#e8eaf6", // indigo lightest
@@ -12,9 +15,34 @@ const CATEGORY_COLORS = [
   "#fce4ec", // pink lightest
   "#e0f7fa", // cyan lightest
   "#f3e5f5", // purple lightest
-  "#e8eaf6", // repeat
+  "#ede7f6", // deep purple lightest
+  "#e1f5fe", // light blue lightest
+  "#f1f8e9", // light green lightest
+  "#fff8e1", // amber lightest
+  "#fbe9e7", // deep orange lightest
+  "#eceff1", // blue grey lightest
 ];
 
+const CATEGORY_BORDER_COLORS = [
+  "#9fa8da", // indigo
+  "#a5d6a7", // green
+  "#ffcc80", // orange
+  "#ef9a9a", // pink
+  "#80deea", // cyan
+  "#ce93d8", // purple
+  "#b39ddb", // deep purple
+  "#81d4fa", // light blue
+  "#c5e1a5", // light green
+  "#ffe082", // amber
+  "#ffab91", // deep orange
+  "#b0bec5", // blue grey
+];
+
+/**
+ * Build a compact overview DOT diagram for the entire layer.
+ * Nodes show only class/interface name (no members) for readability.
+ * Detailed member info is in the Markdown text.
+ */
 export function buildLayerDotDiagram(extraction: LayerExtraction): string {
   const classes = extraction.classes.filter((c) => c.isExported);
   const interfaces = extraction.interfaces.filter((i) => i.isExported);
@@ -24,7 +52,11 @@ export function buildLayerDotDiagram(extraction: LayerExtraction): string {
   const lines: string[] = [];
   lines.push("digraph {");
   lines.push("  rankdir=TB");
-  lines.push('  node [shape=record, fontname="Helvetica", fontsize=10]');
+  lines.push("  newrank=true");
+  lines.push("  compound=true");
+  lines.push("  nodesep=0.3");
+  lines.push("  ranksep=0.5");
+  lines.push('  node [shape=box, style="rounded,filled", fillcolor=white, fontname="Helvetica", fontsize=11]');
   lines.push('  edge [fontname="Helvetica", fontsize=9]');
   lines.push("");
 
@@ -32,25 +64,69 @@ export function buildLayerDotDiagram(extraction: LayerExtraction): string {
   const categories = groupByCategory(classes, interfaces);
   let colorIdx = 0;
 
+  // Track anchor nodes per subgraph for inter-subgraph grid
+  const subgraphAnchors: string[] = [];
+
   for (const [category, items] of categories) {
     const clusterId = sanitizeId(category);
-    const color = CATEGORY_COLORS[colorIdx % CATEGORY_COLORS.length];
+    const bgColor = CATEGORY_COLORS[colorIdx % CATEGORY_COLORS.length];
+    const borderColor = CATEGORY_BORDER_COLORS[colorIdx % CATEGORY_BORDER_COLORS.length];
     colorIdx++;
 
     lines.push(`  subgraph cluster_${clusterId} {`);
     lines.push(`    label="${escapeLabel(category)}"`);
-    lines.push(`    style=filled; color="${color}"; fontname="Helvetica Bold"`);
+    lines.push(`    style="rounded,filled"`);
+    lines.push(`    color="${borderColor}"`);
+    lines.push(`    fillcolor="${bgColor}"`);
+    lines.push(`    fontname="Helvetica Bold"`);
+    lines.push(`    fontsize=13`);
     lines.push("");
 
+    const nodeIds: string[] = [];
     for (const item of items) {
       if (item.kind === "class") {
-        lines.push(`    ${renderClassNode(item.data as ClassInfo)}`);
+        const cls = item.data as ClassInfo;
+        lines.push(`    ${renderCompactClassNode(cls)}`);
+        nodeIds.push(sanitizeId(cls.name));
       } else {
-        lines.push(`    ${renderInterfaceNode(item.data as InterfaceInfo)}`);
+        const iface = item.data as InterfaceInfo;
+        lines.push(`    ${renderCompactInterfaceNode(iface)}`);
+        nodeIds.push(sanitizeId(iface.name));
+      }
+    }
+
+    if (nodeIds.length > 0) {
+      subgraphAnchors.push(nodeIds[0]);
+    }
+
+    // 2-column grid within subgraph
+    if (nodeIds.length > COLS_IN_SUBGRAPH) {
+      lines.push("");
+      for (let r = 0; r < nodeIds.length; r += COLS_IN_SUBGRAPH) {
+        const row = nodeIds.slice(r, r + COLS_IN_SUBGRAPH);
+        lines.push(`    { rank=same; ${row.join("; ")} }`);
+      }
+      for (let r = 0; r + COLS_IN_SUBGRAPH < nodeIds.length; r += COLS_IN_SUBGRAPH) {
+        lines.push(`    ${nodeIds[r]} -> ${nodeIds[r + COLS_IN_SUBGRAPH]} [style=invis]`);
       }
     }
 
     lines.push("  }");
+    lines.push("");
+  }
+
+  // 3-column grid for subgraphs: invisible edges between anchor nodes
+  if (subgraphAnchors.length > COLS_OF_SUBGRAPHS) {
+    lines.push("  // Subgraph grid layout");
+    for (let r = 0; r < subgraphAnchors.length; r += COLS_OF_SUBGRAPHS) {
+      const row = subgraphAnchors.slice(r, r + COLS_OF_SUBGRAPHS);
+      if (row.length > 1) {
+        lines.push(`  { rank=same; ${row.join("; ")} }`);
+      }
+    }
+    for (let r = 0; r + COLS_OF_SUBGRAPHS < subgraphAnchors.length; r += COLS_OF_SUBGRAPHS) {
+      lines.push(`  ${subgraphAnchors[r]} -> ${subgraphAnchors[r + COLS_OF_SUBGRAPHS]} [style=invis]`);
+    }
     lines.push("");
   }
 
@@ -63,13 +139,13 @@ export function buildLayerDotDiagram(extraction: LayerExtraction): string {
   for (const cls of classes) {
     if (cls.extendsClass && allNames.has(cls.extendsClass)) {
       lines.push(
-        `  ${sanitizeId(cls.name)} -> ${sanitizeId(cls.extendsClass)} [arrowhead=empty, label="extends"]`,
+        `  ${sanitizeId(cls.name)} -> ${sanitizeId(cls.extendsClass)} [arrowhead=empty]`,
       );
     }
     for (const impl of cls.implementsInterfaces) {
       if (allNames.has(impl)) {
         lines.push(
-          `  ${sanitizeId(cls.name)} -> ${sanitizeId(impl)} [style=dashed, arrowhead=empty, label="implements"]`,
+          `  ${sanitizeId(cls.name)} -> ${sanitizeId(impl)} [style=dashed, arrowhead=empty]`,
         );
       }
     }
@@ -79,7 +155,7 @@ export function buildLayerDotDiagram(extraction: LayerExtraction): string {
     for (const ext of iface.extendsInterfaces) {
       if (allNames.has(ext)) {
         lines.push(
-          `  ${sanitizeId(iface.name)} -> ${sanitizeId(ext)} [arrowhead=empty, label="extends"]`,
+          `  ${sanitizeId(iface.name)} -> ${sanitizeId(ext)} [arrowhead=empty]`,
         );
       }
     }
@@ -115,58 +191,18 @@ function groupByCategory(
   return map;
 }
 
-function renderClassNode(cls: ClassInfo): string {
-  const props = cls.properties
-    .map((p) => `${visPrefix(p.visibility)}${p.name}: ${sanitizeType(p.type)}\\l`)
-    .join("");
-
-  const methods = cls.methods
-    .map((m) => `${visPrefix(m.visibility)}${m.name}()\\l`)
-    .join("");
-
-  const label = `{${escapeLabel(cls.name)}|${props}|${methods}}`;
-  return `${sanitizeId(cls.name)} [label="${label}"]`;
+function renderCompactClassNode(cls: ClassInfo): string {
+  const id = sanitizeId(cls.name);
+  const memberCount = cls.properties.length + cls.methods.length;
+  const label = `${escapeLabel(cls.name)}\\n(${memberCount} members)`;
+  return `${id} [label="${label}"]`;
 }
 
-function renderInterfaceNode(iface: InterfaceInfo): string {
-  const stereotype = "\\<\\<interface\\>\\>\\n";
-  const props = iface.properties
-    .map((p) => `+${p.name}: ${sanitizeType(p.type)}\\l`)
-    .join("");
-
-  const methods = iface.methods
-    .map((m) => `+${m.name}()\\l`)
-    .join("");
-
-  const label = `{${stereotype}${escapeLabel(iface.name)}|${props}|${methods}}`;
-  return `${sanitizeId(iface.name)} [label="${label}"]`;
-}
-
-function visPrefix(vis: "public" | "protected" | "private"): string {
-  switch (vis) {
-    case "public":
-      return "+";
-    case "protected":
-      return "#";
-    case "private":
-      return "-";
-  }
-}
-
-function sanitizeType(type: string): string {
-  let result = type.replace(/\n/g, " ");
-  // Collapse object literals
-  let prev = "";
-  while (prev !== result) {
-    prev = result;
-    result = result.replace(/\{[^{}]*\}/g, "Object");
-  }
-  // Escape special DOT characters
-  result = result.replace(/"/g, '\\"');
-  result = result.replace(/</g, "\\<");
-  result = result.replace(/>/g, "\\>");
-  result = result.replace(/\|/g, "\\|");
-  return result;
+function renderCompactInterfaceNode(iface: InterfaceInfo): string {
+  const id = sanitizeId(iface.name);
+  const memberCount = iface.properties.length + iface.methods.length;
+  const label = `≪interface≫\\n${escapeLabel(iface.name)}\\n(${memberCount} members)`;
+  return `${id} [label="${label}", style="rounded,filled,dashed"]`;
 }
 
 function sanitizeId(name: string): string {
