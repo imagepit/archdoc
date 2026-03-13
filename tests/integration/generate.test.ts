@@ -76,6 +76,45 @@ describe("generate integration", () => {
     expect(addItemMethod!.calledBy!.some((c) => c.callerName.includes("CreateOrderUseCase"))).toBe(true);
   });
 
+  it("detects interface-mediated calls with callType and interfaceName", () => {
+    const infra = extractions.find((e) => e.layerName === "Infrastructure")!;
+    const prismaRepo = infra.classes.find((c) => c.name === "PrismaOrderRepository")!;
+    const saveMethod = prismaRepo.methods.find((m) => m.name === "save")!;
+
+    // CreateOrderUseCase calls PrismaOrderRepository.save() via OrderRepository interface
+    expect(saveMethod.calledBy).toBeDefined();
+    const useCaseCaller = saveMethod.calledBy!.find((c) =>
+      c.callerName.includes("CreateOrderUseCase"),
+    );
+    expect(useCaseCaller).toBeDefined();
+    expect(useCaseCaller!.callType).toBe("interface");
+    expect(useCaseCaller!.interfaceName).toBe("OrderRepository");
+  });
+
+  it("marks direct calls with callType direct", () => {
+    const domain = extractions.find((e) => e.layerName === "Domain")!;
+    const orderClass = domain.classes.find((c) => c.name === "Order")!;
+    const addItemMethod = orderClass.methods.find((m) => m.name === "addItem")!;
+
+    // CreateOrderUseCase calls Order.addItem() directly (not via interface)
+    expect(addItemMethod.calledBy).toBeDefined();
+    const useCaseCaller = addItemMethod.calledBy!.find((c) =>
+      c.callerName.includes("CreateOrderUseCase"),
+    );
+    expect(useCaseCaller).toBeDefined();
+    expect(useCaseCaller!.callType).toBe("direct");
+  });
+
+  it("renders via InterfaceName for interface-mediated calls in MD output", async () => {
+    const infraLayer = config.layers.find((l) => l.name === "Infrastructure")!;
+    const infraExtraction = extractions.find((e) => e.layerName === "Infrastructure")!;
+    const renderer = new MermaidRenderer();
+    const layerNames = config.layers.map((l) => l.name);
+    const infraMd = await generateLayerMd(infraLayer, infraExtraction, { renderer, layerNames });
+
+    expect(infraMd).toContain("via `OrderRepository`");
+  });
+
   it("generates index.md with all layers", async () => {
     const renderer = new MermaidRenderer();
     const indexMd = await generateIndexMd(config, extractions, { renderer });
@@ -113,5 +152,55 @@ describe("generate integration", () => {
 
     expect(appMd).toContain("Application — アプリケーション層 API Spec");
     expect(appMd).toContain("`CreateOrderUseCase`");
+  });
+
+  it("applies categoryOverrides to presentation layer interfaces", () => {
+    const pres = extractions.find((e) => e.layerName === "Presentation")!;
+    const depsIface = pres.interfaces.find((i) => i.name === "OrderRouterDependencies");
+    expect(depsIface).toBeDefined();
+    expect(depsIface!.category).toBe("Dependency Injection");
+  });
+
+  it("extracts Express routes from router factory functions", () => {
+    const pres = extractions.find((e) => e.layerName === "Presentation")!;
+    const routerFunc = pres.functions.find((f) => f.name === "createOrderRouter");
+    expect(routerFunc).toBeDefined();
+    expect(routerFunc!.routes).toBeDefined();
+    expect(routerFunc!.routes!.length).toBeGreaterThanOrEqual(2);
+
+    const postRoute = routerFunc!.routes!.find((r) => r.method === "POST");
+    expect(postRoute).toBeDefined();
+    expect(postRoute!.path).toBe("/");
+
+    const getRoute = routerFunc!.routes!.find((r) => r.method === "GET");
+    expect(getRoute).toBeDefined();
+    expect(getRoute!.path).toBe("/:orderId");
+  });
+
+  it("extracts route handler calls to use cases", () => {
+    const pres = extractions.find((e) => e.layerName === "Presentation")!;
+    const routerFunc = pres.functions.find((f) => f.name === "createOrderRouter")!;
+    const postRoute = routerFunc.routes!.find((r) => r.method === "POST")!;
+
+    expect(postRoute.calls.length).toBeGreaterThan(0);
+    expect(postRoute.calls.some((c) => c.target === "CreateOrderUseCase" && c.method === "execute")).toBe(true);
+  });
+
+  it("generates presentation layer MD with route table and sequence diagram", async () => {
+    const presLayer = config.layers.find((l) => l.name === "Presentation")!;
+    const presExtraction = extractions.find((e) => e.layerName === "Presentation")!;
+    const renderer = new MermaidRenderer();
+    const layerNames = config.layers.map((l) => l.name);
+    const presMd = await generateLayerMd(presLayer, presExtraction, { renderer, layerNames });
+
+    // Route table
+    expect(presMd).toContain("**Routes**");
+    expect(presMd).toContain("`POST`");
+    expect(presMd).toContain("`GET`");
+    expect(presMd).toContain("`/:orderId`");
+
+    // Sequence diagram
+    expect(presMd).toContain("sequenceDiagram");
+    expect(presMd).toContain("CreateOrderUseCase");
   });
 });

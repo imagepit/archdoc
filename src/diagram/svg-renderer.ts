@@ -2,11 +2,12 @@ import { instance } from "@viz-js/viz";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import type { DiagramRenderer } from "./diagram-renderer.js";
-import type { LayerExtraction, ClassInfo, InterfaceInfo } from "../types/extracted.js";
+import type { LayerExtraction, ClassInfo, InterfaceInfo, RouteInfo } from "../types/extracted.js";
 import type { LayerConfig } from "../types/config.js";
 import type { ClassCallChain } from "../extractor/call-chain-analyzer.js";
 import { buildLayerDotDiagram, buildDetailDotDiagram } from "./dot-class-builder.js";
 import { buildSequenceDiagram } from "./sequence-diagram-builder.js";
+import { buildRouteSequenceDiagram } from "./route-sequence-builder.js";
 import { buildProjectOverviewDot } from "./project-overview-builder.js";
 
 export async function renderDotToSvg(dotCode: string, engine: "dot" | "fdp" | "neato" = "dot"): Promise<string> {
@@ -61,6 +62,13 @@ export class SvgRenderer implements DiagramRenderer {
   async renderSequenceDiagram(chain: ClassCallChain): Promise<string | null> {
     // Fallback to Mermaid (DOT has no sequence diagram support)
     const diagram = buildSequenceDiagram(chain);
+    if (!diagram) return null;
+    return `\`\`\`mermaid\n${diagram}\n\`\`\``;
+  }
+
+  async renderRouteSequenceDiagram(funcName: string, route: RouteInfo): Promise<string | null> {
+    // Fallback to Mermaid (DOT has no sequence diagram support)
+    const diagram = buildRouteSequenceDiagram(funcName, route);
     if (!diagram) return null;
     return `\`\`\`mermaid\n${diagram}\n\`\`\``;
   }

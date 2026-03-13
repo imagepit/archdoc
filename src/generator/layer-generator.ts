@@ -14,6 +14,8 @@ import type { DiagramRenderer } from "../diagram/diagram-renderer.js";
 
 export interface GenerateOptions {
   renderer: DiagramRenderer;
+  /** Ordered layer names (inner → outer) for dependency direction checks */
+  layerNames?: string[];
 }
 
 export async function generateLayerMd(
@@ -22,7 +24,8 @@ export async function generateLayerMd(
   options: GenerateOptions,
 ): Promise<string> {
   const md = new MarkdownBuilder();
-  const { renderer } = options;
+  const { renderer, layerNames } = options;
+  const selfLayerName = layer.name;
 
   md.frontmatter({
     title: `${layer.name} — ${layer.nameJa} API Spec`,
@@ -77,6 +80,8 @@ export async function generateLayerMd(
           extraction.callChains,
           renderer,
           4,
+          selfLayerName,
+          layerNames,
         );
       }
     } else {
@@ -87,6 +92,8 @@ export async function generateLayerMd(
         extraction.callChains,
         renderer,
         3,
+        selfLayerName,
+        layerNames,
       );
     }
   }
@@ -109,6 +116,8 @@ async function renderGroupDiagramAndItems(
   callChains: CallChainEntry[],
   renderer: DiagramRenderer,
   headingLevel: number,
+  selfLayerName?: string,
+  layerNames?: string[],
 ): Promise<void> {
   const catClasses = items
     .filter((i) => i.kind === "class")
@@ -125,12 +134,11 @@ async function renderGroupDiagramAndItems(
   for (const item of items) {
     if (item.kind === "class") {
       const cls = item.data as ClassInfo;
-      renderClass(md, cls, headingLevel);
-      await renderSequenceDiagram(md, cls.name, callChains, renderer);
+      await renderClass(md, cls, headingLevel, selfLayerName, layerNames, callChains, renderer);
     } else if (item.kind === "interface") {
       renderInterface(md, item.data as InterfaceInfo, headingLevel);
     } else {
-      renderFunction(md, item.data as FunctionInfo, headingLevel);
+      await renderFunction(md, item.data as FunctionInfo, headingLevel, selfLayerName, layerNames, renderer);
     }
   }
 }
@@ -211,11 +219,15 @@ function formatSubDirLabel(subDir: string): string {
     .join(" / ");
 }
 
-function renderClass(
+async function renderClass(
   md: MarkdownBuilder,
   cls: ClassInfo,
   headingLevel: number = 3,
-): void {
+  selfLayerName?: string,
+  layerNames?: string[],
+  callChains?: CallChainEntry[],
+  renderer?: DiagramRenderer,
+): Promise<void> {
   md.heading(headingLevel, `\`${cls.name}\``);
 
   md.blockquote(
@@ -250,7 +262,10 @@ function renderClass(
   if (cls.methods.length > 0) {
     md.paragraph("**Methods**");
     for (const method of cls.methods) {
-      renderMethod(md, method, headingLevel + 1);
+      renderMethod(md, method, headingLevel + 1, selfLayerName, layerNames);
+      if (callChains && renderer) {
+        await renderMethodSequenceDiagram(md, cls.name, method.name, callChains, renderer);
+      }
     }
   }
 }
@@ -294,11 +309,14 @@ function renderInterface(
   }
 }
 
-function renderFunction(
+async function renderFunction(
   md: MarkdownBuilder,
   func: FunctionInfo,
   headingLevel: number = 3,
-): void {
+  selfLayerName?: string,
+  layerNames?: string[],
+  renderer?: DiagramRenderer,
+): Promise<void> {
   md.heading(headingLevel, `\`${func.name}()\``);
 
   md.blockquote(`**File**: \`${getFilename(func.filePath)}\``);
@@ -332,17 +350,47 @@ function renderFunction(
     );
   }
 
-  renderCalledBy(md, func.calledBy);
+  renderCalledBy(md, func.calledBy, selfLayerName, layerNames);
 
   if (func.businessRules.length > 0) {
     md.paragraph("**Business Rules**");
     md.list(func.businessRules);
+  }
+
+  if (func.routes && func.routes.length > 0 && renderer) {
+    md.paragraph("**Routes**");
+    md.table(
+      ["Method", "Path", "Middleware"],
+      func.routes.map((r) => [
+        `\`${r.method}\``,
+        `\`${r.path}\``,
+        r.middlewares.length > 0
+          ? r.middlewares.map((m) => `\`${m}\``).join(", ")
+          : "—",
+      ]),
+    );
+
+    for (const route of func.routes) {
+      md.heading(headingLevel + 1, `${route.method} ${route.path}`);
+      if (route.middlewares.length > 0) {
+        md.paragraph(`**Middleware**: ${route.middlewares.map((m) => `\`${m}\``).join(", ")}`);
+      }
+      if (route.description) {
+        md.paragraph(route.description);
+      }
+      if (route.calls.length > 0) {
+        const diagram = await renderer.renderRouteSequenceDiagram(func.name, route);
+        if (diagram) md.rawBlock(diagram);
+      }
+    }
   }
 }
 
 function renderCalledBy(
   md: MarkdownBuilder,
   calledBy?: CallerReference[],
+  selfLayerName?: string,
+  layerNames?: string[],
 ): void {
   if (!calledBy || calledBy.length === 0) return;
   md.paragraph("**Called By**");
@@ -350,6 +398,12 @@ function renderCalledBy(
     calledBy.map((c) => {
       const file = getFilename(c.filePath);
       const layer = c.layerName ? ` — ${c.layerName}` : "";
+      if (c.callType === "interface" && c.interfaceName) {
+        return `\`${c.callerName}\`${layer} (\`${file}\`) via \`${c.interfaceName}\``;
+      }
+      if (c.callType === "direct" && isInwardToOutwardCall(c.layerName, selfLayerName, layerNames)) {
+        return `\u26a0\ufe0f \`${c.callerName}\`${layer} (\`${file}\`)`;
+      }
       return `\`${c.callerName}\`${layer} (\`${file}\`)`;
     }),
   );
@@ -359,6 +413,8 @@ function renderMethod(
   md: MarkdownBuilder,
   method: MethodInfo,
   headingLevel: number = 4,
+  selfLayerName?: string,
+  layerNames?: string[],
 ): void {
   md.heading(headingLevel, `\`${method.signature}\``);
 
@@ -391,7 +447,7 @@ function renderMethod(
     );
   }
 
-  renderCalledBy(md, method.calledBy);
+  renderCalledBy(md, method.calledBy, selfLayerName, layerNames);
 
   if (method.businessRules.length > 0) {
     md.paragraph("**Business Rules**");
@@ -428,17 +484,25 @@ function renderMethodSignature(
   }
 }
 
-async function renderSequenceDiagram(
+async function renderMethodSequenceDiagram(
   md: MarkdownBuilder,
   className: string,
+  methodName: string,
   callChains: CallChainEntry[],
   renderer: DiagramRenderer,
 ): Promise<void> {
   const chain = callChains.find((c) => c.className === className);
-  if (!chain || chain.methods.length === 0) return;
+  if (!chain) return;
 
-  md.paragraph("**Sequence Diagram**");
-  const diagram = await renderer.renderSequenceDiagram(chain);
+  const methodChain = chain.methods.find((m) => m.methodName === methodName);
+  if (!methodChain || methodChain.calls.length === 0) return;
+
+  const singleMethodChain: CallChainEntry = {
+    ...chain,
+    methods: [methodChain],
+  };
+
+  const diagram = await renderer.renderSequenceDiagram(singleMethodChain);
   if (diagram) {
     md.rawBlock(diagram);
   }
@@ -446,6 +510,24 @@ async function renderSequenceDiagram(
 
 function getFilename(filePath: string): string {
   return filePath.split("/").pop() ?? filePath;
+}
+
+/**
+ * Check if a direct call goes against the expected dependency direction.
+ * Layer order in config is inner → outer (e.g. Domain, Application, Infrastructure, Presentation).
+ * Returns true when the caller is from an inner layer calling an outer layer directly.
+ */
+function isInwardToOutwardCall(
+  callerLayerName: string | undefined,
+  targetLayerName: string | undefined,
+  layerNames: string[] | undefined,
+): boolean {
+  if (!callerLayerName || !targetLayerName || !layerNames) return false;
+  if (callerLayerName === targetLayerName) return false;
+  const callerIdx = layerNames.indexOf(callerLayerName);
+  const targetIdx = layerNames.indexOf(targetLayerName);
+  if (callerIdx === -1 || targetIdx === -1) return false;
+  return callerIdx < targetIdx;
 }
 
 /** Replace `|` with `or` for safe Markdown table rendering */

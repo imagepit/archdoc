@@ -49,6 +49,7 @@ layers:
     nameJa: プレゼンテーション層
     path: tests/fixtures/sample-project/src/presentation
     type: presentation
+    framework: express
     description: |
       HTTP controllers and API endpoint handlers.
     responsibility: Handle HTTP requests and responses
@@ -56,3 +57,7 @@ layers:
       - tests/fixtures/sample-project/src/infrastructure
     categories:
       controllers: Controller
+      api: API Router
+    categoryOverrides:
+      - pattern: "*Dependencies"
+        category: Dependency Injection

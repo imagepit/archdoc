@@ -5,6 +5,11 @@ export type LayerType =
   | "infrastructure"
   | "custom";
 
+export interface CategoryOverride {
+  pattern: string;
+  category: string;
+}
+
 export interface LayerConfig {
   name: string;
   nameJa: string;
@@ -16,6 +21,10 @@ export interface LayerConfig {
   categories: Record<string, string>;
   /** Allowed dependency targets (layer names). If omitted, inferred from type. */
   dependsOn?: string[];
+  /** Name-pattern-based category overrides applied after directory-based resolution */
+  categoryOverrides?: CategoryOverride[];
+  /** Framework identifier for framework-specific extraction (e.g. "express") */
+  framework?: string;
 }
 
 export interface ProjectConfig {

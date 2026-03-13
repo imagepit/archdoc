@@ -1,13 +1,14 @@
 import { Project, type SourceFile } from "ts-morph";
 import { join, relative, dirname } from "node:path";
 import { existsSync } from "node:fs";
-import type { LayerConfig } from "../types/config.js";
+import type { LayerConfig, CategoryOverride } from "../types/config.js";
 import type { LayerExtraction } from "../types/extracted.js";
 import { extractClass } from "./class-extractor.js";
 import { extractInterface } from "./interface-extractor.js";
 import { extractFunction } from "./function-extractor.js";
 import { analyzeImports, findForbiddenImports } from "./import-analyzer.js";
 import { analyzeCallChains } from "./call-chain-analyzer.js";
+import { createFrameworkExtractor } from "./framework/index.js";
 
 export function createExtractorProject(
   sourceRoot: string,
@@ -29,9 +30,15 @@ export function extractLayer(
   project: Project,
   layer: LayerConfig,
   allLayers?: LayerConfig[],
+  sourceRoot?: string,
 ): LayerExtraction {
   const pattern = join(layer.path, "**/*.ts");
   project.addSourceFilesAtPaths(pattern);
+
+  // Add sourceRoot-level files (e.g. app.ts) for mount prefix resolution
+  if (layer.framework && sourceRoot) {
+    project.addSourceFilesAtPaths(join(sourceRoot, "*.ts"));
+  }
 
   const sourceFiles = project
     .getSourceFiles()
@@ -46,6 +53,8 @@ export function extractLayer(
     callChains: [],
   };
 
+  const fwExtractor = createFrameworkExtractor(layer.framework);
+
   for (const sourceFile of sourceFiles) {
     const { category, subDirectory } = resolveCategoryAndSubDir(
       sourceFile,
@@ -56,6 +65,7 @@ export function extractLayer(
       if (classDecl.isExported()) {
         const cls = extractClass(classDecl, category);
         cls.subDirectory = subDirectory;
+        cls.category = applyCategoryOverride(cls.name, cls.category, layer.categoryOverrides);
         result.classes.push(cls);
       }
     }
@@ -64,6 +74,7 @@ export function extractLayer(
       if (ifaceDecl.isExported()) {
         const iface = extractInterface(ifaceDecl, category);
         iface.subDirectory = subDirectory;
+        iface.category = applyCategoryOverride(iface.name, iface.category, layer.categoryOverrides);
         result.interfaces.push(iface);
       }
     }
@@ -72,6 +83,10 @@ export function extractLayer(
       if (funcDecl.isExported()) {
         const func = extractFunction(funcDecl, category);
         func.subDirectory = subDirectory;
+        func.category = applyCategoryOverride(func.name, func.category, layer.categoryOverrides);
+        if (fwExtractor) {
+          func.routes = fwExtractor.extractRoutes(sourceFile, func.name);
+        }
         result.functions.push(func);
       }
     }
@@ -91,6 +106,12 @@ export function extractLayer(
     }
   }
 
+  // Resolve app.use() / router.use() mount prefixes for sub-routers
+  if (fwExtractor) {
+    const allSourceFiles = project.getSourceFiles();
+    fwExtractor.resolveMountPrefixes(sourceFiles, allSourceFiles, result.functions);
+  }
+
   result.callChains = analyzeCallChains(sourceFiles);
 
   return result;
@@ -99,6 +120,27 @@ export function extractLayer(
 interface CategoryResolution {
   category: string;
   subDirectory: string;
+}
+
+function applyCategoryOverride(
+  name: string,
+  currentCategory: string,
+  overrides?: CategoryOverride[],
+): string {
+  if (!overrides) return currentCategory;
+  for (const override of overrides) {
+    if (matchGlobPattern(override.pattern, name)) {
+      return override.category;
+    }
+  }
+  return currentCategory;
+}
+
+function matchGlobPattern(pattern: string, name: string): boolean {
+  const regex = new RegExp(
+    "^" + pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".") + "$",
+  );
+  return regex.test(name);
 }
 
 function resolveCategoryAndSubDir(

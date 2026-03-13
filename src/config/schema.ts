@@ -8,6 +8,11 @@ const layerTypeSchema = z.enum([
   "custom",
 ]);
 
+const categoryOverrideSchema = z.object({
+  pattern: z.string().min(1),
+  category: z.string().min(1),
+});
+
 const layerConfigSchema = z.object({
   name: z.string().min(1),
   nameJa: z.string().min(1),
@@ -18,6 +23,8 @@ const layerConfigSchema = z.object({
   forbiddenImports: z.array(z.string()).default([]),
   categories: z.record(z.string()).default({}),
   dependsOn: z.array(z.string()).optional(),
+  categoryOverrides: z.array(categoryOverrideSchema).optional(),
+  framework: z.string().optional(),
 });
 
 export const projectConfigSchema = z.object({

@@ -81,7 +81,8 @@ function findCallers(
     if (seen.has(key)) continue;
     seen.add(key);
 
-    callers.push({ callerName, filePath, layerName });
+    const { callType, interfaceName } = resolveCallType(refNode);
+    callers.push({ callerName, filePath, layerName, callType, interfaceName });
   }
 
   return callers;
@@ -163,6 +164,39 @@ function resolveCallerName(refNode: Node): string {
   // Top-level module scope
   const fileName = refNode.getSourceFile().getBaseName().replace(/\.ts$/, "");
   return `(module) ${fileName}`;
+}
+
+/**
+ * Determine if a call is through an interface or a direct concrete reference.
+ * Checks the type of the expression left of the dot in a property access.
+ */
+function resolveCallType(refNode: Node): {
+  callType: "direct" | "interface";
+  interfaceName?: string;
+} {
+  const parent = refNode.getParent();
+  if (parent?.getKind() !== SyntaxKind.PropertyAccessExpression) {
+    return { callType: "direct" };
+  }
+
+  const propAccess = parent.asKind(SyntaxKind.PropertyAccessExpression)!;
+  const expr = propAccess.getExpression();
+  const type = expr.getType();
+  const symbol = type.getSymbol() ?? type.getAliasSymbol();
+
+  if (symbol) {
+    const declarations = symbol.getDeclarations();
+    if (declarations) {
+      const ifaceDecl = declarations.find(
+        (d) => d.getKind() === SyntaxKind.InterfaceDeclaration,
+      );
+      if (ifaceDecl) {
+        return { callType: "interface", interfaceName: symbol.getName() };
+      }
+    }
+  }
+
+  return { callType: "direct" };
 }
 
 /**

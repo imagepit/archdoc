@@ -47,7 +47,7 @@ export function registerGenerateCommand(program: Command): void {
 
       const extractions = targetLayers.map((layer) => {
         console.log(chalk.gray(`  Extracting ${layer.name} (${layer.nameJa})...`));
-        return extractLayer(project, layer, config.layers);
+        return extractLayer(project, layer, config.layers, config.project.sourceRoot);
       });
 
       // Post-process: analyze caller references across all layers
@@ -65,7 +65,8 @@ export function registerGenerateCommand(program: Command): void {
 
       for (const extraction of extractions) {
         const layerConfig = config.layers.find((l) => l.name === extraction.layerName)!;
-        const layerMd = await generateLayerMd(layerConfig, extraction, { renderer });
+        const layerNames = config.layers.map((l) => l.name);
+        const layerMd = await generateLayerMd(layerConfig, extraction, { renderer, layerNames });
         const filename = `${layerConfig.name.toLowerCase()}.md`;
         writeFileSync(join(outputDir, filename), layerMd);
         console.log(chalk.green(`  Created ${filename}`));

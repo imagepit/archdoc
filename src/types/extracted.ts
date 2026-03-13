@@ -24,6 +24,8 @@ export interface CallerReference {
   callerName: string;
   filePath: string;
   layerName?: string;
+  callType?: "direct" | "interface";
+  interfaceName?: string;
 }
 
 export interface MethodInfo {
@@ -84,6 +86,19 @@ export interface InterfaceInfo {
   extendsInterfaces: string[];
 }
 
+export interface RouteCallInfo {
+  target: string;
+  method: string;
+}
+
+export interface RouteInfo {
+  method: string;
+  path: string;
+  middlewares: string[];
+  description?: string;
+  calls: RouteCallInfo[];
+}
+
 export interface FunctionInfo {
   name: string;
   filePath: string;
@@ -98,6 +113,7 @@ export interface FunctionInfo {
   businessRules: string[];
   isExported: boolean;
   calledBy?: CallerReference[];
+  routes?: RouteInfo[];
 }
 
 export interface CallChainEntry {
