@@ -1,4 +1,4 @@
-import type { LayerExtraction } from "../types/extracted.js";
+import type { LayerExtraction, DependencyInfo } from "../types/extracted.js";
 import type { LayerConfig } from "../types/config.js";
 
 // --- Internal types ---
@@ -41,6 +41,13 @@ const CATEGORY_COLORS = [
   { bg: "#fbe9e7", border: "#ff8a65" }, // light deep orange
   { bg: "#ede7f6", border: "#b39ddb" }, // light deep purple
 ];
+
+interface ImportViolationEdge {
+  sourceLayer: string;
+  targetLayer: string;
+  count: number;
+  details: DependencyInfo[];
+}
 
 // --- Public API ---
 
@@ -86,7 +93,7 @@ export function buildProjectOverviewMermaid(
     }
   }
 
-  // Only violation relationships
+  // Type-level violation relationships
   for (const rel of violations) {
     switch (rel.type) {
       case "extends":
@@ -102,6 +109,15 @@ export function buildProjectOverviewMermaid(
         lines.push(`  ${rel.source} --> ${rel.target}`);
         break;
     }
+  }
+
+  // Import-path-level forbidden violations
+  const importViolations = collectImportViolations(extractions);
+  for (const v of importViolations) {
+    const srcAnchor = findLayerAnchor(nodes, v.sourceLayer);
+    const tgtAnchor = findLayerAnchor(nodes, v.targetLayer);
+    if (!srcAnchor || !tgtAnchor) continue;
+    lines.push(`  ${srcAnchor} ..> ${tgtAnchor} : ${v.count} forbidden`);
   }
 
   return lines.join("\n");
@@ -232,9 +248,9 @@ export function buildProjectOverviewDot(
     lines.push("");
   }
 
-  // Only violation relationships (drawn in red)
+  // Type-level violation relationships (drawn in red)
   if (violations.length > 0) {
-    lines.push("  // Dependency violations");
+    lines.push("  // Type-level dependency violations");
     for (const rel of violations) {
       const src = sanitizeId(rel.source);
       const tgt = sanitizeId(rel.target);
@@ -255,6 +271,28 @@ export function buildProjectOverviewDot(
           lines.push(`  ${src} -> ${tgt} [arrowhead=vee, label="${edgeLabel}"]`);
           break;
       }
+    }
+  }
+
+  // Import-path-level forbidden violations (thick red edges between layer clusters)
+  const importViolations = collectImportViolations(extractions);
+  if (importViolations.length > 0) {
+    lines.push("");
+    lines.push("  // Import-path forbidden violations");
+    for (const v of importViolations) {
+      const srcAnchor = findLayerAnchor(nodes, v.sourceLayer);
+      const tgtAnchor = findLayerAnchor(nodes, v.targetLayer);
+      if (!srcAnchor || !tgtAnchor) continue;
+      const src = sanitizeId(srcAnchor);
+      const tgt = sanitizeId(tgtAnchor);
+      const srcCluster = `cluster_${sanitizeId(v.sourceLayer)}`;
+      const tgtCluster = `cluster_${sanitizeId(v.targetLayer)}`;
+      lines.push(
+        `  ${src} -> ${tgt} [ltail=${srcCluster}, lhead=${tgtCluster}, ` +
+        `color="#d32f2f", penwidth=3, arrowhead=vee, ` +
+        `label="${v.count} forbidden import${v.count > 1 ? "s" : ""}", ` +
+        `fontcolor="#d32f2f", fontsize=10]`,
+      );
     }
   }
 
@@ -512,6 +550,42 @@ function escapeRegex(str: string): string {
 
 function sanitizeId(name: string): string {
   return name.replace(/[^a-zA-Z0-9_]/g, "_");
+}
+
+/** Find the first node name in a given layer (for use as cluster anchor). */
+function findLayerAnchor(
+  nodes: ProjectNode[],
+  layerName: string,
+): string | undefined {
+  return nodes.find((n) => n.layerName === layerName)?.name;
+}
+
+/**
+ * Collect import-path-level forbidden dependency violations aggregated per layer pair.
+ */
+function collectImportViolations(
+  extractions: LayerExtraction[],
+): ImportViolationEdge[] {
+  const map = new Map<string, ImportViolationEdge>();
+  for (const ext of extractions) {
+    for (const dep of ext.dependencies) {
+      if (!dep.isForbidden) continue;
+      const key = `${dep.source}->${dep.target}`;
+      const existing = map.get(key);
+      if (existing) {
+        existing.count++;
+        existing.details.push(dep);
+      } else {
+        map.set(key, {
+          sourceLayer: dep.source,
+          targetLayer: dep.target,
+          count: 1,
+          details: [dep],
+        });
+      }
+    }
+  }
+  return [...map.values()];
 }
 
 function escapeLabel(text: string): string {

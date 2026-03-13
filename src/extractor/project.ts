@@ -6,7 +6,7 @@ import type { LayerExtraction } from "../types/extracted.js";
 import { extractClass } from "./class-extractor.js";
 import { extractInterface } from "./interface-extractor.js";
 import { extractFunction } from "./function-extractor.js";
-import { analyzeImports } from "./import-analyzer.js";
+import { analyzeImports, findForbiddenImports } from "./import-analyzer.js";
 import { analyzeCallChains } from "./call-chain-analyzer.js";
 
 export function createExtractorProject(
@@ -28,6 +28,7 @@ export function createExtractorProject(
 export function extractLayer(
   project: Project,
   layer: LayerConfig,
+  allLayers?: LayerConfig[],
 ): LayerExtraction {
   const pattern = join(layer.path, "**/*.ts");
   project.addSourceFilesAtPaths(pattern);
@@ -72,6 +73,20 @@ export function extractLayer(
         const func = extractFunction(funcDecl, category);
         func.subDirectory = subDirectory;
         result.functions.push(func);
+      }
+    }
+
+    if (allLayers) {
+      const imports = analyzeImports(sourceFile, allLayers);
+      const forbidden = findForbiddenImports(sourceFile, layer, allLayers);
+      const forbiddenSet = new Set(
+        forbidden.map((d) => `${d.sourceFile}:${d.importPath}`),
+      );
+      for (const dep of imports) {
+        dep.isForbidden = forbiddenSet.has(
+          `${dep.sourceFile}:${dep.importPath}`,
+        );
+        result.dependencies.push(dep);
       }
     }
   }

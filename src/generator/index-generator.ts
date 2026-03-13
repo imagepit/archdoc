@@ -1,7 +1,8 @@
 import { MarkdownBuilder } from "./markdown-builder.js";
-import type { ProjectConfig } from "../types/config.js";
-import type { LayerExtraction } from "../types/extracted.js";
+import type { ProjectConfig, LayerConfig } from "../types/config.js";
+import type { LayerExtraction, DependencyInfo } from "../types/extracted.js";
 import type { DiagramRenderer } from "../diagram/diagram-renderer.js";
+import { basename } from "node:path";
 
 export interface IndexGenerateOptions {
   renderer?: DiagramRenderer;
@@ -54,6 +55,39 @@ export async function generateIndexMd(
       md.heading(2, "Cross-Layer Dependency Violations");
       md.rawBlock(diagram);
     }
+  }
+
+  // Import Violations table
+  const forbiddenDeps = collectForbiddenDeps(extractions);
+  if (forbiddenDeps.length > 0) {
+    md.heading(2, "Import Violations");
+    md.paragraph(`**${forbiddenDeps.length} forbidden import(s) detected.**`);
+    md.table(
+      ["Source Layer", "File", "Forbidden Import", "Target Layer"],
+      forbiddenDeps.map((dep) => [
+        dep.source,
+        `\`${dep.sourceFile ? basename(dep.sourceFile) : "—"}\``,
+        `\`${dep.importPath ?? "—"}\``,
+        dep.target,
+      ]),
+    );
+  }
+
+  // Non-Standard Layer Warnings
+  const customLayers = config.layers.filter((l) => l.type === "custom");
+  if (customLayers.length > 0) {
+    md.heading(2, "Non-Standard Layer Warnings");
+    md.paragraph(
+      "以下のレイヤーはDDD標準4層（Domain / Application / Infrastructure / Presentation）に属しません。責務の重複・散在に注意してください。",
+    );
+    md.table(
+      ["Layer", "Path", "Responsibility"],
+      customLayers.map((l) => [
+        `**${l.name}** (${l.nameJa})`,
+        `\`${l.path}/\``,
+        l.responsibility,
+      ]),
+    );
   }
 
   for (const layer of config.layers) {
@@ -109,6 +143,18 @@ export async function generateIndexMd(
   }
 
   return md.build();
+}
+
+function collectForbiddenDeps(
+  extractions: LayerExtraction[],
+): DependencyInfo[] {
+  const deps: DependencyInfo[] = [];
+  for (const ext of extractions) {
+    for (const dep of ext.dependencies) {
+      if (dep.isForbidden) deps.push(dep);
+    }
+  }
+  return deps;
 }
 
 function firstLine(text: string): string {

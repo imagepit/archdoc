@@ -19,7 +19,7 @@ describe("generate integration", () => {
   beforeAll(() => {
     config = loadConfig(join(FIXTURES, "layers.yaml"));
     project = createExtractorProject(config.project.sourceRoot);
-    extractions = config.layers.map((layer) => extractLayer(project, layer));
+    extractions = config.layers.map((layer) => extractLayer(project, layer, config.layers));
   });
 
   it("extracts all 4 layers", () => {
@@ -51,6 +51,17 @@ describe("generate integration", () => {
     const funcNames = domain.functions.map((f) => f.name);
     expect(funcNames).toContain("calculateTax");
     expect(funcNames).toContain("applyDiscount");
+  });
+
+  it("extracts cross-layer dependencies", () => {
+    const app = extractions.find((e) => e.layerName === "Application")!;
+    expect(app.dependencies.length).toBeGreaterThan(0);
+    const domainDeps = app.dependencies.filter((d) => d.target === "Domain");
+    expect(domainDeps.length).toBeGreaterThan(0);
+    expect(domainDeps[0].sourceFile).toBeDefined();
+    expect(domainDeps[0].importPath).toBeDefined();
+    // Application → Domain is allowed, so none should be forbidden
+    expect(domainDeps.every((d) => !d.isForbidden)).toBe(true);
   });
 
   it("generates index.md with all layers", async () => {

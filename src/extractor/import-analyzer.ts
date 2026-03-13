@@ -30,6 +30,8 @@ export function analyzeImports(
           source: sourceLayer.name,
           target: targetLayer.name,
           type: "import",
+          sourceFile: filePath,
+          importPath: moduleSpecifier,
         });
       }
     }
@@ -44,11 +46,13 @@ export function findForbiddenImports(
   layers: LayerConfig[],
 ): DependencyInfo[] {
   const allDeps = analyzeImports(sourceFile, layers);
-  return allDeps.filter((dep) => {
-    const targetLayer = layers.find((l) => l.name === dep.target);
-    if (!targetLayer) return false;
-    return currentLayer.forbiddenImports.some(
-      (forbidden) => targetLayer.path === forbidden || targetLayer.path.startsWith(forbidden),
-    );
-  });
+  return allDeps
+    .filter((dep) => {
+      const targetLayer = layers.find((l) => l.name === dep.target);
+      if (!targetLayer) return false;
+      return currentLayer.forbiddenImports.some(
+        (forbidden) => targetLayer.path === forbidden || targetLayer.path.startsWith(forbidden),
+      );
+    })
+    .map((dep) => ({ ...dep, isForbidden: true }));
 }

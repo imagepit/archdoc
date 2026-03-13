@@ -46,7 +46,7 @@ export function registerGenerateCommand(program: Command): void {
 
       const extractions = targetLayers.map((layer) => {
         console.log(chalk.gray(`  Extracting ${layer.name} (${layer.nameJa})...`));
-        return extractLayer(project, layer);
+        return extractLayer(project, layer, config.layers);
       });
 
       // Create renderer based on diagram format

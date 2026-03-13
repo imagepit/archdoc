@@ -45,6 +45,9 @@ export interface DependencyInfo {
   source: string;
   target: string;
   type: "import" | "see";
+  sourceFile?: string;
+  importPath?: string;
+  isForbidden?: boolean;
 }
 
 export interface ClassInfo {
