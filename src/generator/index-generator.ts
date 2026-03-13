@@ -1,11 +1,17 @@
 import { MarkdownBuilder } from "./markdown-builder.js";
 import type { ProjectConfig } from "../types/config.js";
 import type { LayerExtraction } from "../types/extracted.js";
+import type { DiagramRenderer } from "../diagram/diagram-renderer.js";
 
-export function generateIndexMd(
+export interface IndexGenerateOptions {
+  renderer?: DiagramRenderer;
+}
+
+export async function generateIndexMd(
   config: ProjectConfig,
   extractions: LayerExtraction[],
-): string {
+  options?: IndexGenerateOptions,
+): Promise<string> {
   const md = new MarkdownBuilder();
 
   md.frontmatter({
@@ -40,6 +46,15 @@ export function generateIndexMd(
       `[${layer.name.toLowerCase()}.md](./${layer.name.toLowerCase()}.md)`,
     ]),
   );
+
+  // Cross-layer object relationship diagram
+  if (options?.renderer) {
+    const diagram = await options.renderer.renderProjectOverview(extractions, config.layers);
+    if (diagram) {
+      md.heading(2, "Cross-Layer Dependency Violations");
+      md.rawBlock(diagram);
+    }
+  }
 
   for (const layer of config.layers) {
     const extraction = extractions.find((e) => e.layerName === layer.name);

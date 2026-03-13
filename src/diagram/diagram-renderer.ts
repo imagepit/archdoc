@@ -1,5 +1,6 @@
 import type { LayerExtraction, ClassInfo, InterfaceInfo } from "../types/extracted.js";
 import type { ClassCallChain } from "../extractor/call-chain-analyzer.js";
+import type { LayerConfig } from "../types/config.js";
 
 /**
  * Strategy interface for diagram rendering.
@@ -26,4 +27,10 @@ export interface DiagramRenderer {
    * Render a sequence diagram for a class call chain.
    */
   renderSequenceDiagram(chain: ClassCallChain): Promise<string | null>;
+
+  /**
+   * Render a cross-layer project overview diagram.
+   * Shows all objects grouped by layer. Only dependency violations are drawn.
+   */
+  renderProjectOverview(extractions: LayerExtraction[], layers?: LayerConfig[]): Promise<string | null>;
 }

@@ -49,14 +49,14 @@ export function registerGenerateCommand(program: Command): void {
         return extractLayer(project, layer);
       });
 
-      const indexMd = generateIndexMd(config, extractions);
-      writeFileSync(join(outputDir, "index.md"), indexMd);
-      console.log(chalk.green(`  Created index.md`));
-
       // Create renderer based on diagram format
       const renderer: DiagramRenderer = diagramFormat === "svg"
         ? new SvgRenderer(join(outputDir, "diagrams"), "diagrams")
         : new MermaidRenderer();
+
+      const indexMd = await generateIndexMd(config, extractions, { renderer });
+      writeFileSync(join(outputDir, "index.md"), indexMd);
+      console.log(chalk.green(`  Created index.md`));
 
       for (const extraction of extractions) {
         const layerConfig = config.layers.find((l) => l.name === extraction.layerName)!;

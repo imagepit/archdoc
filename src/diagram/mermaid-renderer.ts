@@ -1,8 +1,10 @@
 import type { DiagramRenderer } from "./diagram-renderer.js";
 import type { LayerExtraction, ClassInfo, InterfaceInfo } from "../types/extracted.js";
+import type { LayerConfig } from "../types/config.js";
 import type { ClassCallChain } from "../extractor/call-chain-analyzer.js";
 import { buildCompactClassDiagram, buildCategoryClassDiagrams } from "./class-diagram-builder.js";
 import { buildSequenceDiagram } from "./sequence-diagram-builder.js";
+import { buildProjectOverviewMermaid } from "./project-overview-builder.js";
 
 /**
  * Mermaid implementation of DiagramRenderer.
@@ -26,6 +28,12 @@ export class MermaidRenderer implements DiagramRenderer {
 
   async renderSequenceDiagram(chain: ClassCallChain): Promise<string | null> {
     const diagram = buildSequenceDiagram(chain);
+    if (!diagram) return null;
+    return wrapMermaid(diagram);
+  }
+
+  async renderProjectOverview(extractions: LayerExtraction[], layers?: LayerConfig[]): Promise<string | null> {
+    const diagram = buildProjectOverviewMermaid(extractions, layers);
     if (!diagram) return null;
     return wrapMermaid(diagram);
   }

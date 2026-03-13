@@ -17,6 +17,7 @@ const layerConfigSchema = z.object({
   responsibility: z.string().default(""),
   forbiddenImports: z.array(z.string()).default([]),
   categories: z.record(z.string()).default({}),
+  dependsOn: z.array(z.string()).optional(),
 });
 
 export const projectConfigSchema = z.object({

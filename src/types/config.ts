@@ -14,6 +14,8 @@ export interface LayerConfig {
   responsibility: string;
   forbiddenImports: string[];
   categories: Record<string, string>;
+  /** Allowed dependency targets (layer names). If omitted, inferred from type. */
+  dependsOn?: string[];
 }
 
 export interface ProjectConfig {

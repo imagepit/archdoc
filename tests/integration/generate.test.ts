@@ -53,8 +53,9 @@ describe("generate integration", () => {
     expect(funcNames).toContain("applyDiscount");
   });
 
-  it("generates index.md with all layers", () => {
-    const indexMd = generateIndexMd(config, extractions);
+  it("generates index.md with all layers", async () => {
+    const renderer = new MermaidRenderer();
+    const indexMd = await generateIndexMd(config, extractions, { renderer });
 
     expect(indexMd).toContain("EC Order System");
     expect(indexMd).toContain("Domain");
@@ -63,6 +64,7 @@ describe("generate integration", () => {
     expect(indexMd).toContain("Infrastructure");
     expect(indexMd).toContain("Presentation");
     expect(indexMd).toContain("domain.md");
+    expect(indexMd).toContain("classDiagram");
   });
 
   it("generates domain layer MD with classes", async () => {
