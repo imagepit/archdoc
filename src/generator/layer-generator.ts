@@ -12,9 +12,14 @@ import { buildCategoryClassDiagrams } from "../diagram/class-diagram-builder.js"
 import { buildSequenceDiagram } from "../diagram/sequence-diagram-builder.js";
 import type { CallChainEntry } from "../types/extracted.js";
 
+export interface GenerateOptions {
+  svg?: boolean;
+}
+
 export function generateLayerMd(
   layer: LayerConfig,
   extraction: LayerExtraction,
+  options: GenerateOptions = {},
 ): string {
   const md = new MarkdownBuilder();
 
@@ -47,19 +52,28 @@ export function generateLayerMd(
 
   const categories = groupByCategory(extraction);
 
+  // SVG mode: embed a single SVG image link at the top
+  if (options.svg) {
+    const svgPath = `diagrams/${layer.name.toLowerCase()}-class.svg`;
+    md.paragraph(`![${layer.name} Class Diagram](${svgPath})`);
+  }
+
   for (const [category, items] of categories) {
     md.heading(2, category);
 
-    const catClasses = items
-      .filter((i) => i.kind === "class")
-      .map((i) => i.data as ClassInfo);
-    const catInterfaces = items
-      .filter((i) => i.kind === "interface")
-      .map((i) => i.data as InterfaceInfo);
+    // Mermaid diagrams only in non-SVG mode
+    if (!options.svg) {
+      const catClasses = items
+        .filter((i) => i.kind === "class")
+        .map((i) => i.data as ClassInfo);
+      const catInterfaces = items
+        .filter((i) => i.kind === "interface")
+        .map((i) => i.data as InterfaceInfo);
 
-    const diagrams = buildCategoryClassDiagrams(catClasses, catInterfaces);
-    for (const diagram of diagrams) {
-      md.codeBlock(diagram, "mermaid");
+      const diagrams = buildCategoryClassDiagrams(catClasses, catInterfaces);
+      for (const diagram of diagrams) {
+        md.codeBlock(diagram, "mermaid");
+      }
     }
 
     for (const item of items) {

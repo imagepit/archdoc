@@ -4,6 +4,8 @@ import { loadConfig } from "../../config/loader.js";
 import { createExtractorProject, extractLayer } from "../../extractor/project.js";
 import { generateIndexMd } from "../../generator/index-generator.js";
 import { generateLayerMd } from "../../generator/layer-generator.js";
+import { buildLayerDotDiagram } from "../../diagram/dot-class-builder.js";
+import { renderDotToSvg } from "../../diagram/svg-renderer.js";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
@@ -14,7 +16,8 @@ export function registerGenerateCommand(program: Command): void {
     .option("-c, --config <path>", "Path to layers.yaml", "layers.yaml")
     .option("-o, --output <dir>", "Output directory", "docs/architecture")
     .option("--layer <name>", "Generate only a specific layer")
-    .action(async (options: { config: string; output: string; layer?: string }) => {
+    .option("--svg", "Generate SVG class diagrams using Graphviz")
+    .action(async (options: { config: string; output: string; layer?: string; svg?: boolean }) => {
       const config = loadConfig(options.config);
       const outputDir = options.output;
       mkdirSync(outputDir, { recursive: true });
@@ -40,9 +43,25 @@ export function registerGenerateCommand(program: Command): void {
       writeFileSync(join(outputDir, "index.md"), indexMd);
       console.log(chalk.green(`  Created index.md`));
 
+      // Generate SVG diagrams if --svg flag is set
+      if (options.svg) {
+        const diagramDir = join(outputDir, "diagrams");
+        mkdirSync(diagramDir, { recursive: true });
+
+        for (const extraction of extractions) {
+          const dot = buildLayerDotDiagram(extraction);
+          if (dot) {
+            const svgFilename = `${extraction.layerName.toLowerCase()}-class.svg`;
+            const svg = await renderDotToSvg(dot);
+            writeFileSync(join(diagramDir, svgFilename), svg);
+            console.log(chalk.green(`  Created diagrams/${svgFilename}`));
+          }
+        }
+      }
+
       for (const extraction of extractions) {
         const layerConfig = config.layers.find((l) => l.name === extraction.layerName)!;
-        const layerMd = generateLayerMd(layerConfig, extraction);
+        const layerMd = generateLayerMd(layerConfig, extraction, { svg: !!options.svg });
         const filename = `${layerConfig.name.toLowerCase()}.md`;
         writeFileSync(join(outputDir, filename), layerMd);
         console.log(chalk.green(`  Created ${filename}`));
