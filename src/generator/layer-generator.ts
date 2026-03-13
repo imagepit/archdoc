@@ -239,7 +239,7 @@ function renderClass(
       ["Property", "Type", "Required", "Description"],
       cls.properties.map((p) => [
         `\`${p.name}\``,
-        `\`${p.type}\``,
+        `\`${sanitizeTableType(p.type)}\``,
         p.isOptional ? "—" : "✓",
         p.description || "—",
       ]),
@@ -278,7 +278,7 @@ function renderInterface(
       ["Property", "Type", "Required", "Description"],
       iface.properties.map((p) => [
         `\`${p.name}\``,
-        `\`${p.type}\``,
+        `\`${sanitizeTableType(p.type)}\``,
         p.isOptional ? "—" : "✓",
         p.description || "—",
       ]),
@@ -313,7 +313,7 @@ function renderFunction(
       ["Parameter", "Type", "Description"],
       func.parameters.map((p) => [
         `\`${p.name}\``,
-        `\`${p.type}\``,
+        `\`${sanitizeTableType(p.type)}\``,
         p.description || "—",
       ]),
     );
@@ -353,7 +353,7 @@ function renderMethod(
       ["Parameter", "Type", "Description"],
       method.parameters.map((p) => [
         `\`${p.name}\``,
-        `\`${p.type}\``,
+        `\`${sanitizeTableType(p.type)}\``,
         p.description || "—",
       ]),
     );
@@ -361,7 +361,7 @@ function renderMethod(
 
   if (method.returnType && method.returnType !== "void") {
     md.paragraph(
-      `**Returns**: \`${method.returnType}\` ${method.returnDescription || ""}`,
+      `**Returns**: \`${sanitizeTableType(method.returnType)}\` ${method.returnDescription || ""}`,
     );
   }
 
@@ -395,7 +395,7 @@ function renderMethodSignature(
       ["Parameter", "Type", "Description"],
       method.parameters.map((p) => [
         `\`${p.name}\``,
-        `\`${p.type}\``,
+        `\`${sanitizeTableType(p.type)}\``,
         p.description || "—",
       ]),
     );
@@ -403,7 +403,7 @@ function renderMethodSignature(
 
   if (method.returnType && method.returnType !== "void") {
     md.paragraph(
-      `**Returns**: \`${method.returnType}\` ${method.returnDescription || ""}`,
+      `**Returns**: \`${sanitizeTableType(method.returnType)}\` ${method.returnDescription || ""}`,
     );
   }
 }
@@ -426,4 +426,9 @@ async function renderSequenceDiagram(
 
 function getFilename(filePath: string): string {
   return filePath.split("/").pop() ?? filePath;
+}
+
+/** Replace `|` with `or` for safe Markdown table rendering */
+function sanitizeTableType(type: string): string {
+  return type.replace(/\s*\|\s*/g, " or ");
 }

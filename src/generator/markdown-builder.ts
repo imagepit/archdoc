@@ -33,9 +33,10 @@ export class MarkdownBuilder {
   table(headers: string[], rows: string[][]): this {
     if (rows.length === 0) return this;
 
-    const headerRow = `| ${headers.join(" | ")} |`;
+    const esc = (cell: string) => cell.replace(/\|/g, "\\|");
+    const headerRow = `| ${headers.map(esc).join(" | ")} |`;
     const separator = `| ${headers.map(() => "---").join(" | ")} |`;
-    const dataRows = rows.map((row) => `| ${row.join(" | ")} |`);
+    const dataRows = rows.map((row) => `| ${row.map(esc).join(" | ")} |`);
 
     this.lines.push(headerRow);
     this.lines.push(separator);
