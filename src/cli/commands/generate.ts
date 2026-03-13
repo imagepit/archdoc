@@ -4,8 +4,9 @@ import { loadConfig } from "../../config/loader.js";
 import { createExtractorProject, extractLayer } from "../../extractor/project.js";
 import { generateIndexMd } from "../../generator/index-generator.js";
 import { generateLayerMd } from "../../generator/layer-generator.js";
-import { buildLayerDotDiagram } from "../../diagram/dot-class-builder.js";
-import { renderDotToSvg } from "../../diagram/svg-renderer.js";
+import { MermaidRenderer } from "../../diagram/mermaid-renderer.js";
+import { SvgRenderer } from "../../diagram/svg-renderer.js";
+import type { DiagramRenderer } from "../../diagram/diagram-renderer.js";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
@@ -52,25 +53,14 @@ export function registerGenerateCommand(program: Command): void {
       writeFileSync(join(outputDir, "index.md"), indexMd);
       console.log(chalk.green(`  Created index.md`));
 
-      // Generate SVG diagrams
-      if (diagramFormat === "svg") {
-        const diagramDir = join(outputDir, "diagrams");
-        mkdirSync(diagramDir, { recursive: true });
-
-        for (const extraction of extractions) {
-          const dot = buildLayerDotDiagram(extraction);
-          if (dot) {
-            const svgFilename = `${extraction.layerName.toLowerCase()}-class.svg`;
-            const svg = await renderDotToSvg(dot);
-            writeFileSync(join(diagramDir, svgFilename), svg);
-            console.log(chalk.green(`  Created diagrams/${svgFilename}`));
-          }
-        }
-      }
+      // Create renderer based on diagram format
+      const renderer: DiagramRenderer = diagramFormat === "svg"
+        ? new SvgRenderer(join(outputDir, "diagrams"), "diagrams")
+        : new MermaidRenderer();
 
       for (const extraction of extractions) {
         const layerConfig = config.layers.find((l) => l.name === extraction.layerName)!;
-        const layerMd = generateLayerMd(layerConfig, extraction, { svg: diagramFormat === "svg" });
+        const layerMd = await generateLayerMd(layerConfig, extraction, { renderer });
         const filename = `${layerConfig.name.toLowerCase()}.md`;
         writeFileSync(join(outputDir, filename), layerMd);
         console.log(chalk.green(`  Created ${filename}`));

@@ -52,6 +52,7 @@ export interface ClassInfo {
   filePath: string;
   description: string;
   category: string;
+  subDirectory: string;
   properties: PropertyInfo[];
   methods: MethodInfo[];
   businessRules: string[];
@@ -66,6 +67,7 @@ export interface InterfaceInfo {
   filePath: string;
   description: string;
   category: string;
+  subDirectory: string;
   properties: PropertyInfo[];
   methods: MethodSignatureInfo[];
   isExported: boolean;
@@ -77,6 +79,7 @@ export interface FunctionInfo {
   filePath: string;
   description: string;
   category: string;
+  subDirectory: string;
   signature: string;
   parameters: ParameterInfo[];
   returnType: string;

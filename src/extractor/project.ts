@@ -46,23 +46,32 @@ export function extractLayer(
   };
 
   for (const sourceFile of sourceFiles) {
-    const category = resolveCategory(sourceFile, layer);
+    const { category, subDirectory } = resolveCategoryAndSubDir(
+      sourceFile,
+      layer,
+    );
 
     for (const classDecl of sourceFile.getClasses()) {
       if (classDecl.isExported()) {
-        result.classes.push(extractClass(classDecl, category));
+        const cls = extractClass(classDecl, category);
+        cls.subDirectory = subDirectory;
+        result.classes.push(cls);
       }
     }
 
     for (const ifaceDecl of sourceFile.getInterfaces()) {
       if (ifaceDecl.isExported()) {
-        result.interfaces.push(extractInterface(ifaceDecl, category));
+        const iface = extractInterface(ifaceDecl, category);
+        iface.subDirectory = subDirectory;
+        result.interfaces.push(iface);
       }
     }
 
     for (const funcDecl of sourceFile.getFunctions()) {
       if (funcDecl.isExported()) {
-        result.functions.push(extractFunction(funcDecl, category));
+        const func = extractFunction(funcDecl, category);
+        func.subDirectory = subDirectory;
+        result.functions.push(func);
       }
     }
   }
@@ -72,20 +81,40 @@ export function extractLayer(
   return result;
 }
 
-function resolveCategory(sourceFile: SourceFile, layer: LayerConfig): string {
+interface CategoryResolution {
+  category: string;
+  subDirectory: string;
+}
+
+function resolveCategoryAndSubDir(
+  sourceFile: SourceFile,
+  layer: LayerConfig,
+): CategoryResolution {
   const filePath = sourceFile.getFilePath();
   const relPath = relative(layer.path, filePath);
-  const dir = dirname(relPath).split("/")[0];
+  const parts = dirname(relPath).split("/").filter((p) => p !== ".");
 
+  // First directory segment matches a category key
+  const dir = parts[0];
   if (dir && layer.categories[dir]) {
-    return layer.categories[dir];
+    const subDir = parts.length > 1 ? parts.slice(1).join("/") : "";
+    return { category: layer.categories[dir], subDirectory: subDir };
   }
 
+  // Fallback: match by substring
   for (const [key, label] of Object.entries(layer.categories)) {
     if (relPath.toLowerCase().includes(key.toLowerCase())) {
-      return label;
+      // Find the matching segment index and extract subdirectory after it
+      const idx = parts.findIndex((p) =>
+        p.toLowerCase().includes(key.toLowerCase()),
+      );
+      const subDir =
+        idx >= 0 && parts.length > idx + 1
+          ? parts.slice(idx + 1).join("/")
+          : "";
+      return { category: label, subDirectory: subDir };
     }
   }
 
-  return "Other";
+  return { category: "Other", subDirectory: "" };
 }

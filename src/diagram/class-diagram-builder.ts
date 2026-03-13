@@ -15,6 +15,58 @@ export function buildClassDiagram(extraction: LayerExtraction): string {
   return buildDiagramFromItems(classes, interfaces);
 }
 
+/**
+ * Build a compact overview class diagram for the entire layer.
+ * Shows only class/interface names (no member details) with relationships.
+ */
+export function buildCompactClassDiagram(extraction: LayerExtraction): string {
+  const classes = deduplicateByName(extraction.classes.filter((c) => c.isExported));
+  const interfaces = deduplicateByName(extraction.interfaces.filter((i) => i.isExported));
+
+  if (classes.length === 0 && interfaces.length === 0) return "";
+
+  const lines: string[] = ["classDiagram", "  direction LR"];
+
+  // Render compact nodes (name only, no members)
+  for (const iface of interfaces) {
+    lines.push(`  class ${iface.name} {`);
+    lines.push(`    <<interface>>`);
+    lines.push("  }");
+  }
+
+  for (const cls of classes) {
+    lines.push(`  class ${cls.name}`);
+  }
+
+  // All known names
+  const allNames = new Set([
+    ...classes.map((c) => c.name),
+    ...interfaces.map((i) => i.name),
+  ]);
+
+  // Inheritance & implementation relationships
+  for (const cls of classes) {
+    if (cls.extendsClass && allNames.has(cls.extendsClass)) {
+      lines.push(`  ${cls.extendsClass} <|-- ${cls.name}`);
+    }
+    for (const impl of cls.implementsInterfaces) {
+      if (allNames.has(impl)) {
+        lines.push(`  ${impl} <|.. ${cls.name}`);
+      }
+    }
+  }
+
+  for (const iface of interfaces) {
+    for (const ext of iface.extendsInterfaces) {
+      if (allNames.has(ext)) {
+        lines.push(`  ${ext} <|-- ${iface.name}`);
+      }
+    }
+  }
+
+  return lines.join("\n");
+}
+
 export function buildCategoryClassDiagrams(
   classes: ClassInfo[],
   interfaces: InterfaceInfo[],
@@ -46,12 +98,13 @@ function buildDiagramFromItems(
     renderClassMembers(lines, cls);
   }
 
-  // Relationships
+  // All known names in this diagram scope
   const allNames = new Set([
     ...classes.map((c) => c.name),
     ...interfaces.map((i) => i.name),
   ]);
 
+  // Inheritance & implementation relationships
   for (const cls of classes) {
     if (cls.extendsClass && allNames.has(cls.extendsClass)) {
       lines.push(`  ${cls.extendsClass} <|-- ${cls.name}`);
@@ -71,7 +124,90 @@ function buildDiagramFromItems(
     }
   }
 
+  // Composition & association relationships based on property types
+  const compositionLines = detectPropertyRelationships(classes, interfaces, allNames);
+  lines.push(...compositionLines);
+
   return lines.join("\n");
+}
+
+/**
+ * Detect composition/association relationships by analyzing property types.
+ * If a property type references another class/interface in the diagram,
+ * an arrow is added: composition (*--) for collections, association (-->) for single refs.
+ */
+function detectPropertyRelationships(
+  classes: ClassInfo[],
+  interfaces: InterfaceInfo[],
+  allNames: Set<string>,
+): string[] {
+  const lines: string[] = [];
+  const seen = new Set<string>();
+
+  // Check class properties
+  for (const cls of classes) {
+    detectPropsRelationships(cls.name, cls.properties, allNames, seen, lines);
+  }
+
+  // Check interface properties
+  for (const iface of interfaces) {
+    detectPropsRelationships(iface.name, iface.properties, allNames, seen, lines);
+  }
+
+  return lines;
+}
+
+function detectPropsRelationships(
+  ownerName: string,
+  properties: { name: string; type: string }[],
+  allNames: Set<string>,
+  seen: Set<string>,
+  lines: string[],
+): void {
+  for (const prop of properties) {
+    for (const targetName of allNames) {
+      if (targetName === ownerName) continue;
+
+      if (!typeReferences(prop.type, targetName)) continue;
+
+      const key = `${ownerName}->${targetName}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      if (isCollectionType(prop.type, targetName)) {
+        lines.push(`  ${ownerName} *-- ${targetName} : ${prop.name}`);
+      } else {
+        lines.push(`  ${ownerName} --> ${targetName} : ${prop.name}`);
+      }
+      break;
+    }
+  }
+}
+
+/**
+ * Check if a type string references a given class/interface name.
+ * Matches whole words to avoid false positives (e.g. "OrderItem" should not match "Order").
+ */
+function typeReferences(typeStr: string, name: string): boolean {
+  const regex = new RegExp(`\\b${escapeRegex(name)}\\b`);
+  return regex.test(typeStr);
+}
+
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Check if a type represents a collection of the target type.
+ */
+function isCollectionType(typeStr: string, targetName: string): boolean {
+  return (
+    typeStr.includes(`${targetName}[]`) ||
+    typeStr.includes(`Array<${targetName}>`) ||
+    typeStr.includes(`ReadonlyArray<${targetName}>`) ||
+    typeStr.includes(`Set<${targetName}>`) ||
+    (typeStr.includes(`Map<`) && typeStr.includes(targetName))
+  );
 }
 
 function renderInterfaceMembers(lines: string[], iface: InterfaceInfo): void {
@@ -145,6 +281,15 @@ function formatParams(
 ): string {
   if (params.length === 0) return "";
   return params
-    .map((p) => `${p.name}`)
+    .map((p) => `${p.name}: ${sanitizeType(p.type)}`)
     .join(", ");
+}
+
+function deduplicateByName<T extends { name: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (seen.has(item.name)) return false;
+    seen.add(item.name);
+    return true;
+  });
 }

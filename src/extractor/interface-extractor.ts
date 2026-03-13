@@ -22,6 +22,7 @@ export function extractInterface(
     filePath: ifaceDecl.getSourceFile().getFilePath(),
     description: jsdoc.description,
     category,
+    subDirectory: "",
     properties: ifaceDecl.getProperties().map(extractProperty),
     methods: ifaceDecl.getMethods().map(extractMethodSignature),
     isExported: ifaceDecl.isExported(),

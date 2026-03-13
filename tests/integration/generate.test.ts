@@ -3,6 +3,7 @@ import { loadConfig } from "../../src/config/loader.js";
 import { createExtractorProject, extractLayer } from "../../src/extractor/project.js";
 import { generateIndexMd } from "../../src/generator/index-generator.js";
 import { generateLayerMd } from "../../src/generator/layer-generator.js";
+import { MermaidRenderer } from "../../src/diagram/mermaid-renderer.js";
 import { join } from "node:path";
 import type { Project } from "ts-morph";
 import type { ProjectConfig } from "../../src/types/config.js";
@@ -64,10 +65,11 @@ describe("generate integration", () => {
     expect(indexMd).toContain("domain.md");
   });
 
-  it("generates domain layer MD with classes", () => {
+  it("generates domain layer MD with classes", async () => {
     const domainLayer = config.layers.find((l) => l.name === "Domain")!;
     const domainExtraction = extractions.find((e) => e.layerName === "Domain")!;
-    const domainMd = generateLayerMd(domainLayer, domainExtraction);
+    const renderer = new MermaidRenderer();
+    const domainMd = await generateLayerMd(domainLayer, domainExtraction, { renderer });
 
     expect(domainMd).toContain("Domain — ドメイン層 API Spec");
     expect(domainMd).toContain("`Order`");
@@ -78,10 +80,11 @@ describe("generate integration", () => {
     expect(domainMd).toContain("OrderNotEditableError");
   });
 
-  it("generates application layer MD", () => {
+  it("generates application layer MD", async () => {
     const appLayer = config.layers.find((l) => l.name === "Application")!;
     const appExtraction = extractions.find((e) => e.layerName === "Application")!;
-    const appMd = generateLayerMd(appLayer, appExtraction);
+    const renderer = new MermaidRenderer();
+    const appMd = await generateLayerMd(appLayer, appExtraction, { renderer });
 
     expect(appMd).toContain("Application — アプリケーション層 API Spec");
     expect(appMd).toContain("`CreateOrderUseCase`");

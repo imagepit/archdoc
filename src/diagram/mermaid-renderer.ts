@@ -1,0 +1,36 @@
+import type { DiagramRenderer } from "./diagram-renderer.js";
+import type { LayerExtraction, ClassInfo, InterfaceInfo } from "../types/extracted.js";
+import type { ClassCallChain } from "../extractor/call-chain-analyzer.js";
+import { buildCompactClassDiagram, buildCategoryClassDiagrams } from "./class-diagram-builder.js";
+import { buildSequenceDiagram } from "./sequence-diagram-builder.js";
+
+/**
+ * Mermaid implementation of DiagramRenderer.
+ * Returns Mermaid code blocks ready to embed in Markdown.
+ */
+export class MermaidRenderer implements DiagramRenderer {
+  async renderLayerOverview(extraction: LayerExtraction): Promise<string | null> {
+    const diagram = buildCompactClassDiagram(extraction);
+    if (!diagram) return null;
+    return wrapMermaid(diagram);
+  }
+
+  async renderDetailClassDiagram(
+    classes: ClassInfo[],
+    interfaces: InterfaceInfo[],
+  ): Promise<string | null> {
+    const diagrams = buildCategoryClassDiagrams(classes, interfaces);
+    if (diagrams.length === 0) return null;
+    return diagrams.map(wrapMermaid).join("\n");
+  }
+
+  async renderSequenceDiagram(chain: ClassCallChain): Promise<string | null> {
+    const diagram = buildSequenceDiagram(chain);
+    if (!diagram) return null;
+    return wrapMermaid(diagram);
+  }
+}
+
+function wrapMermaid(code: string): string {
+  return `\`\`\`mermaid\n${code}\n\`\`\``;
+}

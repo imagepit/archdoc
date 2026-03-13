@@ -65,6 +65,12 @@ export class MarkdownBuilder {
     return this;
   }
 
+  rawBlock(text: string): this {
+    this.lines.push(text);
+    this.lines.push("");
+    return this;
+  }
+
   build(): string {
     return this.lines.join("\n");
   }

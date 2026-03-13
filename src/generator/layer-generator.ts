@@ -8,20 +8,20 @@ import type {
   MethodInfo,
   MethodSignatureInfo,
 } from "../types/extracted.js";
-import { buildCategoryClassDiagrams } from "../diagram/class-diagram-builder.js";
-import { buildSequenceDiagram } from "../diagram/sequence-diagram-builder.js";
 import type { CallChainEntry } from "../types/extracted.js";
+import type { DiagramRenderer } from "../diagram/diagram-renderer.js";
 
 export interface GenerateOptions {
-  svg?: boolean;
+  renderer: DiagramRenderer;
 }
 
-export function generateLayerMd(
+export async function generateLayerMd(
   layer: LayerConfig,
   extraction: LayerExtraction,
-  options: GenerateOptions = {},
-): string {
+  options: GenerateOptions,
+): Promise<string> {
   const md = new MarkdownBuilder();
+  const { renderer } = options;
 
   md.frontmatter({
     title: `${layer.name} — ${layer.nameJa} API Spec`,
@@ -50,42 +50,43 @@ export function generateLayerMd(
     md.paragraph(layer.description.trim());
   }
 
-  const categories = groupByCategory(extraction);
-
-  // SVG mode: embed a single SVG image link at the top
-  if (options.svg) {
-    const svgPath = `diagrams/${layer.name.toLowerCase()}-class.svg`;
-    md.paragraph(`![${layer.name} Class Diagram](${svgPath})`);
+  // Layer-level overview diagram (compact)
+  const overview = await renderer.renderLayerOverview(extraction);
+  if (overview) {
+    md.rawBlock(overview);
   }
+
+  const categories = groupByCategory(extraction);
 
   for (const [category, items] of categories) {
     md.heading(2, category);
 
-    // Mermaid diagrams only in non-SVG mode
-    if (!options.svg) {
-      const catClasses = items
-        .filter((i) => i.kind === "class")
-        .map((i) => i.data as ClassInfo);
-      const catInterfaces = items
-        .filter((i) => i.kind === "interface")
-        .map((i) => i.data as InterfaceInfo);
+    // Check if items span multiple subdirectories
+    const subDirGroups = groupBySubDirectory(items);
 
-      const diagrams = buildCategoryClassDiagrams(catClasses, catInterfaces);
-      for (const diagram of diagrams) {
-        md.codeBlock(diagram, "mermaid");
-      }
-    }
+    if (subDirGroups.size > 1) {
+      // Multiple subdirectories: create sub-sections per subdirectory
+      for (const [subDir, subItems] of subDirGroups) {
+        const subDirLabel = formatSubDirLabel(subDir);
+        md.heading(3, subDirLabel);
 
-    for (const item of items) {
-      if (item.kind === "class") {
-        const cls = item.data as ClassInfo;
-        renderClass(md, cls);
-        renderSequenceDiagram(md, cls.name, extraction.callChains);
-      } else if (item.kind === "interface") {
-        renderInterface(md, item.data as InterfaceInfo);
-      } else {
-        renderFunction(md, item.data as FunctionInfo);
+        await renderGroupDiagramAndItems(
+          md,
+          subItems,
+          extraction.callChains,
+          renderer,
+          4,
+        );
       }
+    } else {
+      // Single group (or no subdirectory): render as before
+      await renderGroupDiagramAndItems(
+        md,
+        items,
+        extraction.callChains,
+        renderer,
+        3,
+      );
     }
   }
 
@@ -95,6 +96,42 @@ export function generateLayerMd(
 interface CategorizedItem {
   kind: "class" | "interface" | "function";
   data: ClassInfo | InterfaceInfo | FunctionInfo;
+}
+
+/**
+ * Render the class diagram and individual items for a group.
+ * headingLevel controls where individual class/interface headings start.
+ */
+async function renderGroupDiagramAndItems(
+  md: MarkdownBuilder,
+  items: CategorizedItem[],
+  callChains: CallChainEntry[],
+  renderer: DiagramRenderer,
+  headingLevel: number,
+): Promise<void> {
+  const catClasses = items
+    .filter((i) => i.kind === "class")
+    .map((i) => i.data as ClassInfo);
+  const catInterfaces = items
+    .filter((i) => i.kind === "interface")
+    .map((i) => i.data as InterfaceInfo);
+
+  const detailDiagram = await renderer.renderDetailClassDiagram(catClasses, catInterfaces);
+  if (detailDiagram) {
+    md.rawBlock(detailDiagram);
+  }
+
+  for (const item of items) {
+    if (item.kind === "class") {
+      const cls = item.data as ClassInfo;
+      renderClass(md, cls, headingLevel);
+      await renderSequenceDiagram(md, cls.name, callChains, renderer);
+    } else if (item.kind === "interface") {
+      renderInterface(md, item.data as InterfaceInfo, headingLevel);
+    } else {
+      renderFunction(md, item.data as FunctionInfo, headingLevel);
+    }
+  }
 }
 
 function groupByCategory(
@@ -133,8 +170,52 @@ function groupByCategory(
   return map;
 }
 
-function renderClass(md: MarkdownBuilder, cls: ClassInfo): void {
-  md.heading(3, `\`${cls.name}\``);
+/**
+ * Group items by their subDirectory field.
+ * Items with empty subDirectory are grouped under "".
+ */
+function groupBySubDirectory(
+  items: CategorizedItem[],
+): Map<string, CategorizedItem[]> {
+  const map = new Map<string, CategorizedItem[]>();
+
+  for (const item of items) {
+    const subDir = getSubDirectory(item);
+    const group = map.get(subDir) ?? [];
+    group.push(item);
+    map.set(subDir, group);
+  }
+
+  return map;
+}
+
+function getSubDirectory(item: CategorizedItem): string {
+  return (item.data as ClassInfo | InterfaceInfo | FunctionInfo).subDirectory ?? "";
+}
+
+/**
+ * Format a subdirectory path into a readable section label.
+ * e.g. "order" → "Order", "create-order" → "Create Order"
+ */
+function formatSubDirLabel(subDir: string): string {
+  if (!subDir) return "General";
+  return subDir
+    .split("/")
+    .map((segment) =>
+      segment
+        .split("-")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" "),
+    )
+    .join(" / ");
+}
+
+function renderClass(
+  md: MarkdownBuilder,
+  cls: ClassInfo,
+  headingLevel: number = 3,
+): void {
+  md.heading(headingLevel, `\`${cls.name}\``);
 
   md.blockquote(
     [
@@ -168,13 +249,17 @@ function renderClass(md: MarkdownBuilder, cls: ClassInfo): void {
   if (cls.methods.length > 0) {
     md.paragraph("**Methods**");
     for (const method of cls.methods) {
-      renderMethod(md, method);
+      renderMethod(md, method, headingLevel + 1);
     }
   }
 }
 
-function renderInterface(md: MarkdownBuilder, iface: InterfaceInfo): void {
-  md.heading(3, `\`${iface.name}\``);
+function renderInterface(
+  md: MarkdownBuilder,
+  iface: InterfaceInfo,
+  headingLevel: number = 3,
+): void {
+  md.heading(headingLevel, `\`${iface.name}\``);
 
   md.blockquote(
     [
@@ -203,13 +288,17 @@ function renderInterface(md: MarkdownBuilder, iface: InterfaceInfo): void {
   if (iface.methods.length > 0) {
     md.paragraph("**Methods**");
     for (const method of iface.methods) {
-      renderMethodSignature(md, method);
+      renderMethodSignature(md, method, headingLevel + 1);
     }
   }
 }
 
-function renderFunction(md: MarkdownBuilder, func: FunctionInfo): void {
-  md.heading(3, `\`${func.name}()\``);
+function renderFunction(
+  md: MarkdownBuilder,
+  func: FunctionInfo,
+  headingLevel: number = 3,
+): void {
+  md.heading(headingLevel, `\`${func.name}()\``);
 
   md.blockquote(`**File**: \`${getFilename(func.filePath)}\``);
 
@@ -248,8 +337,12 @@ function renderFunction(md: MarkdownBuilder, func: FunctionInfo): void {
   }
 }
 
-function renderMethod(md: MarkdownBuilder, method: MethodInfo): void {
-  md.heading(4, `\`${method.signature}\``);
+function renderMethod(
+  md: MarkdownBuilder,
+  method: MethodInfo,
+  headingLevel: number = 4,
+): void {
+  md.heading(headingLevel, `\`${method.signature}\``);
 
   if (method.description) {
     md.paragraph(method.description);
@@ -289,8 +382,9 @@ function renderMethod(md: MarkdownBuilder, method: MethodInfo): void {
 function renderMethodSignature(
   md: MarkdownBuilder,
   method: MethodSignatureInfo,
+  headingLevel: number = 4,
 ): void {
-  md.heading(4, `\`${method.signature}\``);
+  md.heading(headingLevel, `\`${method.signature}\``);
 
   if (method.description) {
     md.paragraph(method.description);
@@ -314,18 +408,19 @@ function renderMethodSignature(
   }
 }
 
-function renderSequenceDiagram(
+async function renderSequenceDiagram(
   md: MarkdownBuilder,
   className: string,
   callChains: CallChainEntry[],
-): void {
+  renderer: DiagramRenderer,
+): Promise<void> {
   const chain = callChains.find((c) => c.className === className);
   if (!chain || chain.methods.length === 0) return;
 
   md.paragraph("**Sequence Diagram**");
-  const diagram = buildSequenceDiagram(chain);
+  const diagram = await renderer.renderSequenceDiagram(chain);
   if (diagram) {
-    md.codeBlock(diagram, "mermaid");
+    md.rawBlock(diagram);
   }
 }
 

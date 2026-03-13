@@ -30,6 +30,7 @@ export function extractFunction(
     filePath: funcDecl.getSourceFile().getFilePath(),
     description: jsdoc.description,
     category,
+    subDirectory: "",
     signature,
     parameters: mergedParams,
     returnType,

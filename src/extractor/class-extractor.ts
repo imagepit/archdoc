@@ -19,6 +19,7 @@ export function extractClass(classDecl: ClassDeclaration, category: string): Cla
     filePath: classDecl.getSourceFile().getFilePath(),
     description: jsdoc.description,
     category,
+    subDirectory: "",
     properties: classDecl
       .getProperties()
       .filter((p) => p.getScope() !== Scope.Private)
