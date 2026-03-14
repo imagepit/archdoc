@@ -5,12 +5,16 @@ import type {
   ClassInfo,
   InterfaceInfo,
   FunctionInfo,
+  TypeAliasInfo,
+  EnumInfo,
+  ConstInfo,
   MethodInfo,
   MethodSignatureInfo,
   CallerReference,
 } from "../types/extracted.js";
 import type { CallChainEntry } from "../types/extracted.js";
 import type { DiagramRenderer } from "../diagram/diagram-renderer.js";
+import { formatName, kindEmoji, type ObjectKind } from "./emoji.js";
 
 export interface GenerateOptions {
   renderer: DiagramRenderer;
@@ -102,8 +106,8 @@ export async function generateLayerMd(
 }
 
 interface CategorizedItem {
-  kind: "class" | "interface" | "function";
-  data: ClassInfo | InterfaceInfo | FunctionInfo;
+  kind: ObjectKind;
+  data: ClassInfo | InterfaceInfo | FunctionInfo | TypeAliasInfo | EnumInfo | ConstInfo;
 }
 
 /**
@@ -132,13 +136,25 @@ async function renderGroupDiagramAndItems(
   }
 
   for (const item of items) {
-    if (item.kind === "class") {
-      const cls = item.data as ClassInfo;
-      await renderClass(md, cls, headingLevel, selfLayerName, layerNames, callChains, renderer);
-    } else if (item.kind === "interface") {
-      renderInterface(md, item.data as InterfaceInfo, headingLevel);
-    } else {
-      await renderFunction(md, item.data as FunctionInfo, headingLevel, selfLayerName, layerNames, renderer);
+    switch (item.kind) {
+      case "class":
+        await renderClass(md, item.data as ClassInfo, headingLevel, selfLayerName, layerNames, callChains, renderer);
+        break;
+      case "interface":
+        renderInterface(md, item.data as InterfaceInfo, headingLevel);
+        break;
+      case "function":
+        await renderFunction(md, item.data as FunctionInfo, headingLevel, selfLayerName, layerNames, renderer);
+        break;
+      case "type":
+        renderTypeAlias(md, item.data as TypeAliasInfo, headingLevel);
+        break;
+      case "enum":
+        renderEnum(md, item.data as EnumInfo, headingLevel);
+        break;
+      case "const":
+        renderConst(md, item.data as ConstInfo, headingLevel);
+        break;
     }
   }
 }
@@ -176,6 +192,33 @@ function groupByCategory(
     map.set(func.category, items);
   }
 
+  for (const ta of extraction.typeAliases) {
+    const key = `type:${ta.name}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const items = map.get(ta.category) ?? [];
+    items.push({ kind: "type", data: ta });
+    map.set(ta.category, items);
+  }
+
+  for (const en of extraction.enums) {
+    const key = `enum:${en.name}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const items = map.get(en.category) ?? [];
+    items.push({ kind: "enum", data: en });
+    map.set(en.category, items);
+  }
+
+  for (const c of extraction.constants) {
+    const key = `const:${c.name}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const items = map.get(c.category) ?? [];
+    items.push({ kind: "const", data: c });
+    map.set(c.category, items);
+  }
+
   return map;
 }
 
@@ -199,7 +242,7 @@ function groupBySubDirectory(
 }
 
 function getSubDirectory(item: CategorizedItem): string {
-  return (item.data as ClassInfo | InterfaceInfo | FunctionInfo).subDirectory ?? "";
+  return (item.data as { subDirectory?: string }).subDirectory ?? "";
 }
 
 /**
@@ -228,7 +271,7 @@ async function renderClass(
   callChains?: CallChainEntry[],
   renderer?: DiagramRenderer,
 ): Promise<void> {
-  md.heading(headingLevel, `\`${cls.name}\``);
+  md.heading(headingLevel, `${kindEmoji("class")} ${formatName(cls.name, "class", cls.category)}`);
 
   md.blockquote(
     [
@@ -275,7 +318,7 @@ function renderInterface(
   iface: InterfaceInfo,
   headingLevel: number = 3,
 ): void {
-  md.heading(headingLevel, `\`${iface.name}\``);
+  md.heading(headingLevel, `${kindEmoji("interface")} ${formatName(iface.name, "interface", iface.category)}`);
 
   md.blockquote(
     [
@@ -317,7 +360,7 @@ async function renderFunction(
   layerNames?: string[],
   renderer?: DiagramRenderer,
 ): Promise<void> {
-  md.heading(headingLevel, `\`${func.name}()\``);
+  md.heading(headingLevel, `${kindEmoji("function")} ${formatName(func.name, "function", func.category)}`);
 
   md.blockquote(`**File**: \`${getFilename(func.filePath)}\``);
 
@@ -522,6 +565,96 @@ async function renderMethodSequenceDiagram(
   const diagram = await renderer.renderSequenceDiagram(singleMethodChain);
   if (diagram) {
     md.rawBlock(diagram);
+  }
+}
+
+function renderTypeAlias(
+  md: MarkdownBuilder,
+  ta: TypeAliasInfo,
+  headingLevel: number = 3,
+): void {
+  md.heading(headingLevel, `${kindEmoji("type")} ${formatName(ta.name, "type", ta.category)}`);
+
+  md.blockquote(
+    [
+      `**File**: \`${getFilename(ta.filePath)}\``,
+      `**Type**: ${ta.category}`,
+    ].join("\n"),
+  );
+
+  if (ta.description) {
+    md.paragraph(ta.description);
+  }
+
+  md.codeBlock(ta.typeText, "typescript");
+
+  if (ta.properties.length > 0) {
+    md.paragraph("**Properties**");
+    md.table(
+      ["Property", "Type", "Required", "Description"],
+      ta.properties.map((p) => [
+        `\`${p.name}\``,
+        `\`${sanitizeTableType(p.type)}\``,
+        p.isOptional ? "—" : "✓",
+        p.description || "—",
+      ]),
+    );
+  }
+}
+
+function renderEnum(
+  md: MarkdownBuilder,
+  en: EnumInfo,
+  headingLevel: number = 3,
+): void {
+  md.heading(headingLevel, `${kindEmoji("enum")} ${formatName(en.name, "enum", en.category)}`);
+
+  md.blockquote(
+    [
+      `**File**: \`${getFilename(en.filePath)}\``,
+      `**Type**: ${en.category}`,
+    ].join("\n"),
+  );
+
+  if (en.description) {
+    md.paragraph(en.description);
+  }
+
+  if (en.members.length > 0) {
+    md.paragraph("**Members**");
+    md.table(
+      ["Name", "Value", "Description"],
+      en.members.map((m) => [
+        `\`${m.name}\``,
+        m.value ? `\`${m.value}\`` : "—",
+        m.description || "—",
+      ]),
+    );
+  }
+}
+
+function renderConst(
+  md: MarkdownBuilder,
+  c: ConstInfo,
+  headingLevel: number = 3,
+): void {
+  md.heading(headingLevel, `${kindEmoji("const")} ${formatName(c.name, "const", c.category)}`);
+
+  md.blockquote(
+    [
+      `**File**: \`${getFilename(c.filePath)}\``,
+      `**Type**: ${c.category}`,
+    ].join("\n"),
+  );
+
+  if (c.description) {
+    md.paragraph(c.description);
+  }
+
+  md.paragraph(`**Type**: \`${sanitizeTableType(c.type)}\``);
+
+  if (c.valuePreview) {
+    md.codeBlock(c.valuePreview, "typescript");
   }
 }
 

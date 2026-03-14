@@ -1,4 +1,4 @@
-import { Project, type SourceFile } from "ts-morph";
+import { Project, type SourceFile, VariableDeclarationKind, Node } from "ts-morph";
 import { join, relative, dirname } from "node:path";
 import { existsSync } from "node:fs";
 import type { LayerConfig, CategoryOverride } from "../types/config.js";
@@ -6,6 +6,9 @@ import type { LayerExtraction } from "../types/extracted.js";
 import { extractClass } from "./class-extractor.js";
 import { extractInterface } from "./interface-extractor.js";
 import { extractFunction } from "./function-extractor.js";
+import { extractTypeAlias } from "./type-alias-extractor.js";
+import { extractEnum } from "./enum-extractor.js";
+import { extractConst } from "./const-extractor.js";
 import { analyzeImports, findForbiddenImports } from "./import-analyzer.js";
 import { analyzeCallChains } from "./call-chain-analyzer.js";
 import { createFrameworkExtractor } from "./framework/index.js";
@@ -49,6 +52,9 @@ export function extractLayer(
     classes: [],
     interfaces: [],
     functions: [],
+    typeAliases: [],
+    enums: [],
+    constants: [],
     dependencies: [],
     callChains: [],
   };
@@ -88,6 +94,37 @@ export function extractLayer(
           func.routes = fwExtractor.extractRoutes(sourceFile, func.name);
         }
         result.functions.push(func);
+      }
+    }
+
+    for (const typeDecl of sourceFile.getTypeAliases()) {
+      if (typeDecl.isExported()) {
+        const ta = extractTypeAlias(typeDecl, category);
+        ta.subDirectory = subDirectory;
+        ta.category = applyCategoryOverride(ta.name, ta.category, layer.categoryOverrides);
+        result.typeAliases.push(ta);
+      }
+    }
+
+    for (const enumDecl of sourceFile.getEnums()) {
+      if (enumDecl.isExported()) {
+        const en = extractEnum(enumDecl, category);
+        en.subDirectory = subDirectory;
+        en.category = applyCategoryOverride(en.name, en.category, layer.categoryOverrides);
+        result.enums.push(en);
+      }
+    }
+
+    for (const varStmt of sourceFile.getVariableStatements()) {
+      if (varStmt.isExported() && varStmt.getDeclarationKind() === VariableDeclarationKind.Const) {
+        for (const decl of varStmt.getDeclarations()) {
+          const init = decl.getInitializer();
+          if (init && (Node.isArrowFunction(init) || Node.isFunctionExpression(init))) continue;
+          const c = extractConst(decl, category);
+          c.subDirectory = subDirectory;
+          c.category = applyCategoryOverride(c.name, c.category, layer.categoryOverrides);
+          result.constants.push(c);
+        }
       }
     }
 

@@ -2,6 +2,7 @@ import { MarkdownBuilder } from "./markdown-builder.js";
 import type { ProjectConfig, LayerConfig } from "../types/config.js";
 import type { LayerExtraction, DependencyInfo } from "../types/extracted.js";
 import type { DiagramRenderer } from "../diagram/diagram-renderer.js";
+import { formatName, kindLabel, kindLegendRows, categoryLegendRows, type ObjectKind } from "./emoji.js";
 import { basename } from "node:path";
 
 export interface IndexGenerateOptions {
@@ -47,6 +48,15 @@ export async function generateIndexMd(
       `[${layer.name.toLowerCase()}.md](./${layer.name.toLowerCase()}.md)`,
     ]),
   );
+
+  // Legend
+  md.heading(2, "Legend");
+
+  md.paragraph("**Kind** — Object type indicators");
+  md.table(["Icon", "Description"], kindLegendRows());
+
+  md.paragraph("**Category** — Domain category indicators (applied to Component name)");
+  md.table(["Icon", "Category"], categoryLegendRows());
 
   // Cross-layer object relationship diagram
   if (options?.renderer) {
@@ -99,41 +109,24 @@ export async function generateIndexMd(
     const seen = new Set<string>();
     const components: string[][] = [];
 
-    for (const c of extraction.classes) {
-      const key = `${c.name}:${c.category}`;
-      if (seen.has(key)) continue;
+    const addComponent = (name: string, kind: ObjectKind, category: string, description: string) => {
+      const key = `${kind}:${name}:${category}`;
+      if (seen.has(key)) return;
       seen.add(key);
       components.push([
-        `\`${c.name}\``,
-        "class",
-        c.category,
-        truncate(firstLine(c.description), 60),
+        formatName(name, kind, category),
+        kindLabel(kind),
+        category,
+        truncate(firstLine(description), 60),
       ]);
-    }
+    };
 
-    for (const i of extraction.interfaces) {
-      const key = `${i.name}:${i.category}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      components.push([
-        `\`${i.name}\``,
-        "interface",
-        i.category,
-        truncate(firstLine(i.description), 60),
-      ]);
-    }
-
-    for (const f of extraction.functions) {
-      const key = `${f.name}:${f.category}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      components.push([
-        `\`${f.name}()\``,
-        "function",
-        f.category,
-        truncate(firstLine(f.description), 60),
-      ]);
-    }
+    for (const c of extraction.classes) addComponent(c.name, "class", c.category, c.description);
+    for (const i of extraction.interfaces) addComponent(i.name, "interface", i.category, i.description);
+    for (const f of extraction.functions) addComponent(f.name, "function", f.category, f.description);
+    for (const t of extraction.typeAliases) addComponent(t.name, "type", t.category, t.description);
+    for (const e of extraction.enums) addComponent(e.name, "enum", e.category, e.description);
+    for (const c of extraction.constants) addComponent(c.name, "const", c.category, c.description);
 
     if (components.length > 0) {
       md.table(["Component", "Kind", "Category", "Description"], components);

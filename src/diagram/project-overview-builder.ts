@@ -6,7 +6,7 @@ import type { LayerConfig } from "../types/config.js";
 interface ProjectNode {
   name: string;
   layerName: string;
-  kind: "class" | "interface" | "function";
+  kind: "class" | "interface" | "function" | "type" | "enum" | "const";
   category: string;
 }
 
@@ -77,16 +77,12 @@ export function buildProjectOverviewMermaid(
       const nsName = `${layerName}__${categoryName.replace(/[^a-zA-Z0-9]/g, "_")}`;
       lines.push(`  namespace ${nsName} {`);
       for (const node of catItems) {
-        if (node.kind === "interface") {
-          lines.push(`    class ${node.name} {`);
-          lines.push(`      <<interface>>`);
-          lines.push(`    }`);
-        } else if (node.kind === "function") {
-          lines.push(`    class ${node.name} {`);
-          lines.push(`      <<function>>`);
-          lines.push(`    }`);
-        } else {
+        if (node.kind === "class") {
           lines.push(`    class ${node.name}`);
+        } else {
+          lines.push(`    class ${node.name} {`);
+          lines.push(`      <<${node.kind}>>`);
+          lines.push(`    }`);
         }
       }
       lines.push(`  }`);
@@ -193,14 +189,35 @@ export function buildProjectOverviewDot(
         const id = sanitizeId(node.name);
         nodeIds.push(id);
         allNodeIds.push(id);
-        if (node.kind === "interface") {
-          const label = `\\<\\<interface\\>\\>\\n${escapeLabel(node.name)}`;
-          lines.push(`      ${id} [label="${label}", style="rounded,filled,dashed"]`);
-        } else if (node.kind === "function") {
-          const label = `\\<\\<function\\>\\>\\n${escapeLabel(node.name)}`;
-          lines.push(`      ${id} [label="${label}", shape=ellipse]`);
-        } else {
-          lines.push(`      ${id} [label="${escapeLabel(node.name)}"]`);
+        switch (node.kind) {
+          case "class":
+            lines.push(`      ${id} [label="${escapeLabel(node.name)}"]`);
+            break;
+          case "interface": {
+            const label = `\\<\\<interface\\>\\>\\n${escapeLabel(node.name)}`;
+            lines.push(`      ${id} [label="${label}", style="rounded,filled,dashed"]`);
+            break;
+          }
+          case "function": {
+            const label = `\\<\\<function\\>\\>\\n${escapeLabel(node.name)}`;
+            lines.push(`      ${id} [label="${label}", shape=ellipse]`);
+            break;
+          }
+          case "type": {
+            const label = `\\<\\<type\\>\\>\\n${escapeLabel(node.name)}`;
+            lines.push(`      ${id} [label="${label}", shape=note]`);
+            break;
+          }
+          case "enum": {
+            const label = `\\<\\<enum\\>\\>\\n${escapeLabel(node.name)}`;
+            lines.push(`      ${id} [label="${label}", shape=component]`);
+            break;
+          }
+          case "const": {
+            const label = `\\<\\<const\\>\\>\\n${escapeLabel(node.name)}`;
+            lines.push(`      ${id} [label="${label}", shape=diamond]`);
+            break;
+          }
         }
       }
 
@@ -411,6 +428,21 @@ function collectNodes(extractions: LayerExtraction[]): ProjectNode[] {
       if (!func.isExported || seen.has(func.name)) continue;
       seen.add(func.name);
       nodes.push({ name: func.name, layerName: ext.layerName, kind: "function", category: func.category });
+    }
+    for (const ta of ext.typeAliases) {
+      if (!ta.isExported || seen.has(ta.name)) continue;
+      seen.add(ta.name);
+      nodes.push({ name: ta.name, layerName: ext.layerName, kind: "type", category: ta.category });
+    }
+    for (const en of ext.enums) {
+      if (!en.isExported || seen.has(en.name)) continue;
+      seen.add(en.name);
+      nodes.push({ name: en.name, layerName: ext.layerName, kind: "enum", category: en.category });
+    }
+    for (const c of ext.constants) {
+      if (!c.isExported || seen.has(c.name)) continue;
+      seen.add(c.name);
+      nodes.push({ name: c.name, layerName: ext.layerName, kind: "const", category: c.category });
     }
   }
 

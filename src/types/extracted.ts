@@ -123,6 +123,44 @@ export interface FunctionInfo {
   routes?: RouteInfo[];
 }
 
+export interface TypeAliasInfo {
+  name: string;
+  filePath: string;
+  description: string;
+  category: string;
+  subDirectory: string;
+  typeText: string;
+  properties: PropertyInfo[];
+  isExported: boolean;
+}
+
+export interface EnumMemberInfo {
+  name: string;
+  value: string;
+  description: string;
+}
+
+export interface EnumInfo {
+  name: string;
+  filePath: string;
+  description: string;
+  category: string;
+  subDirectory: string;
+  members: EnumMemberInfo[];
+  isExported: boolean;
+}
+
+export interface ConstInfo {
+  name: string;
+  filePath: string;
+  description: string;
+  category: string;
+  subDirectory: string;
+  type: string;
+  valuePreview: string;
+  isExported: boolean;
+}
+
 export interface CallChainEntry {
   className: string;
   filePath: string;
@@ -138,6 +176,9 @@ export interface LayerExtraction {
   classes: ClassInfo[];
   interfaces: InterfaceInfo[];
   functions: FunctionInfo[];
+  typeAliases: TypeAliasInfo[];
+  enums: EnumInfo[];
+  constants: ConstInfo[];
   dependencies: DependencyInfo[];
   callChains: CallChainEntry[];
 }
