@@ -20,7 +20,7 @@ describe("generate integration", () => {
   beforeAll(() => {
     config = loadConfig(join(FIXTURES, "layers.yaml"));
     project = createExtractorProject(config.project.sourceRoot);
-    extractions = config.layers.map((layer) => extractLayer(project, layer, config.layers));
+    extractions = config.layers.map((layer) => extractLayer(project, layer, config.layers, config.project.sourceRoot));
     analyzeCallerReferences(project, extractions, config.layers);
   });
 

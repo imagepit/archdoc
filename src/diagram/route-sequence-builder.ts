@@ -19,11 +19,18 @@ export function buildRouteSequenceDiagram(funcName: string, route: RouteInfo): s
     }
   }
 
+  // Request flow
   lines.push(`    Client->>${funcName}: ${route.method} ${route.path}`);
 
   for (const call of route.calls) {
     lines.push(`    ${funcName}->>${call.target}: ${call.method}()`);
+    lines.push(`    ${call.target}-->>${funcName}: `);
   }
+
+  // Response: use @returns description or default
+  const returnsTag = route.jsdocTags?.find((t) => t.tag === "returns");
+  const returnsDesc = returnsTag?.description || "レスポンス";
+  lines.push(`    ${funcName}-->>Client: ${returnsDesc}`);
 
   return lines.join("\n");
 }

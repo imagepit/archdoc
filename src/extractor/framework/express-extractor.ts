@@ -5,7 +5,7 @@ import {
   type Node,
   SyntaxKind,
 } from "ts-morph";
-import type { RouteInfo, RouteCallInfo, FunctionInfo } from "../../types/extracted.js";
+import type { RouteInfo, RouteCallInfo, RouteJSDocTag, FunctionInfo } from "../../types/extracted.js";
 import type { FrameworkExtractor } from "./framework-extractor.js";
 
 const HTTP_METHODS = new Set(["get", "post", "put", "delete", "patch"]);
@@ -33,29 +33,48 @@ export class ExpressExtractor implements FrameworkExtractor {
     allSourceFiles: SourceFile[],
     functions: FunctionInfo[],
   ): void {
-    // Build a map: sub-router function name → mount prefix
-    // Scan ALL project source files to detect app.use() / router.use() mounts
-    const mountMap = new Map<string, string>();
+    // Build mount graph: routerFuncName → { prefix, parentFuncName }
+    const mountGraph = new Map<string, { prefix: string; parentFuncName: string }>();
 
     for (const sourceFile of allSourceFiles) {
       for (const funcDecl of sourceFile.getFunctions()) {
+        const parentName = funcDecl.getName() ?? "";
         for (const callExpr of funcDecl.getDescendantsOfKind(
           SyntaxKind.CallExpression,
         )) {
           const mount = parseRouterUse(callExpr);
           if (mount) {
-            mountMap.set(mount.routerFuncName, mount.prefix);
+            mountGraph.set(mount.routerFuncName, {
+              prefix: mount.prefix,
+              parentFuncName: parentName,
+            });
           }
         }
       }
     }
 
-    // Apply mount prefixes to sub-router routes
+    // Resolve full prefix by walking up the mount chain
+    const resolveFullPrefix = (funcName: string): string => {
+      const parts: string[] = [];
+      let current = funcName;
+      const visited = new Set<string>();
+      while (mountGraph.has(current) && !visited.has(current)) {
+        visited.add(current);
+        const entry = mountGraph.get(current)!;
+        parts.unshift(entry.prefix);
+        current = entry.parentFuncName;
+      }
+      return parts.reduce((acc, part) => joinPaths(acc, part === "/" ? "/" : part), "");
+    };
+
+    // Apply resolved prefixes to sub-router routes
     for (const func of functions) {
-      if (func.routes && func.routes.length > 0 && mountMap.has(func.name)) {
-        const prefix = mountMap.get(func.name)!;
-        for (const route of func.routes) {
-          route.path = joinPaths(prefix, route.path);
+      if (func.routes && func.routes.length > 0 && mountGraph.has(func.name)) {
+        const fullPrefix = resolveFullPrefix(func.name);
+        if (fullPrefix) {
+          for (const route of func.routes) {
+            route.path = joinPaths(fullPrefix, route.path);
+          }
         }
       }
     }
@@ -133,8 +152,8 @@ function parseRouterCall(
     }
   }
 
-  // Extract JSDoc description from preceding comment
-  const description = extractRouteDescription(callExpr);
+  // Extract JSDoc description and tags from preceding comment
+  const jsdoc = extractRouteJSDoc(callExpr);
 
   // Extract calls from handler body
   const calls = handlerNode
@@ -145,7 +164,8 @@ function parseRouterCall(
     method: methodName.toUpperCase(),
     path,
     middlewares,
-    description,
+    description: jsdoc.description,
+    jsdocTags: jsdoc.tags.length > 0 ? jsdoc.tags : undefined,
     calls,
   };
 }
@@ -242,10 +262,12 @@ function joinPaths(prefix: string, path: string): string {
 }
 
 /**
- * Extract route description from JSDoc-style comment preceding the router call.
- * Returns description lines (excluding the method+path line and @tags).
+ * Extract route description and JSDoc tags from preceding comment block.
  */
-function extractRouteDescription(callExpr: CallExpression): string | undefined {
+function extractRouteJSDoc(
+  callExpr: CallExpression,
+): { description: string | undefined; tags: RouteJSDocTag[] } {
+  const empty = { description: undefined, tags: [] };
   const sourceFile = callExpr.getSourceFile();
   const fullText = sourceFile.getFullText();
   const start = callExpr.getStart();
@@ -253,28 +275,49 @@ function extractRouteDescription(callExpr: CallExpression): string | undefined {
   // Find the last /** ... */ block immediately before the call
   const textBefore = fullText.substring(0, start);
   const allComments = [...textBefore.matchAll(/\/\*\*([\s\S]*?)\*\//g)];
-  if (allComments.length === 0) return undefined;
+  if (allComments.length === 0) return empty;
 
   const lastComment = allComments[allComments.length - 1];
   // Verify only whitespace between the comment end and the call
   const commentEnd = lastComment.index! + lastComment[0].length;
   const gap = textBefore.substring(commentEnd).trim();
-  if (gap.length > 0) return undefined;
+  if (gap.length > 0) return empty;
 
   const lines = lastComment[1]
     .split("\n")
     .map((l) => l.replace(/^\s*\*\s?/, "").trim())
     .filter((l) => l.length > 0);
 
-  // Collect description lines: skip first line if it looks like "GET /path",
-  // and skip @tag lines
   const httpPattern = /^(GET|POST|PUT|DELETE|PATCH)\s+\//i;
+  const tagPattern = /^@(\w+)\s*(.*)/;
+  // Express handler params to exclude from API documentation
+  const expressParams = new Set(["req", "res", "next", "request", "response", "_req", "_res"]);
   const descLines: string[] = [];
+  const tags: RouteJSDocTag[] = [];
+
   for (const line of lines) {
-    if (line.startsWith("@")) continue;
+    const tagMatch = line.match(tagPattern);
+    if (tagMatch) {
+      const [, tag, rest] = tagMatch;
+      if (tag === "param") {
+        // @param name — description  OR  @param name description
+        const paramMatch = rest.match(/^(\w+)\s*[-—–]?\s*(.*)/);
+        if (paramMatch && !expressParams.has(paramMatch[1])) {
+          tags.push({ tag, name: paramMatch[1], description: paramMatch[2] || "" });
+        }
+      } else if (tag === "returns" || tag === "return") {
+        tags.push({ tag: "returns", description: rest.replace(/^[-—–]\s*/, "") });
+      } else if (tag === "throws" || tag === "throw") {
+        tags.push({ tag: "throws", description: rest.replace(/^[-—–]\s*/, "") });
+      }
+      continue;
+    }
     if (descLines.length === 0 && httpPattern.test(line)) continue;
     descLines.push(line);
   }
 
-  return descLines.length > 0 ? descLines.join("\n") : undefined;
+  return {
+    description: descLines.length > 0 ? descLines.join("\n") : undefined,
+    tags,
+  };
 }

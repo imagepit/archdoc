@@ -91,11 +91,18 @@ export interface RouteCallInfo {
   method: string;
 }
 
+export interface RouteJSDocTag {
+  tag: string;       // "param", "returns", "throws"
+  name?: string;     // parameter name (for @param)
+  description: string;
+}
+
 export interface RouteInfo {
   method: string;
   path: string;
   middlewares: string[];
   description?: string;
+  jsdocTags?: RouteJSDocTag[];
   calls: RouteCallInfo[];
 }
 

@@ -378,6 +378,23 @@ async function renderFunction(
       if (route.description) {
         md.paragraph(route.description);
       }
+      if (route.jsdocTags && route.jsdocTags.length > 0) {
+        const params = route.jsdocTags.filter((t) => t.tag === "param");
+        const returns = route.jsdocTags.filter((t) => t.tag === "returns");
+        const throws = route.jsdocTags.filter((t) => t.tag === "throws");
+        if (params.length > 0) {
+          md.table(
+            ["Parameter", "Description"],
+            params.map((p) => [`\`${p.name}\``, p.description]),
+          );
+        }
+        if (returns.length > 0) {
+          md.paragraph(`**Returns**: ${returns.map((r) => r.description).join(", ")}`);
+        }
+        if (throws.length > 0) {
+          md.paragraph(`**Throws**: ${throws.map((t) => t.description).join(", ")}`);
+        }
+      }
       if (route.calls.length > 0) {
         const diagram = await renderer.renderRouteSequenceDiagram(func.name, route);
         if (diagram) md.rawBlock(diagram);
