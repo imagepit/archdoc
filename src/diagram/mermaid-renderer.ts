@@ -1,7 +1,6 @@
 import type { DiagramRenderer } from "./diagram-renderer.js";
-import type { LayerExtraction, ClassInfo, InterfaceInfo, RouteInfo } from "../types/extracted.js";
+import type { LayerExtraction, ClassInfo, InterfaceInfo, RouteInfo, ClassCallChain } from "../types/extracted.js";
 import type { LayerConfig } from "../types/config.js";
-import type { ClassCallChain } from "../extractor/call-chain-analyzer.js";
 import { buildCompactClassDiagram, buildCategoryClassDiagrams } from "./class-diagram-builder.js";
 import { buildSequenceDiagram } from "./sequence-diagram-builder.js";
 import { buildRouteSequenceDiagram } from "./route-sequence-builder.js";

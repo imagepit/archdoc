@@ -1,5 +1,4 @@
-import type { LayerExtraction, ClassInfo, InterfaceInfo, RouteInfo } from "../types/extracted.js";
-import type { ClassCallChain } from "../extractor/call-chain-analyzer.js";
+import type { LayerExtraction, ClassInfo, InterfaceInfo, RouteInfo, ClassCallChain } from "../types/extracted.js";
 import type { LayerConfig } from "../types/config.js";
 
 /**

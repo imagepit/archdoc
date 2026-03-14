@@ -161,6 +161,28 @@ export interface ConstInfo {
   isExported: boolean;
 }
 
+export interface ConstructorDep {
+  paramName: string;
+  typeName: string;
+}
+
+export interface MethodCall {
+  target: string;
+  method: string;
+}
+
+export interface MethodCallChain {
+  methodName: string;
+  calls: MethodCall[];
+}
+
+export interface ClassCallChain {
+  className: string;
+  filePath: string;
+  constructorDeps: ConstructorDep[];
+  methods: MethodCallChain[];
+}
+
 export interface CallChainEntry {
   className: string;
   filePath: string;

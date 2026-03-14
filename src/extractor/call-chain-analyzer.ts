@@ -1,27 +1,8 @@
 import type { ClassDeclaration, SourceFile } from "ts-morph";
 import { SyntaxKind } from "ts-morph";
+import type { ClassCallChain, ConstructorDep, MethodCall, MethodCallChain } from "../types/extracted.js";
 
-export interface ConstructorDep {
-  paramName: string;
-  typeName: string;
-}
-
-export interface MethodCall {
-  target: string;
-  method: string;
-}
-
-export interface MethodCallChain {
-  methodName: string;
-  calls: MethodCall[];
-}
-
-export interface ClassCallChain {
-  className: string;
-  filePath: string;
-  constructorDeps: ConstructorDep[];
-  methods: MethodCallChain[];
-}
+export type { ClassCallChain, ConstructorDep, MethodCall, MethodCallChain };
 
 export function analyzeCallChains(sourceFiles: SourceFile[]): ClassCallChain[] {
   const results: ClassCallChain[] = [];

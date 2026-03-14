@@ -1,0 +1,99 @@
+project:
+  name: archdoc
+  description: DDD layered architecture documentation generator
+  sourceRoot: src
+layers:
+  - name: Types
+    nameJa: 型定義層
+    path: src/types
+    type: custom
+    description: |
+      プロジェクト全体で共有される型定義。
+      設定ファイル構造と抽出結果の型を定義。
+    responsibility: 共通型定義の提供
+    forbiddenImports:
+      - src/cli
+      - src/config
+      - src/diagram
+      - src/drift
+      - src/extractor
+      - src/generator
+    categories: {}
+  - name: Config
+    nameJa: 設定層
+    path: src/config
+    type: custom
+    description: |
+      layers.yaml設定ファイルの読み込みとバリデーション。
+    responsibility: 設定ファイルの解析・バリデーション
+    forbiddenImports:
+      - src/cli
+      - src/diagram
+      - src/drift
+      - src/extractor
+      - src/generator
+    categories: {}
+  - name: Extractor
+    nameJa: 抽出層
+    path: src/extractor
+    type: custom
+    description: |
+      TypeScriptソースコードからAST解析でクラス・インターフェース・
+      関数・型・enum・定数を抽出する。
+    responsibility: ソースコードの静的解析と情報抽出
+    forbiddenImports:
+      - src/cli
+      - src/diagram
+      - src/generator
+    categories:
+      framework: Framework Extractor
+  - name: Diagram
+    nameJa: ダイアグラム層
+    path: src/diagram
+    type: custom
+    description: |
+      Mermaid/DOT形式のアーキテクチャ図を生成。
+      レイヤー間依存関係・オブジェクト関連図のレンダリング。
+    responsibility: ダイアグラム生成
+    forbiddenImports:
+      - src/cli
+      - src/config
+      - src/extractor
+    categories: {}
+  - name: Generator
+    nameJa: 生成層
+    path: src/generator
+    type: custom
+    description: |
+      抽出結果からMarkdownドキュメントを生成。
+      index.md（全体概要）とレイヤー別ドキュメントを出力。
+    responsibility: Markdownドキュメント生成
+    forbiddenImports:
+      - src/cli
+      - src/config
+      - src/extractor
+    categories: {}
+  - name: Drift
+    nameJa: ドリフト検出層
+    path: src/drift
+    type: custom
+    description: |
+      layers.yamlの定義と実際のソースコードの乖離を検出。
+      未定義レイヤー・未分類ファイルの警告。
+    responsibility: 設定と実態の乖離検出
+    forbiddenImports:
+      - src/cli
+      - src/diagram
+      - src/generator
+    categories: {}
+  - name: Cli
+    nameJa: CLI層
+    path: src/cli
+    type: custom
+    description: |
+      CLIコマンドの定義とエントリポイント。
+      init / generate / drift サブコマンドの実装。
+    responsibility: CLIインターフェースの提供
+    forbiddenImports: []
+    categories:
+      commands: Command

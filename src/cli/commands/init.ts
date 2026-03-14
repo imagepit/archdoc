@@ -1,8 +1,8 @@
 import type { Command } from "commander";
 import chalk from "chalk";
 import fg from "fast-glob";
-import { writeFileSync, existsSync } from "node:fs";
-import { basename, relative } from "node:path";
+import { writeFileSync, readFileSync, existsSync } from "node:fs";
+import { basename, relative, join } from "node:path";
 import yaml from "js-yaml";
 import type { LayerType } from "../../types/config.js";
 
@@ -67,6 +67,11 @@ export function registerInitCommand(program: Command): void {
     });
 }
 
+const DEFAULT_FORBIDDEN_IMPORTS: Partial<Record<LayerType, string[]>> = {
+  domain: ["src/infrastructure", "src/presentation"],
+  application: ["src/infrastructure", "src/presentation"],
+};
+
 function discoverLayers(sourceRoot: string): object {
   const dirs = fg.sync(`${sourceRoot}/*/`, { onlyDirectories: true, deep: 1 });
   const layers = [];
@@ -74,7 +79,8 @@ function discoverLayers(sourceRoot: string): object {
   for (const dir of dirs) {
     const dirName = basename(dir);
     const known = KNOWN_LAYER_DIRS[dirName.toLowerCase()];
-    if (!known) continue;
+    const layerType: LayerType = known?.type ?? "custom";
+    const layerNameJa = known?.nameJa ?? `${capitalize(dirName)}層`;
 
     const cleanDir = dir.replace(/\/$/, "");
     const subDirs = fg.sync(`${cleanDir}/*/`, { onlyDirectories: true, deep: 1 });
@@ -82,31 +88,40 @@ function discoverLayers(sourceRoot: string): object {
     for (const subDir of subDirs) {
       const subName = basename(subDir);
       const cat = KNOWN_CATEGORIES[subName.toLowerCase()];
-      if (cat) {
-        categories[subName] = cat;
-      }
+      categories[subName] = cat ?? capitalize(subName);
     }
 
     layers.push({
       name: capitalize(dirName),
-      nameJa: known.nameJa,
+      nameJa: layerNameJa,
       path: relative(".", dir).replace(/\/$/, ""),
-      type: known.type,
-      description: `TODO: ${known.nameJa}の説明を記載`,
-      responsibility: `TODO: ${known.nameJa}の責務を記載`,
-      forbiddenImports: [],
+      type: layerType,
+      description: `TODO: ${layerNameJa}の説明を記載`,
+      responsibility: `TODO: ${layerNameJa}の責務を記載`,
+      forbiddenImports: DEFAULT_FORBIDDEN_IMPORTS[layerType] ?? [],
       categories,
     });
   }
 
   return {
     project: {
-      name: "TODO: Project Name",
+      name: resolveProjectName(),
       description: "TODO: Project description",
       sourceRoot,
     },
     layers,
   };
+}
+
+function resolveProjectName(): string {
+  const pkgPath = join(process.cwd(), "package.json");
+  if (existsSync(pkgPath)) {
+    try {
+      const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
+      if (pkg.name) return pkg.name;
+    } catch { /* ignore parse errors */ }
+  }
+  return "TODO: Project Name";
 }
 
 function createMinimalConfig(): object {

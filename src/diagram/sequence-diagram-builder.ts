@@ -1,4 +1,4 @@
-import type { ClassCallChain } from "../extractor/call-chain-analyzer.js";
+import type { ClassCallChain } from "../types/extracted.js";
 
 export function buildSequenceDiagram(chain: ClassCallChain): string {
   if (chain.methods.length === 0) return "";
