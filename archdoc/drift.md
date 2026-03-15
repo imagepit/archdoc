@@ -1,17 +1,17 @@
 ---
-title: Drift — ドリフト検出層 API Spec
+title: Drift — ドリフト検出層 API仕様
 description: 設定と実態の乖離検出
 ---
 
-# Drift — ドリフト検出層 API Spec
+# Drift — ドリフト検出層 API仕様
 
-## Responsibilities & Constraints
+## 責務と制約
 
-| Item | Detail |
+| 項目 | 詳細 |
 | --- | --- |
-| **Path** | `src/drift/` |
-| **Responsibility** | 設定と実態の乖離検出 |
-| **Forbidden Imports** | `src/cli`, `src/diagram`, `src/generator` |
+| **パス** | `src/drift/` |
+| **責務** | 設定と実態の乖離検出 |
+| **禁止インポート** | `src/cli`, `src/diagram`, `src/generator` |
 
 layers.yamlの定義と実際のソースコードの乖離を検出。
 未定義レイヤー・未分類ファイルの警告。
@@ -20,7 +20,7 @@ layers.yamlの定義と実際のソースコードの乖離を検出。
 
 ### 🔧 `formatDriftReport`
 
-> **File**: `drift-reporter.ts`
+> **ファイル**: `drift-reporter.ts`
 
 ドリフト検出結果を人間が読みやすいテキストレポートに整形する。
 
@@ -28,19 +28,19 @@ layers.yamlの定義と実際のソースコードの乖離を検出。
 formatDriftReport(result: DriftResult): string
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `result` | `DriftResult` | ドリフト検出結果 |
 
-**Returns**: `string` テキストレポート文字列
+**戻り値**: `string` テキストレポート文字列
 
-**Called By**
+**呼び出し元**
 
 - `registerDriftCommand()` — Cli (`drift.ts`)
 
 ### 🔧 `formatDriftReportMd`
 
-> **File**: `drift-reporter.ts`
+> **ファイル**: `drift-reporter.ts`
 
 ドリフト検出結果をMarkdownレポートに整形する。
 
@@ -48,15 +48,15 @@ formatDriftReport(result: DriftResult): string
 formatDriftReportMd(result: DriftResult): string
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `result` | `DriftResult` | ドリフト検出結果 |
 
-**Returns**: `string` Markdownレポート文字列
+**戻り値**: `string` Markdownレポート文字列
 
 ### 🔧 `compareSpecs`
 
-> **File**: `spec-comparator.ts`
+> **ファイル**: `spec-comparator.ts`
 
 2つのレイヤー抽出スナップショットを比較し、仕様ドリフトを検出する。
 
@@ -64,21 +64,21 @@ formatDriftReportMd(result: DriftResult): string
 compareSpecs(layerName: string, baseline: LayerExtraction, current: LayerExtraction): DriftResult
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `layerName` | `string` | レイヤー名 |
 | `baseline` | `LayerExtraction` | ベースライン（前回の抽出結果） |
 | `current` | `LayerExtraction` | 現在の抽出結果 |
 
-**Returns**: `DriftResult` ドリフト検出結果
+**戻り値**: `DriftResult` ドリフト検出結果
 
-**Called By**
+**呼び出し元**
 
 - `registerDriftCommand()` — Cli (`drift.ts`)
 
 ### 🔧 `saveSpec`
 
-> **File**: `spec-store.ts`
+> **ファイル**: `spec-store.ts`
 
 レイヤー抽出スナップショットをJSONファイルに保存する。
 
@@ -86,18 +86,18 @@ compareSpecs(layerName: string, baseline: LayerExtraction, current: LayerExtract
 saveSpec(layerName: string, extraction: LayerExtraction): void
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `layerName` | `string` | レイヤー名（ファイル名に使用） |
 | `extraction` | `LayerExtraction` | 保存する抽出結果 |
 
-**Called By**
+**呼び出し元**
 
 - `registerDriftCommand()` — Cli (`drift.ts`)
 
 ### 🔧 `loadSpec`
 
-> **File**: `spec-store.ts`
+> **ファイル**: `spec-store.ts`
 
 保存済みのレイヤー抽出スナップショットをJSONファイルから読み込む。
 
@@ -105,12 +105,12 @@ saveSpec(layerName: string, extraction: LayerExtraction): void
 loadSpec(layerName: string): LayerExtraction | null
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `layerName` | `string` | レイヤー名（ファイル名に使用） |
 
-**Returns**: `LayerExtraction | null` 抽出結果、またはファイルが存在しない/読み込み失敗時はnull
+**戻り値**: `LayerExtraction | null` 抽出結果、またはファイルが存在しない/読み込み失敗時はnull
 
-**Called By**
+**呼び出し元**
 
 - `registerDriftCommand()` — Cli (`drift.ts`)

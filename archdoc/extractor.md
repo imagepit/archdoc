@@ -1,17 +1,17 @@
 ---
-title: Extractor — 抽出層 API Spec
+title: Extractor — 抽出層 API仕様
 description: ソースコードの静的解析と情報抽出
 ---
 
-# Extractor — 抽出層 API Spec
+# Extractor — 抽出層 API仕様
 
-## Responsibilities & Constraints
+## 責務と制約
 
-| Item | Detail |
+| 項目 | 詳細 |
 | --- | --- |
-| **Path** | `src/extractor/` |
-| **Responsibility** | ソースコードの静的解析と情報抽出 |
-| **Forbidden Imports** | `src/cli`, `src/diagram`, `src/generator` |
+| **パス** | `src/extractor/` |
+| **責務** | ソースコードの静的解析と情報抽出 |
+| **禁止インポート** | `src/cli`, `src/diagram`, `src/generator` |
 
 TypeScriptソースコードからAST解析でクラス・インターフェース・
 関数・型・enum・定数を抽出する。
@@ -24,62 +24,62 @@ TypeScriptソースコードからAST解析でクラス・インターフェー�
 
 ### 🏗️ `ExpressExtractor`
 
-> **File**: `express-extractor.ts`
-> **Type**: Framework Extractor
+> **ファイル**: `express-extractor.ts`
+> **型**: Framework Extractor
 
 FrameworkExtractorを実装するExpress.jsルート抽出器。
 
-**Methods**
+**メソッド**
 
 #### `extractRoutes(sourceFile: SourceFile, funcName: string): RouteInfo[]`
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `sourceFile` | `SourceFile` | — |
 | `funcName` | `string` | — |
 
-**Returns**: `RouteInfo[]` 
+**戻り値**: `RouteInfo[]` 
 
-**Called By**
+**呼び出し元**
 
 - `extractLayer()` — Extractor (`project.ts`) via `FrameworkExtractor`
 
 #### `resolveMountPrefixes(layerSourceFiles: SourceFile[], allSourceFiles: SourceFile[], functions: FunctionInfo[]): void`
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `layerSourceFiles` | `SourceFile[]` | — |
 | `allSourceFiles` | `SourceFile[]` | — |
 | `functions` | `FunctionInfo[]` | — |
 
-**Called By**
+**呼び出し元**
 
 - `extractLayer()` — Extractor (`project.ts`) via `FrameworkExtractor`
 
 ### 📋 `FrameworkExtractor`
 
-> **File**: `framework-extractor.ts`
-> **Type**: Framework Extractor
+> **ファイル**: `framework-extractor.ts`
+> **型**: Framework Extractor
 
 フレームワーク固有のルート抽出用ストラテジーインターフェース。
 
-**Methods**
+**メソッド**
 
 #### `extractRoutes(sourceFile: SourceFile, funcName: string): RouteInfo[]`
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `sourceFile` | `SourceFile` | — |
 | `funcName` | `string` | — |
 
-**Returns**: `RouteInfo[]` 
+**戻り値**: `RouteInfo[]` 
 
 #### `resolveMountPrefixes(layerSourceFiles: SourceFile[], allSourceFiles: SourceFile[], functions: FunctionInfo[]): void`
 
 後処理ステップ: app.use() / router.use() のマウントパターンを解決し、
 サブルーターのルートにプレフィックスを付与する。
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `layerSourceFiles` | `SourceFile[]` | 抽出対象レイヤー内のソースファイル群 |
 | `allSourceFiles` | `SourceFile[]` | プロジェクト全体のソースファイル群（app.tsなどのapp.use()検出用） |
@@ -87,7 +87,7 @@ FrameworkExtractorを実装するExpress.jsルート抽出器。
 
 ### 🔧 `createFrameworkExtractor`
 
-> **File**: `index.ts`
+> **ファイル**: `index.ts`
 
 レイヤー設定に基づいてFrameworkExtractorを生成するファクトリ関数。
 
@@ -95,13 +95,13 @@ FrameworkExtractorを実装するExpress.jsルート抽出器。
 createFrameworkExtractor(framework?: string | undefined): FrameworkExtractor | null
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `framework` | `string or undefined` | フレームワーク名（例: "express"） |
 
-**Returns**: `FrameworkExtractor | null` フレームワーク抽出器、または対応フレームワークがない場合はnull
+**戻り値**: `FrameworkExtractor | null` フレームワーク抽出器、または対応フレームワークがない場合はnull
 
-**Called By**
+**呼び出し元**
 
 - `extractLayer()` — Extractor (`project.ts`)
 
@@ -111,14 +111,14 @@ createFrameworkExtractor(framework?: string | undefined): FrameworkExtractor | n
 
 ### 📋 `ParsedJsDoc`
 
-> **File**: `jsdoc-parser.ts`
-> **Type**: Other
+> **ファイル**: `jsdoc-parser.ts`
+> **型**: Other
 
 説明文・引数・throws・ビジネスルールを含むJSDoc解析結果。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `description` | `string` | ✓ | — |
 | `params` | `Map<string, string>` | ✓ | — |
@@ -129,7 +129,7 @@ createFrameworkExtractor(framework?: string | undefined): FrameworkExtractor | n
 
 ### 🔧 `analyzeCallChains`
 
-> **File**: `call-chain-analyzer.ts`
+> **ファイル**: `call-chain-analyzer.ts`
 
 エクスポートされた全クラスのコンストラクタインジェクションによるコールチェーンを解析する。
 
@@ -137,19 +137,19 @@ createFrameworkExtractor(framework?: string | undefined): FrameworkExtractor | n
 analyzeCallChains(sourceFiles: SourceFile[]): ClassCallChain[]
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `sourceFiles` | `SourceFile[]` | 解析対象のソースファイル群 |
 
-**Returns**: `ClassCallChain[]` クラスごとのコールチェーン配列
+**戻り値**: `ClassCallChain[]` クラスごとのコールチェーン配列
 
-**Called By**
+**呼び出し元**
 
 - `extractLayer()` — Extractor (`project.ts`)
 
 ### 🔧 `analyzeFunctionCallChains`
 
-> **File**: `call-chain-analyzer.ts`
+> **ファイル**: `call-chain-analyzer.ts`
 
 エクスポートされた全関数の引数ベースのコールチェーンを解析する。
 
@@ -157,19 +157,19 @@ analyzeCallChains(sourceFiles: SourceFile[]): ClassCallChain[]
 analyzeFunctionCallChains(sourceFiles: SourceFile[]): ClassCallChain[]
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `sourceFiles` | `SourceFile[]` | 解析対象のソースファイル群 |
 
-**Returns**: `ClassCallChain[]` 関数ごとのコールチェーン配列
+**戻り値**: `ClassCallChain[]` 関数ごとのコールチェーン配列
 
-**Called By**
+**呼び出し元**
 
 - `extractLayer()` — Extractor (`project.ts`)
 
 ### 🔧 `analyzeCallerReferences`
 
-> **File**: `caller-analyzer.ts`
+> **ファイル**: `caller-analyzer.ts`
 
 Post-process: analyze caller references for all methods and functions.
 Must be called AFTER all layers have been extracted (all source files loaded).
@@ -179,13 +179,13 @@ Mutates MethodInfo.calledBy and FunctionInfo.calledBy in-place.
 analyzeCallerReferences(project: Project, extractions: LayerExtraction[], layers?: LayerConfig[] | undefined): void
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `project` | `Project` | — |
 | `extractions` | `LayerExtraction[]` | — |
 | `layers` | `LayerConfig[] or undefined` | — |
 
-**Called By**
+**呼び出し元**
 
 - `registerGenerateCommand()` — Cli (`generate.ts`)
 
@@ -202,7 +202,7 @@ sequenceDiagram
 
 ### 🔧 `extractClass`
 
-> **File**: `class-extractor.ts`
+> **ファイル**: `class-extractor.ts`
 
 ts-morph ASTを使用してTypeScriptクラス宣言からメタデータを抽出する。
 
@@ -210,14 +210,14 @@ ts-morph ASTを使用してTypeScriptクラス宣言からメタデータを抽�
 extractClass(classDecl: ClassDeclaration, category: string): ClassInfo
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `classDecl` | `ClassDeclaration` | クラス宣言ノード |
 | `category` | `string` | 所属カテゴリ名 |
 
-**Returns**: `ClassInfo` 抽出されたクラス情報
+**戻り値**: `ClassInfo` 抽出されたクラス情報
 
-**Called By**
+**呼び出し元**
 
 - `extractLayer()` — Extractor (`project.ts`)
 
@@ -246,7 +246,7 @@ sequenceDiagram
 
 ### 🔧 `extractConst`
 
-> **File**: `const-extractor.ts`
+> **ファイル**: `const-extractor.ts`
 
 エクスポートされた定数宣言からメタデータを抽出する。
 
@@ -254,14 +254,14 @@ sequenceDiagram
 extractConst(decl: VariableDeclaration, category: string): ConstInfo
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `decl` | `VariableDeclaration` | 変数宣言ノード |
 | `category` | `string` | 所属カテゴリ名 |
 
-**Returns**: `ConstInfo` 抽出された定数情報
+**戻り値**: `ConstInfo` 抽出された定数情報
 
-**Called By**
+**呼び出し元**
 
 - `extractLayer()` — Extractor (`project.ts`)
 
@@ -286,7 +286,7 @@ sequenceDiagram
 
 ### 🔧 `extractEnum`
 
-> **File**: `enum-extractor.ts`
+> **ファイル**: `enum-extractor.ts`
 
 TypeScript enum宣言からメタデータを抽出する。
 
@@ -294,14 +294,14 @@ TypeScript enum宣言からメタデータを抽出する。
 extractEnum(decl: EnumDeclaration, category: string): EnumInfo
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `decl` | `EnumDeclaration` | enum宣言ノード |
 | `category` | `string` | 所属カテゴリ名 |
 
-**Returns**: `EnumInfo` 抽出されたenum情報
+**戻り値**: `EnumInfo` 抽出されたenum情報
 
-**Called By**
+**呼び出し元**
 
 - `extractLayer()` — Extractor (`project.ts`)
 
@@ -324,7 +324,7 @@ sequenceDiagram
 
 ### 🔧 `extractFunction`
 
-> **File**: `function-extractor.ts`
+> **ファイル**: `function-extractor.ts`
 
 TypeScript関数宣言からメタデータを抽出する。
 
@@ -332,14 +332,14 @@ TypeScript関数宣言からメタデータを抽出する。
 extractFunction(funcDecl: FunctionDeclaration, category: string): FunctionInfo
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `funcDecl` | `FunctionDeclaration` | 関数宣言ノード |
 | `category` | `string` | 所属カテゴリ名 |
 
-**Returns**: `FunctionInfo` 抽出された関数情報
+**戻り値**: `FunctionInfo` 抽出された関数情報
 
-**Called By**
+**呼び出し元**
 
 - `extractLayer()` — Extractor (`project.ts`)
 
@@ -364,7 +364,7 @@ sequenceDiagram
 
 ### 🔧 `analyzeImports`
 
-> **File**: `import-analyzer.ts`
+> **ファイル**: `import-analyzer.ts`
 
 ソースファイルの全インポート文を解析し、対象レイヤーを特定する。
 
@@ -372,14 +372,14 @@ sequenceDiagram
 analyzeImports(sourceFile: SourceFile, layers: LayerConfig[]): DependencyInfo[]
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `sourceFile` | `SourceFile` | 解析対象のソースファイル |
 | `layers` | `LayerConfig[]` | 全レイヤーの設定 |
 
-**Returns**: `DependencyInfo[]` レイヤー間の依存関係情報配列
+**戻り値**: `DependencyInfo[]` レイヤー間の依存関係情報配列
 
-**Called By**
+**呼び出し元**
 
 - `findForbiddenImports()` — Extractor (`import-analyzer.ts`)
 - `extractLayer()` — Extractor (`project.ts`)
@@ -399,7 +399,7 @@ sequenceDiagram
 
 ### 🔧 `findForbiddenImports`
 
-> **File**: `import-analyzer.ts`
+> **ファイル**: `import-analyzer.ts`
 
 レイヤー設定に基づいて禁止されたクロスレイヤーインポートを検出する。
 
@@ -407,21 +407,21 @@ sequenceDiagram
 findForbiddenImports(sourceFile: SourceFile, currentLayer: LayerConfig, layers: LayerConfig[]): DependencyInfo[]
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `sourceFile` | `SourceFile` | 解析対象のソースファイル |
 | `currentLayer` | `LayerConfig` | 自レイヤーの設定 |
 | `layers` | `LayerConfig[]` | 全レイヤーの設定 |
 
-**Returns**: `DependencyInfo[]` 禁止インポートの依存関係情報配列
+**戻り値**: `DependencyInfo[]` 禁止インポートの依存関係情報配列
 
-**Called By**
+**呼び出し元**
 
 - `extractLayer()` — Extractor (`project.ts`)
 
 ### 🔧 `extractInterface`
 
-> **File**: `interface-extractor.ts`
+> **ファイル**: `interface-extractor.ts`
 
 TypeScriptインターフェース宣言からメタデータを抽出する。
 
@@ -429,14 +429,14 @@ TypeScriptインターフェース宣言からメタデータを抽出する。
 extractInterface(ifaceDecl: InterfaceDeclaration, category: string): InterfaceInfo
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `ifaceDecl` | `InterfaceDeclaration` | インターフェース宣言ノード |
 | `category` | `string` | 所属カテゴリ名 |
 
-**Returns**: `InterfaceInfo` 抽出されたインターフェース情報
+**戻り値**: `InterfaceInfo` 抽出されたインターフェース情報
 
-**Called By**
+**呼び出し元**
 
 - `extractLayer()` — Extractor (`project.ts`)
 
@@ -463,7 +463,7 @@ sequenceDiagram
 
 ### 🔧 `parseJsDoc`
 
-> **File**: `jsdoc-parser.ts`
+> **ファイル**: `jsdoc-parser.ts`
 
 ts-morphノードからJSDocコメントを構造化データに変換する。
 
@@ -471,13 +471,13 @@ ts-morphノードからJSDocコメントを構造化データに変換する。
 parseJsDoc(node: JSDocableNode): ParsedJsDoc
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `node` | `JSDocableNode` | JSDocを持つts-morphノード |
 
-**Returns**: `ParsedJsDoc` 解析されたJSDoc情報
+**戻り値**: `ParsedJsDoc` 解析されたJSDoc情報
 
-**Called By**
+**呼び出し元**
 
 - `extractClass()` — Extractor (`class-extractor.ts`)
 - `extractProperty()` — Extractor (`class-extractor.ts`)
@@ -503,7 +503,7 @@ sequenceDiagram
 
 ### 🔧 `mergeParamDescriptions`
 
-> **File**: `jsdoc-parser.ts`
+> **ファイル**: `jsdoc-parser.ts`
 
 JSDoc
 
@@ -511,14 +511,14 @@ JSDoc
 mergeParamDescriptions(params: ParameterInfo[], jsDocParams: Map<string, string>): ParameterInfo[]
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `params` | `ParameterInfo[]` | 抽出済みの引数情報配列 |
 | `jsDocParams` | `Map<string, string>` | 解析済みJSDoc情報（引数名と説明文のMap） |
 
-**Returns**: `ParameterInfo[]` マージ済みの引数情報配列
+**戻り値**: `ParameterInfo[]` マージ済みの引数情報配列
 
-**Called By**
+**呼び出し元**
 
 - `extractMethod()` — Extractor (`class-extractor.ts`)
 - `extractFunction()` — Extractor (`function-extractor.ts`)
@@ -537,7 +537,7 @@ sequenceDiagram
 
 ### 🔧 `createExtractorProject`
 
-> **File**: `project.ts`
+> **ファイル**: `project.ts`
 
 ソースコード解析用のts-morph Projectインスタンスを作成する。
 
@@ -545,14 +545,14 @@ sequenceDiagram
 createExtractorProject(sourceRoot: string, tsConfigPath?: string | undefined): Project
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `sourceRoot` | `string` | ソースルートディレクトリ |
 | `tsConfigPath` | `string or undefined` | tsconfig.jsonのパス（省略可） |
 
-**Returns**: `Project` 設定済みのProjectインスタンス
+**戻り値**: `Project` 設定済みのProjectインスタンス
 
-**Called By**
+**呼び出し元**
 
 - `registerDiagramCommand()` — Cli (`diagram.ts`)
 - `registerDriftCommand()` — Cli (`drift.ts`)
@@ -560,7 +560,7 @@ createExtractorProject(sourceRoot: string, tsConfigPath?: string | undefined): P
 
 ### 🔧 `extractLayer`
 
-> **File**: `project.ts`
+> **ファイル**: `project.ts`
 
 単一アーキテクチャレイヤーから全コンポーネントを抽出する。
 
@@ -568,16 +568,16 @@ createExtractorProject(sourceRoot: string, tsConfigPath?: string | undefined): P
 extractLayer(project: Project, layer: LayerConfig, allLayers?: LayerConfig[] | undefined, sourceRoot?: string | undefined): LayerExtraction
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `project` | `Project` | ts-morph Projectインスタンス |
 | `layer` | `LayerConfig` | レイヤー設定 |
 | `allLayers` | `LayerConfig[] or undefined` | 全レイヤーの設定 |
 | `sourceRoot` | `string or undefined` | ソースルートディレクトリ（フレームワーク抽出時に使用） |
 
-**Returns**: `LayerExtraction` レイヤーの抽出結果
+**戻り値**: `LayerExtraction` レイヤーの抽出結果
 
-**Called By**
+**呼び出し元**
 
 - `registerDiagramCommand()` — Cli (`diagram.ts`)
 - `registerDriftCommand()` — Cli (`drift.ts`)
@@ -599,7 +599,7 @@ sequenceDiagram
 
 ### 🔧 `extractTypeAlias`
 
-> **File**: `type-alias-extractor.ts`
+> **ファイル**: `type-alias-extractor.ts`
 
 TypeScript型エイリアス宣言からメタデータを抽出する。
 
@@ -607,14 +607,14 @@ TypeScript型エイリアス宣言からメタデータを抽出する。
 extractTypeAlias(decl: TypeAliasDeclaration, category: string): TypeAliasInfo
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `decl` | `TypeAliasDeclaration` | 型エイリアス宣言ノード |
 | `category` | `string` | 所属カテゴリ名 |
 
-**Returns**: `TypeAliasInfo` 抽出された型エイリアス情報
+**戻り値**: `TypeAliasInfo` 抽出された型エイリアス情報
 
-**Called By**
+**呼び出し元**
 
 - `extractLayer()` — Extractor (`project.ts`)
 

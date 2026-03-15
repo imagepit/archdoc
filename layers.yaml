@@ -2,6 +2,7 @@ project:
   name: archdoc
   description: DDD layered architecture documentation generator
   sourceRoot: src
+  locale: ja
 layers:
   - name: Types
     nameJa: 型定義層

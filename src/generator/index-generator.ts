@@ -2,12 +2,15 @@ import { MarkdownBuilder } from "./markdown-builder.js";
 import type { ProjectConfig, LayerConfig } from "../types/config.js";
 import type { LayerExtraction, DependencyInfo } from "../types/extracted.js";
 import type { DiagramRenderer } from "../diagram/diagram-renderer.js";
+import type { LocaleMessages } from "../i18n/types.js";
+import { getMessages } from "../i18n/index.js";
 import { formatName, kindLabel, kindLegendRows, categoryLegendRows, type ObjectKind } from "./emoji.js";
 import { basename } from "node:path";
 
 /** ダイアグラムレンダラーを含むindex.md生成オプション。 */
 export interface IndexGenerateOptions {
   renderer?: DiagramRenderer;
+  messages?: LocaleMessages;
 }
 
 /**
@@ -23,29 +26,30 @@ export async function generateIndexMd(
   options?: IndexGenerateOptions,
 ): Promise<string> {
   const md = new MarkdownBuilder();
+  const t = options?.messages ?? getMessages("en");
 
   md.frontmatter({
-    title: "System Architecture Overview",
-    description: `${config.project.name} DDD layered architecture overview`,
+    title: t.index.systemArchitectureOverview,
+    description: `${config.project.name} ${t.index.dddOverviewSuffix}`,
   });
 
-  md.heading(1, "System Architecture Overview");
+  md.heading(1, t.index.systemArchitectureOverview);
 
-  md.heading(2, "Project");
+  md.heading(2, t.index.project);
 
   md.table(
-    ["Item", "Detail"],
+    [t.index.headerItem, t.index.headerDetail],
     [
-      ["**Name**", config.project.name],
-      ["**Description**", config.project.description],
-      ["**Source Root**", `\`${config.project.sourceRoot}/\``],
+      [t.index.labelName, config.project.name],
+      [t.index.labelDescription, config.project.description],
+      [t.index.labelSourceRoot, `\`${config.project.sourceRoot}/\``],
     ],
   );
 
-  md.heading(2, "Layer Overview");
+  md.heading(2, t.index.layerOverview);
 
   md.table(
-    ["Layer", "Path", "Responsibility", "Forbidden Imports", "Details"],
+    [t.index.headerLayer, t.index.headerPath, t.index.headerResponsibility, t.index.headerForbiddenImports, t.index.headerDetails],
     config.layers.map((layer) => [
       `**${layer.name}** (${layer.nameJa})`,
       `\`${layer.path}/\``,
@@ -61,25 +65,25 @@ export async function generateIndexMd(
   if (options?.renderer) {
     const layerDep = await options.renderer.renderLayerDependency(extractions, config.layers);
     if (layerDep) {
-      md.heading(2, "Layer Dependency");
+      md.heading(2, t.index.layerDependency);
       md.rawBlock(layerDep);
     }
   }
 
   // Legend
-  md.heading(2, "Legend");
+  md.heading(2, t.index.legend);
 
-  md.paragraph("**Kind** — Object type indicators");
-  md.table(["Icon", "Description"], kindLegendRows());
+  md.paragraph(t.index.kindLegendLabel);
+  md.table([t.index.headerIcon, t.index.headerDescription], kindLegendRows(t));
 
-  md.paragraph("**Category** — Domain category indicators (applied to Component name)");
-  md.table(["Icon", "Category"], categoryLegendRows());
+  md.paragraph(t.index.categoryLegendLabel);
+  md.table([t.index.headerIcon, t.index.headerCategory], categoryLegendRows(t));
 
   // Cross-layer object relationship diagram
   if (options?.renderer) {
     const diagram = await options.renderer.renderProjectOverview(extractions, config.layers);
     if (diagram) {
-      md.heading(2, "Cross-Layer Dependency Violations");
+      md.heading(2, t.index.crossLayerViolations);
       md.rawBlock(diagram);
     }
   }
@@ -87,10 +91,10 @@ export async function generateIndexMd(
   // Import Violations table
   const forbiddenDeps = collectForbiddenDeps(extractions);
   if (forbiddenDeps.length > 0) {
-    md.heading(2, "Import Violations");
-    md.paragraph(`**${forbiddenDeps.length} forbidden import(s) detected.**`);
+    md.heading(2, t.index.importViolations);
+    md.paragraph(t.index.forbiddenImportsDetected(forbiddenDeps.length));
     md.table(
-      ["Source Layer", "File", "Forbidden Import", "Target Layer"],
+      [t.index.headerSourceLayer, t.index.headerFile, t.index.headerForbiddenImport, t.index.headerTargetLayer],
       forbiddenDeps.map((dep) => [
         dep.source,
         `\`${dep.sourceFile ? basename(dep.sourceFile) : "—"}\``,
@@ -103,12 +107,10 @@ export async function generateIndexMd(
   // Non-Standard Layer Warnings
   const customLayers = config.layers.filter((l) => l.type === "custom");
   if (customLayers.length > 0) {
-    md.heading(2, "Non-Standard Layer Warnings");
-    md.paragraph(
-      "以下のレイヤーはDDD標準4層（Domain / Application / Infrastructure / Presentation）に属しません。責務の重複・散在に注意してください。",
-    );
+    md.heading(2, t.index.nonStandardWarnings);
+    md.paragraph(t.index.nonStandardWarningText);
     md.table(
-      ["Layer", "Path", "Responsibility"],
+      [t.index.headerLayer, t.index.headerPath, t.index.headerResponsibility],
       customLayers.map((l) => [
         `**${l.name}** (${l.nameJa})`,
         `\`${l.path}/\``,
@@ -141,14 +143,14 @@ export async function generateIndexMd(
     for (const c of extraction.classes) addComponent(c.name, "class", c.category, c.description);
     for (const i of extraction.interfaces) addComponent(i.name, "interface", i.category, i.description);
     for (const f of extraction.functions) addComponent(f.name, "function", f.category, f.description);
-    for (const t of extraction.typeAliases) addComponent(t.name, "type", t.category, t.description);
+    for (const ta of extraction.typeAliases) addComponent(ta.name, "type", ta.category, ta.description);
     for (const e of extraction.enums) addComponent(e.name, "enum", e.category, e.description);
     for (const c of extraction.constants) addComponent(c.name, "const", c.category, c.description);
 
     if (components.length > 0) {
-      md.table(["Component", "Kind", "Category", "Description"], components);
+      md.table([t.index.headerComponent, t.index.headerKind, t.index.headerCategory, t.index.headerDescription], components);
     } else {
-      md.paragraph("*No exported components found.*");
+      md.paragraph(t.index.noExportedComponents);
     }
   }
 

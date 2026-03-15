@@ -1,17 +1,17 @@
 ---
-title: Cli — CLI層 API Spec
+title: Cli — CLI層 API仕様
 description: CLIインターフェースの提供
 ---
 
-# Cli — CLI層 API Spec
+# Cli — CLI層 API仕様
 
-## Responsibilities & Constraints
+## 責務と制約
 
-| Item | Detail |
+| 項目 | 詳細 |
 | --- | --- |
-| **Path** | `src/cli/` |
-| **Responsibility** | CLIインターフェースの提供 |
-| **Forbidden Imports** | — |
+| **パス** | `src/cli/` |
+| **責務** | CLIインターフェースの提供 |
+| **禁止インポート** | — |
 
 CLIコマンドの定義とエントリポイント。
 init / generate / drift サブコマンドの実装。
@@ -20,7 +20,7 @@ init / generate / drift サブコマンドの実装。
 
 ### 🔧 `createProgram`
 
-> **File**: `index.ts`
+> **ファイル**: `index.ts`
 
 全CLIサブコマンドを登録したCommander.jsプログラムを作成する。
 
@@ -28,13 +28,13 @@ init / generate / drift サブコマンドの実装。
 createProgram(): Command
 ```
 
-**Returns**: `Command` 設定済みのCommanderプログラム
+**戻り値**: `Command` 設定済みのCommanderプログラム
 
 ## Command
 
 ### 🔧 `registerDiagramCommand`
 
-> **File**: `diagram.ts`
+> **ファイル**: `diagram.ts`
 
 単体ダイアグラム生成用の'diagram'サブコマンドを登録する。
 
@@ -42,11 +42,11 @@ createProgram(): Command
 registerDiagramCommand(program: Command): void
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `program` | `Command` | Commanderプログラム |
 
-**Called By**
+**呼び出し元**
 
 - `createProgram()` — Cli (`index.ts`)
 
@@ -63,7 +63,7 @@ sequenceDiagram
 
 ### 🔧 `registerDriftCommand`
 
-> **File**: `drift.ts`
+> **ファイル**: `drift.ts`
 
 仕様ドリフト検出用の'drift'サブコマンドを登録する。
 
@@ -71,11 +71,11 @@ sequenceDiagram
 registerDriftCommand(program: Command): void
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `program` | `Command` | Commanderプログラム |
 
-**Called By**
+**呼び出し元**
 
 - `createProgram()` — Cli (`index.ts`)
 
@@ -92,7 +92,7 @@ sequenceDiagram
 
 ### 🔧 `registerGenerateCommand`
 
-> **File**: `generate.ts`
+> **ファイル**: `generate.ts`
 
 ドキュメント生成用の'generate'サブコマンドを登録する。
 
@@ -100,11 +100,11 @@ sequenceDiagram
 registerGenerateCommand(program: Command): void
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `program` | `Command` | Commanderプログラム |
 
-**Called By**
+**呼び出し元**
 
 - `createProgram()` — Cli (`index.ts`)
 
@@ -121,7 +121,7 @@ sequenceDiagram
 
 ### 🔧 `registerInitCommand`
 
-> **File**: `init.ts`
+> **ファイル**: `init.ts`
 
 layers.yaml初期化用の'init'サブコマンドを登録する。
 
@@ -129,11 +129,11 @@ layers.yaml初期化用の'init'サブコマンドを登録する。
 registerInitCommand(program: Command): void
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `program` | `Command` | Commanderプログラム |
 
-**Called By**
+**呼び出し元**
 
 - `createProgram()` — Cli (`index.ts`)
 

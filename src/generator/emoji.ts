@@ -1,3 +1,6 @@
+import type { LocaleMessages, CategoryKey } from "../i18n/types.js";
+import { getMessages } from "../i18n/index.js";
+
 /** ドキュメント出力で使用するオブジェクト種別。 */
 export type ObjectKind =
   | "class"
@@ -16,18 +19,18 @@ const KIND_EMOJI: Record<ObjectKind, string> = {
   const: "\u{1F4CC}",       // 📌
 };
 
-const CATEGORY_PATTERNS: [RegExp, string][] = [
-  [/Entity|Aggregate/i, "\u{1F4E6}"],       // 📦
-  [/Value\s*Object/i, "\u{1F48E}"],          // 💎
-  [/Repository/i, "\u{1F5C4}\u{FE0F}"],     // 🗄️
-  [/Use\s*Case/i, "\u{2699}\u{FE0F}"],      // ⚙️
-  [/Domain\s*Service|Service/i, "\u{1F6E0}\u{FE0F}"], // 🛠️
-  [/Router|Controller/i, "\u{1F310}"],       // 🌐
-  [/DTO|Dependency\s*Injection/i, "\u{1F4CB}"], // 📋
-  [/Middleware|Authentication|Validation/i, "\u{1F6E1}\u{FE0F}"], // 🛡️
-  [/Error/i, "\u{274C}"],                    // ❌
-  [/Port/i, "\u{1F50C}"],                    // 🔌
-  [/External\s*Service/i, "\u{1F517}"],      // 🔗
+const CATEGORY_PATTERNS: [RegExp, string, CategoryKey][] = [
+  [/Entity|Aggregate/i, "\u{1F4E6}", "entityAggregate"],       // 📦
+  [/Value\s*Object/i, "\u{1F48E}", "valueObject"],             // 💎
+  [/Repository/i, "\u{1F5C4}\u{FE0F}", "repository"],          // 🗄️
+  [/Use\s*Case/i, "\u{2699}\u{FE0F}", "useCase"],              // ⚙️
+  [/Domain\s*Service|Service/i, "\u{1F6E0}\u{FE0F}", "domainService"], // 🛠️
+  [/Router|Controller/i, "\u{1F310}", "routerController"],      // 🌐
+  [/DTO|Dependency\s*Injection/i, "\u{1F4CB}", "dtoDependencyInjection"], // 📋
+  [/Middleware|Authentication|Validation/i, "\u{1F6E1}\u{FE0F}", "middlewareAuthValidation"], // 🛡️
+  [/Error/i, "\u{274C}", "error"],                              // ❌
+  [/Port/i, "\u{1F50C}", "port"],                               // 🔌
+  [/External\s*Service/i, "\u{1F517}", "externalService"],      // 🔗
 ];
 
 /**
@@ -78,41 +81,25 @@ export function kindLabel(kind: ObjectKind): string {
 
 /**
  * 全オブジェクト種別アイコンの凡例テーブル行を生成する。
+ * @param messages - ロケールメッセージ（省略時は英語）
  * @returns 凡例行の二次元配列
  */
-export function kindLegendRows(): string[][] {
+export function kindLegendRows(messages?: LocaleMessages): string[][] {
+  const t = messages ?? getMessages("en");
   return (Object.entries(KIND_EMOJI) as [ObjectKind, string][]).map(
-    ([kind, emoji]) => [`${emoji} ${kind}`, kindDescription(kind)],
+    ([kind, emoji]) => [`${emoji} ${kind}`, t.kinds[kind]],
   );
 }
 
 /**
  * 全カテゴリアイコンの凡例テーブル行を生成する。
+ * @param messages - ロケールメッセージ（省略時は英語）
  * @returns 凡例行の二次元配列
  */
-export function categoryLegendRows(): string[][] {
-  return CATEGORY_PATTERNS.map(([pattern, emoji]) => [
+export function categoryLegendRows(messages?: LocaleMessages): string[][] {
+  const t = messages ?? getMessages("en");
+  return CATEGORY_PATTERNS.map(([_pattern, emoji, key]) => [
     `${emoji}`,
-    patternToLabel(pattern),
+    t.categories[key],
   ]);
-}
-
-function kindDescription(kind: ObjectKind): string {
-  const descriptions: Record<ObjectKind, string> = {
-    class: "Class declaration",
-    interface: "Interface declaration",
-    function: "Exported function",
-    type: "Type alias",
-    enum: "Enum declaration",
-    const: "Exported constant",
-  };
-  return descriptions[kind];
-}
-
-function patternToLabel(pattern: RegExp): string {
-  return pattern.source
-    .replace(/\\/g, "")
-    .replace(/\|/g, " / ")
-    .replace(/s\*/g, " ")
-    .replace(/^i$/, "");
 }

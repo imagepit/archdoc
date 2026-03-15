@@ -36,6 +36,8 @@ export interface ProjectConfig {
     name: string;
     description: string;
     sourceRoot: string;
+    /** 生成ドキュメントの表示言語（デフォルト: "en"）。 */
+    locale?: "en" | "ja";
   };
   layers: LayerConfig[];
 }

@@ -1,21 +1,21 @@
 ---
-title: System Architecture Overview
-description: archdoc DDD layered architecture overview
+title: システムアーキテクチャ概要
+description: archdoc DDDレイヤードアーキテクチャ概要
 ---
 
-# System Architecture Overview
+# システムアーキテクチャ概要
 
-## Project
+## プロジェクト
 
-| Item | Detail |
+| 項目 | 詳細 |
 | --- | --- |
-| **Name** | archdoc |
-| **Description** | DDD layered architecture documentation generator |
-| **Source Root** | `src/` |
+| **名前** | archdoc |
+| **説明** | DDD layered architecture documentation generator |
+| **ソースルート** | `src/` |
 
-## Layer Overview
+## レイヤー概要
 
-| Layer | Path | Responsibility | Forbidden Imports | Details |
+| レイヤー | パス | 責務 | 禁止インポート | 詳細 |
 | --- | --- | --- | --- | --- |
 | **Types** (型定義層) | `src/types/` | 共通型定義の提供 | `src/cli`, `src/config`, `src/diagram`, `src/drift`, `src/extractor`, `src/generator` | [types.md](./types.md) |
 | **Config** (設定層) | `src/config/` | 設定ファイルの解析・バリデーション | `src/cli`, `src/diagram`, `src/drift`, `src/extractor`, `src/generator` | [config.md](./config.md) |
@@ -25,48 +25,48 @@ description: archdoc DDD layered architecture overview
 | **Drift** (ドリフト検出層) | `src/drift/` | 設定と実態の乖離検出 | `src/cli`, `src/diagram`, `src/generator` | [drift.md](./drift.md) |
 | **Cli** (CLI層) | `src/cli/` | CLIインターフェースの提供 | — | [cli.md](./cli.md) |
 
-## Layer Dependency
+## レイヤー依存関係
 
 ![Layer Dependency](diagrams/layer-dependency.svg)
 
-## Legend
+## 凡例
 
-**Kind** — Object type indicators
+**種別** — オブジェクト種別の表示アイコン
 
-| Icon | Description |
+| アイコン | 説明 |
 | --- | --- |
-| 🏗️ class | Class declaration |
-| 📋 interface | Interface declaration |
-| 🔧 function | Exported function |
-| 📝 type | Type alias |
-| 🔢 enum | Enum declaration |
-| 📌 const | Exported constant |
+| 🏗️ class | クラス宣言 |
+| 📋 interface | インターフェース宣言 |
+| 🔧 function | エクスポート関数 |
+| 📝 type | 型エイリアス |
+| 🔢 enum | 列挙型宣言 |
+| 📌 const | エクスポート定数 |
 
-**Category** — Domain category indicators (applied to Component name)
+**カテゴリ** — ドメインカテゴリの表示アイコン（コンポーネント名に適用）
 
-| Icon | Category |
+| アイコン | カテゴリ |
 | --- | --- |
-| 📦 | Entity / Aggregate |
-| 💎 | Value Object |
-| 🗄️ | Repository |
-| ⚙️ | Use Case |
-| 🛠️ | Domain Service / Service |
-| 🌐 | Router / Controller |
-| 📋 | DTO / Dependency Injection |
-| 🛡️ | Middleware / Authentication / Validation |
-| ❌ | Error |
-| 🔌 | Port |
-| 🔗 | External Service |
+| 📦 | エンティティ / 集約 |
+| 💎 | 値オブジェクト |
+| 🗄️ | リポジトリ |
+| ⚙️ | ユースケース |
+| 🛠️ | ドメインサービス / サービス |
+| 🌐 | ルーター / コントローラー |
+| 📋 | DTO / 依存性注入 |
+| 🛡️ | ミドルウェア / 認証 / バリデーション |
+| ❌ | エラー |
+| 🔌 | ポート |
+| 🔗 | 外部サービス |
 
-## Cross-Layer Dependency Violations
+## レイヤー間依存違反
 
 ![Project Overview](diagrams/project-overview.svg)
 
-## Non-Standard Layer Warnings
+## 非標準レイヤー警告
 
 以下のレイヤーはDDD標準4層（Domain / Application / Infrastructure / Presentation）に属しません。責務の重複・散在に注意してください。
 
-| Layer | Path | Responsibility |
+| レイヤー | パス | 責務 |
 | --- | --- | --- |
 | **Types** (型定義層) | `src/types/` | 共通型定義の提供 |
 | **Config** (設定層) | `src/config/` | 設定ファイルの解析・バリデーション |
@@ -78,7 +78,7 @@ description: archdoc DDD layered architecture overview
 
 ### Types (型定義層)
 
-| Component | Kind | Category | Description |
+| コンポーネント | 種別 | カテゴリ | 説明 |
 | --- | --- | --- | --- |
 | `CategoryOverride` | 📋 interface | Other | パターンベースのカテゴリ上書き設定。 |
 | `LayerConfig` | 📋 interface | Other | 単一アーキテクチャレイヤーの設定。 |
@@ -113,7 +113,7 @@ description: archdoc DDD layered architecture overview
 
 ### Config (設定層)
 
-| Component | Kind | Category | Description |
+| コンポーネント | 種別 | カテゴリ | 説明 |
 | --- | --- | --- | --- |
 | `getDefaultCategories` | 🔧 function | Other | 指定されたレイヤー種別に対応するデフォルトカテゴリマッピングを返す。 |
 | `loadConfig` | 🔧 function | Other | layers.yamlファイルからプロジェクト設定を読み込みバリデーションする。 |
@@ -121,7 +121,7 @@ description: archdoc DDD layered architecture overview
 
 ### Extractor (抽出層)
 
-| Component | Kind | Category | Description |
+| コンポーネント | 種別 | カテゴリ | 説明 |
 | --- | --- | --- | --- |
 | `ExpressExtractor` | 🏗️ class | Framework Extractor | FrameworkExtractorを実装するExpress.jsルート抽出器。 |
 | `ParsedJsDoc` | 📋 interface | Other | 説明文・引数・throws・ビジネスルールを含むJSDoc解析結果。 |
@@ -145,7 +145,7 @@ description: archdoc DDD layered architecture overview
 
 ### Diagram (ダイアグラム層)
 
-| Component | Kind | Category | Description |
+| コンポーネント | 種別 | カテゴリ | 説明 |
 | --- | --- | --- | --- |
 | `MermaidRenderer` | 🏗️ class | Other | DiagramRendererのMermaid実装。 |
 | `SvgRenderer` | 🏗️ class | Other | DiagramRendererのSVG実装。 |
@@ -170,7 +170,7 @@ description: archdoc DDD layered architecture overview
 
 ### Generator (生成層)
 
-| Component | Kind | Category | Description |
+| コンポーネント | 種別 | カテゴリ | 説明 |
 | --- | --- | --- | --- |
 | `MarkdownBuilder` | 🏗️ class | Other | Markdownドキュメントをプログラマティックに構築するFluentビルダー。 |
 | `IndexGenerateOptions` | 📋 interface | Other | ダイアグラムレンダラーを含むindex.md生成オプション。 |
@@ -187,7 +187,7 @@ description: archdoc DDD layered architecture overview
 
 ### Drift (ドリフト検出層)
 
-| Component | Kind | Category | Description |
+| コンポーネント | 種別 | カテゴリ | 説明 |
 | --- | --- | --- | --- |
 | `formatDriftReport` | 🔧 function | Other | ドリフト検出結果を人間が読みやすいテキストレポートに整形する。 |
 | `formatDriftReportMd` | 🔧 function | Other | ドリフト検出結果をMarkdownレポートに整形する。 |
@@ -197,7 +197,7 @@ description: archdoc DDD layered architecture overview
 
 ### Cli (CLI層)
 
-| Component | Kind | Category | Description |
+| コンポーネント | 種別 | カテゴリ | 説明 |
 | --- | --- | --- | --- |
 | `createProgram` | 🔧 function | Other | 全CLIサブコマンドを登録したCommander.jsプログラムを作成する。 |
 | `registerDiagramCommand` | 🔧 function | Command | 単体ダイアグラム生成用の'diagram'サブコマンドを登録する。 |

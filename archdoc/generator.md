@@ -1,17 +1,17 @@
 ---
-title: Generator — 生成層 API Spec
+title: Generator — 生成層 API仕様
 description: Markdownドキュメント生成
 ---
 
-# Generator — 生成層 API Spec
+# Generator — 生成層 API仕様
 
-## Responsibilities & Constraints
+## 責務と制約
 
-| Item | Detail |
+| 項目 | 詳細 |
 | --- | --- |
-| **Path** | `src/generator/` |
-| **Responsibility** | Markdownドキュメント生成 |
-| **Forbidden Imports** | `src/cli`, `src/config`, `src/extractor` |
+| **パス** | `src/generator/` |
+| **責務** | Markdownドキュメント生成 |
+| **禁止インポート** | `src/cli`, `src/config`, `src/extractor` |
 
 抽出結果からMarkdownドキュメントを生成。
 index.md（全体概要）とレイヤー別ドキュメントを出力。
@@ -24,24 +24,24 @@ index.md（全体概要）とレイヤー別ドキュメントを出力。
 
 ### 🏗️ `MarkdownBuilder`
 
-> **File**: `markdown-builder.ts`
-> **Type**: Other
+> **ファイル**: `markdown-builder.ts`
+> **型**: Other
 
 Markdownドキュメントをプログラマティックに構築するFluentビルダー。
 
-**Methods**
+**メソッド**
 
 #### `frontmatter(data: Record<string, string>): this`
 
 YAMLフロントマターブロックを追加する。
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `data` | `Record<string, string>` | フロントマターのキー/値ペア |
 
-**Returns**: `this` thisを返すメソッドチェーン用
+**戻り値**: `this` thisを返すメソッドチェーン用
 
-**Called By**
+**呼び出し元**
 
 - `generateIndexMd()` — Generator (`index-generator.ts`)
 - `generateLayerMd()` — Generator (`layer-generator.ts`)
@@ -50,14 +50,14 @@ YAMLフロントマターブロックを追加する。
 
 指定レベルの見出しを追加する。
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `level` | `number` | 見出しレベル（1〜6） |
 | `text` | `string` | 見出しテキスト |
 
-**Returns**: `this` thisを返すメソッドチェーン用
+**戻り値**: `this` thisを返すメソッドチェーン用
 
-**Called By**
+**呼び出し元**
 
 - `generateIndexMd()` — Generator (`index-generator.ts`)
 - `generateLayerMd()` — Generator (`layer-generator.ts`)
@@ -74,13 +74,13 @@ YAMLフロントマターブロックを追加する。
 
 段落テキストを追加する。
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `text` | `string` | 段落テキスト |
 
-**Returns**: `this` thisを返すメソッドチェーン用
+**戻り値**: `this` thisを返すメソッドチェーン用
 
-**Called By**
+**呼び出し元**
 
 - `generateIndexMd()` — Generator (`index-generator.ts`)
 - `generateLayerMd()` — Generator (`layer-generator.ts`)
@@ -98,13 +98,13 @@ YAMLフロントマターブロックを追加する。
 
 引用ブロックを追加する。
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `text` | `string` | 引用テキスト（複数行可） |
 
-**Returns**: `this` thisを返すメソッドチェーン用
+**戻り値**: `this` thisを返すメソッドチェーン用
 
-**Called By**
+**呼び出し元**
 
 - `renderClass()` — Generator (`layer-generator.ts`)
 - `renderInterface()` — Generator (`layer-generator.ts`)
@@ -117,14 +117,14 @@ YAMLフロントマターブロックを追加する。
 
 Markdownテーブルを追加する。
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `headers` | `string[]` | ヘッダー文字列配列 |
 | `rows` | `string[][]` | データ行の二次元配列 |
 
-**Returns**: `this` thisを返すメソッドチェーン用
+**戻り値**: `this` thisを返すメソッドチェーン用
 
-**Called By**
+**呼び出し元**
 
 - `generateIndexMd()` — Generator (`index-generator.ts`)
 - `generateLayerMd()` — Generator (`layer-generator.ts`)
@@ -140,14 +140,14 @@ Markdownテーブルを追加する。
 
 コードブロックを追加する。
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `code` | `string` | コード文字列 |
 | `lang` | `string` | 言語識別子（デフォルト: "ts"） |
 
-**Returns**: `this` thisを返すメソッドチェーン用
+**戻り値**: `this` thisを返すメソッドチェーン用
 
-**Called By**
+**呼び出し元**
 
 - `renderFunction()` — Generator (`layer-generator.ts`)
 - `renderTypeAlias()` — Generator (`layer-generator.ts`)
@@ -157,13 +157,13 @@ Markdownテーブルを追加する。
 
 箇条書きリストを追加する。
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `items` | `string[]` | リスト項目の文字列配列 |
 
-**Returns**: `this` thisを返すメソッドチェーン用
+**戻り値**: `this` thisを返すメソッドチェーン用
 
-**Called By**
+**呼び出し元**
 
 - `renderClass()` — Generator (`layer-generator.ts`)
 - `renderFunction()` — Generator (`layer-generator.ts`)
@@ -174,23 +174,23 @@ Markdownテーブルを追加する。
 
 テキストをそのままドキュメントに追加する（末尾改行なし）。
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `text` | `string` | 追加するテキスト |
 
-**Returns**: `this` thisを返すメソッドチェーン用
+**戻り値**: `this` thisを返すメソッドチェーン用
 
 #### `rawBlock(text: string): this`
 
 テキストをブロックとしてドキュメントに追加する（末尾に空行を追加）。
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `text` | `string` | 追加するテキスト |
 
-**Returns**: `this` thisを返すメソッドチェーン用
+**戻り値**: `this` thisを返すメソッドチェーン用
 
-**Called By**
+**呼び出し元**
 
 - `generateIndexMd()` — Generator (`index-generator.ts`)
 - `generateLayerMd()` — Generator (`layer-generator.ts`)
@@ -203,43 +203,45 @@ Markdownテーブルを追加する。
 
 蓄積したすべての行を結合してMarkdown文字列を返す。
 
-**Returns**: `string` 完成したMarkdown文字列
+**戻り値**: `string` 完成したMarkdown文字列
 
-**Called By**
+**呼び出し元**
 
 - `generateIndexMd()` — Generator (`index-generator.ts`)
 - `generateLayerMd()` — Generator (`layer-generator.ts`)
 
 ### 📋 `IndexGenerateOptions`
 
-> **File**: `index-generator.ts`
-> **Type**: Other
+> **ファイル**: `index-generator.ts`
+> **型**: Other
 
 ダイアグラムレンダラーを含むindex.md生成オプション。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `renderer` | `DiagramRenderer or undefined` | — | — |
+| `messages` | `LocaleMessages or undefined` | — | — |
 
 ### 📋 `GenerateOptions`
 
-> **File**: `layer-generator.ts`
-> **Type**: Other
+> **ファイル**: `layer-generator.ts`
+> **型**: Other
 
 ダイアグラムレンダラーを含むレイヤードキュメント生成オプション。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `renderer` | `DiagramRenderer` | ✓ | — |
 | `layerNames` | `string[] or undefined` | — | 依存方向チェック用のレイヤー名順序配列（内側 → 外側） |
+| `messages` | `LocaleMessages or undefined` | — | ロケールメッセージ（省略時は英語） |
 
 ### 🔧 `kindEmoji`
 
-> **File**: `emoji.ts`
+> **ファイル**: `emoji.ts`
 
 オブジェクト種別に対応する絵文字アイコンを返す。
 
@@ -247,13 +249,13 @@ Markdownテーブルを追加する。
 kindEmoji(kind: ObjectKind): string
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `kind` | `ObjectKind` | オブジェクト種別 |
 
-**Returns**: `string` 絵文字文字列
+**戻り値**: `string` 絵文字文字列
 
-**Called By**
+**呼び出し元**
 
 - `renderClass()` — Generator (`layer-generator.ts`)
 - `renderInterface()` — Generator (`layer-generator.ts`)
@@ -264,7 +266,7 @@ kindEmoji(kind: ObjectKind): string
 
 ### 🔧 `categoryEmoji`
 
-> **File**: `emoji.ts`
+> **ファイル**: `emoji.ts`
 
 ドメインカテゴリに対応する絵文字アイコンを返す。
 
@@ -272,19 +274,19 @@ kindEmoji(kind: ObjectKind): string
 categoryEmoji(category: string): string
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `category` | `string` | カテゴリ名 |
 
-**Returns**: `string` 絵文字文字列（該当なしの場合は空文字列）
+**戻り値**: `string` 絵文字文字列（該当なしの場合は空文字列）
 
-**Called By**
+**呼び出し元**
 
 - `formatName()` — Generator (`emoji.ts`)
 
 ### 🔧 `formatName`
 
-> **File**: `emoji.ts`
+> **ファイル**: `emoji.ts`
 
 カテゴリ絵文字プレフィックス付きのコンポーネント名を整形する。
 
@@ -292,15 +294,15 @@ categoryEmoji(category: string): string
 formatName(name: string, kind: ObjectKind, category: string): string
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `name` | `string` | コンポーネント名 |
 | `kind` | `ObjectKind` | オブジェクト種別 |
 | `category` | `string` | カテゴリ名 |
 
-**Returns**: `string` 整形済みの名前文字列
+**戻り値**: `string` 整形済みの名前文字列
 
-**Called By**
+**呼び出し元**
 
 - `addComponent()` — Generator (`index-generator.ts`)
 - `renderClass()` — Generator (`layer-generator.ts`)
@@ -312,7 +314,7 @@ formatName(name: string, kind: ObjectKind, category: string): string
 
 ### 🔧 `kindLabel`
 
-> **File**: `emoji.ts`
+> **ファイル**: `emoji.ts`
 
 絵文字と種別名を組み合わせた表示ラベルを返す。
 
@@ -320,51 +322,59 @@ formatName(name: string, kind: ObjectKind, category: string): string
 kindLabel(kind: ObjectKind): string
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `kind` | `ObjectKind` | オブジェクト種別 |
 
-**Returns**: `string` 表示ラベル文字列
+**戻り値**: `string` 表示ラベル文字列
 
-**Called By**
+**呼び出し元**
 
 - `addComponent()` — Generator (`index-generator.ts`)
 
 ### 🔧 `kindLegendRows`
 
-> **File**: `emoji.ts`
+> **ファイル**: `emoji.ts`
 
 全オブジェクト種別アイコンの凡例テーブル行を生成する。
 
 ```ts
-kindLegendRows(): string[][]
+kindLegendRows(messages?: LocaleMessages | undefined): string[][]
 ```
 
-**Returns**: `string[][]` 凡例行の二次元配列
+| 引数 | 型 | 説明 |
+| --- | --- | --- |
+| `messages` | `LocaleMessages or undefined` | ロケールメッセージ（省略時は英語） |
 
-**Called By**
+**戻り値**: `string[][]` 凡例行の二次元配列
+
+**呼び出し元**
 
 - `generateIndexMd()` — Generator (`index-generator.ts`)
 
 ### 🔧 `categoryLegendRows`
 
-> **File**: `emoji.ts`
+> **ファイル**: `emoji.ts`
 
 全カテゴリアイコンの凡例テーブル行を生成する。
 
 ```ts
-categoryLegendRows(): string[][]
+categoryLegendRows(messages?: LocaleMessages | undefined): string[][]
 ```
 
-**Returns**: `string[][]` 凡例行の二次元配列
+| 引数 | 型 | 説明 |
+| --- | --- | --- |
+| `messages` | `LocaleMessages or undefined` | ロケールメッセージ（省略時は英語） |
 
-**Called By**
+**戻り値**: `string[][]` 凡例行の二次元配列
+
+**呼び出し元**
 
 - `generateIndexMd()` — Generator (`index-generator.ts`)
 
 ### 🔧 `generateIndexMd`
 
-> **File**: `index-generator.ts`
+> **ファイル**: `index-generator.ts`
 
 プロジェクト全体の概要ドキュメントindex.mdを生成する。
 
@@ -372,21 +382,21 @@ categoryLegendRows(): string[][]
 generateIndexMd(config: ProjectConfig, extractions: LayerExtraction[], options?: IndexGenerateOptions | undefined): Promise<string>
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `config` | `ProjectConfig` | プロジェクト設定 |
 | `extractions` | `LayerExtraction[]` | 全レイヤーの抽出結果 |
 | `options` | `IndexGenerateOptions or undefined` | 生成オプション（省略可） |
 
-**Returns**: `Promise<string>` 生成されたMarkdown文字列
+**戻り値**: `Promise<string>` 生成されたMarkdown文字列
 
-**Called By**
+**呼び出し元**
 
 - `registerGenerateCommand()` — Cli (`generate.ts`)
 
 ### 🔧 `generateLayerMd`
 
-> **File**: `layer-generator.ts`
+> **ファイル**: `layer-generator.ts`
 
 単一アーキテクチャレイヤーのMarkdownドキュメントを生成する。
 
@@ -394,22 +404,22 @@ generateIndexMd(config: ProjectConfig, extractions: LayerExtraction[], options?:
 generateLayerMd(layer: LayerConfig, extraction: LayerExtraction, options: GenerateOptions): Promise<string>
 ```
 
-| Parameter | Type | Description |
+| 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `layer` | `LayerConfig` | レイヤー設定 |
 | `extraction` | `LayerExtraction` | レイヤーの抽出結果 |
 | `options` | `GenerateOptions` | 生成オプション |
 
-**Returns**: `Promise<string>` 生成されたMarkdown文字列
+**戻り値**: `Promise<string>` 生成されたMarkdown文字列
 
-**Called By**
+**呼び出し元**
 
 - `registerGenerateCommand()` — Cli (`generate.ts`)
 
 ### 📝 `ObjectKind`
 
-> **File**: `emoji.ts`
-> **Type**: Other
+> **ファイル**: `emoji.ts`
+> **型**: Other
 
 ドキュメント出力で使用するオブジェクト種別。
 

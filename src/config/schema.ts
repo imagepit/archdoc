@@ -33,6 +33,7 @@ export const projectConfigSchema = z.object({
     name: z.string().min(1),
     description: z.string().default(""),
     sourceRoot: z.string().default("src"),
+    locale: z.enum(["en", "ja"]).default("en"),
   }),
   layers: z.array(layerConfigSchema).min(1),
 });

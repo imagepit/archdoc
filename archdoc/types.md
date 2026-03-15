@@ -1,17 +1,17 @@
 ---
-title: Types — 型定義層 API Spec
+title: Types — 型定義層 API仕様
 description: 共通型定義の提供
 ---
 
-# Types — 型定義層 API Spec
+# Types — 型定義層 API仕様
 
-## Responsibilities & Constraints
+## 責務と制約
 
-| Item | Detail |
+| 項目 | 詳細 |
 | --- | --- |
-| **Path** | `src/types/` |
-| **Responsibility** | 共通型定義の提供 |
-| **Forbidden Imports** | `src/cli`, `src/config`, `src/diagram`, `src/drift`, `src/extractor`, `src/generator` |
+| **パス** | `src/types/` |
+| **責務** | 共通型定義の提供 |
+| **禁止インポート** | `src/cli`, `src/config`, `src/diagram`, `src/drift`, `src/extractor`, `src/generator` |
 
 プロジェクト全体で共有される型定義。
 設定ファイル構造と抽出結果の型を定義。
@@ -24,28 +24,28 @@ description: 共通型定義の提供
 
 ### 📋 `CategoryOverride`
 
-> **File**: `config.ts`
-> **Type**: Other
+> **ファイル**: `config.ts`
+> **型**: Other
 
 パターンベースのカテゴリ上書き設定。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `pattern` | `string` | ✓ | — |
 | `category` | `string` | ✓ | — |
 
 ### 📋 `LayerConfig`
 
-> **File**: `config.ts`
-> **Type**: Other
+> **ファイル**: `config.ts`
+> **型**: Other
 
 単一アーキテクチャレイヤーの設定。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `name` | `string` | ✓ | — |
 | `nameJa` | `string` | ✓ | — |
@@ -61,28 +61,28 @@ description: 共通型定義の提供
 
 ### 📋 `ProjectConfig`
 
-> **File**: `config.ts`
-> **Type**: Other
+> **ファイル**: `config.ts`
+> **型**: Other
 
 layers.yamlから読み込まれるプロジェクト設定。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
-| `project` | `{ name: string; description: string; sourceRoot: string; }` | ✓ | — |
+| `project` | `{ name: string; description: string; sourceRoot: string; locale?: "en" or "ja"; }` | ✓ | — |
 | `layers` | `LayerConfig[]` | ✓ | — |
 
 ### 📋 `SpecDiff`
 
-> **File**: `drift.ts`
-> **Type**: Other
+> **ファイル**: `drift.ts`
+> **型**: Other
 
 2つの仕様スナップショット間で検出された単一の差分。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `entityName` | `string` | ✓ | — |
 | `entityType` | `"function" or "class" or "interface"` | ✓ | — |
@@ -94,14 +94,14 @@ layers.yamlから読み込まれるプロジェクト設定。
 
 ### 📋 `DriftResult`
 
-> **File**: `drift.ts`
-> **Type**: Other
+> **ファイル**: `drift.ts`
+> **型**: Other
 
 レイヤーのドリフト検出結果。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `layerName` | `string` | ✓ | — |
 | `diffs` | `SpecDiff[]` | ✓ | — |
@@ -109,14 +109,14 @@ layers.yamlから読み込まれるプロジェクト設定。
 
 ### 📋 `PropertyInfo`
 
-> **File**: `extracted.ts`
-> **Type**: Other
+> **ファイル**: `extracted.ts`
+> **型**: Other
 
 クラスまたはインターフェースから抽出されたプロパティ情報。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `name` | `string` | ✓ | — |
 | `type` | `string` | ✓ | — |
@@ -127,14 +127,14 @@ layers.yamlから読み込まれるプロジェクト設定。
 
 ### 📋 `ParameterInfo`
 
-> **File**: `extracted.ts`
-> **Type**: Other
+> **ファイル**: `extracted.ts`
+> **型**: Other
 
 関数またはメソッドから抽出された引数情報。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `name` | `string` | ✓ | — |
 | `type` | `string` | ✓ | — |
@@ -144,28 +144,28 @@ layers.yamlから読み込まれるプロジェクト設定。
 
 ### 📋 `ThrowInfo`
 
-> **File**: `extracted.ts`
-> **Type**: Other
+> **ファイル**: `extracted.ts`
+> **型**: Other
 
 JSDoc
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `type` | `string` | ✓ | — |
 | `description` | `string` | ✓ | — |
 
 ### 📋 `CallerReference`
 
-> **File**: `extracted.ts`
-> **Type**: Other
+> **ファイル**: `extracted.ts`
+> **型**: Other
 
 このメソッドまたは関数を呼び出しているコンポーネントの参照情報。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `callerName` | `string` | ✓ | — |
 | `filePath` | `string` | ✓ | — |
@@ -175,14 +175,14 @@ JSDoc
 
 ### 📋 `MethodInfo`
 
-> **File**: `extracted.ts`
-> **Type**: Other
+> **ファイル**: `extracted.ts`
+> **型**: Other
 
 シグネチャ・引数・ビジネスルールを含むメソッド情報。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `name` | `string` | ✓ | — |
 | `description` | `string` | ✓ | — |
@@ -197,14 +197,14 @@ JSDoc
 
 ### 📋 `MethodSignatureInfo`
 
-> **File**: `extracted.ts`
-> **Type**: Other
+> **ファイル**: `extracted.ts`
+> **型**: Other
 
 インターフェース宣言から抽出されたメソッドシグネチャ。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `name` | `string` | ✓ | — |
 | `description` | `string` | ✓ | — |
@@ -215,14 +215,14 @@ JSDoc
 
 ### 📋 `DependencyInfo`
 
-> **File**: `extracted.ts`
-> **Type**: Other
+> **ファイル**: `extracted.ts`
+> **型**: Other
 
 レイヤー間のインポート依存関係（禁止インポート検出含む）。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `source` | `string` | ✓ | — |
 | `target` | `string` | ✓ | — |
@@ -233,14 +233,14 @@ JSDoc
 
 ### 📋 `ClassInfo`
 
-> **File**: `extracted.ts`
-> **Type**: Other
+> **ファイル**: `extracted.ts`
+> **型**: Other
 
 プロパティ・メソッド・依存関係を含むクラス情報。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `name` | `string` | ✓ | — |
 | `filePath` | `string` | ✓ | — |
@@ -257,14 +257,14 @@ JSDoc
 
 ### 📋 `InterfaceInfo`
 
-> **File**: `extracted.ts`
-> **Type**: Other
+> **ファイル**: `extracted.ts`
+> **型**: Other
 
 プロパティ・メソッドシグネチャを含むインターフェース情報。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `name` | `string` | ✓ | — |
 | `filePath` | `string` | ✓ | — |
@@ -278,28 +278,28 @@ JSDoc
 
 ### 📋 `RouteCallInfo`
 
-> **File**: `extracted.ts`
-> **Type**: Other
+> **ファイル**: `extracted.ts`
+> **型**: Other
 
 Expressルートハンドラ内のメソッド呼び出し。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `target` | `string` | ✓ | — |
 | `method` | `string` | ✓ | — |
 
 ### 📋 `RouteJSDocTag`
 
-> **File**: `extracted.ts`
-> **Type**: Other
+> **ファイル**: `extracted.ts`
+> **型**: Other
 
 Expressルートハンドラから抽出されたJSDocタグ。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `tag` | `string` | ✓ | — |
 | `name` | `string or undefined` | — | — |
@@ -307,14 +307,14 @@ Expressルートハンドラから抽出されたJSDocタグ。
 
 ### 📋 `RouteInfo`
 
-> **File**: `extracted.ts`
-> **Type**: Other
+> **ファイル**: `extracted.ts`
+> **型**: Other
 
 ミドルウェアとコールチェーンを含むExpressルート定義。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `method` | `string` | ✓ | — |
 | `path` | `string` | ✓ | — |
@@ -325,14 +325,14 @@ Expressルートハンドラから抽出されたJSDocタグ。
 
 ### 📋 `FunctionInfo`
 
-> **File**: `extracted.ts`
-> **Type**: Other
+> **ファイル**: `extracted.ts`
+> **型**: Other
 
 シグネチャ・引数・ルート情報を含む関数情報。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `name` | `string` | ✓ | — |
 | `filePath` | `string` | ✓ | — |
@@ -351,14 +351,14 @@ Expressルートハンドラから抽出されたJSDocタグ。
 
 ### 📋 `TypeAliasInfo`
 
-> **File**: `extracted.ts`
-> **Type**: Other
+> **ファイル**: `extracted.ts`
+> **型**: Other
 
 型エイリアスの抽出情報。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `name` | `string` | ✓ | — |
 | `filePath` | `string` | ✓ | — |
@@ -371,14 +371,14 @@ Expressルートハンドラから抽出されたJSDocタグ。
 
 ### 📋 `EnumMemberInfo`
 
-> **File**: `extracted.ts`
-> **Type**: Other
+> **ファイル**: `extracted.ts`
+> **型**: Other
 
 enum宣言の個別メンバー情報。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `name` | `string` | ✓ | — |
 | `value` | `string` | ✓ | — |
@@ -386,14 +386,14 @@ enum宣言の個別メンバー情報。
 
 ### 📋 `EnumInfo`
 
-> **File**: `extracted.ts`
-> **Type**: Other
+> **ファイル**: `extracted.ts`
+> **型**: Other
 
 enum宣言の抽出情報。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `name` | `string` | ✓ | — |
 | `filePath` | `string` | ✓ | — |
@@ -405,14 +405,14 @@ enum宣言の抽出情報。
 
 ### 📋 `ConstInfo`
 
-> **File**: `extracted.ts`
-> **Type**: Other
+> **ファイル**: `extracted.ts`
+> **型**: Other
 
 エクスポートされた定数の抽出情報。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `name` | `string` | ✓ | — |
 | `filePath` | `string` | ✓ | — |
@@ -425,56 +425,56 @@ enum宣言の抽出情報。
 
 ### 📋 `ConstructorDep`
 
-> **File**: `extracted.ts`
-> **Type**: Other
+> **ファイル**: `extracted.ts`
+> **型**: Other
 
 コールチェーン解析用のコンストラクタ依存パラメータ。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `paramName` | `string` | ✓ | — |
 | `typeName` | `string` | ✓ | — |
 
 ### 📋 `MethodCall`
 
-> **File**: `extracted.ts`
-> **Type**: Other
+> **ファイル**: `extracted.ts`
+> **型**: Other
 
 クラスメソッドまたは関数内での依存先への単一メソッド呼び出し。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `target` | `string` | ✓ | — |
 | `method` | `string` | ✓ | — |
 
 ### 📋 `MethodCallChain`
 
-> **File**: `extracted.ts`
-> **Type**: Other
+> **ファイル**: `extracted.ts`
+> **型**: Other
 
 単一メソッド内のすべての依存先呼び出し。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `methodName` | `string` | ✓ | — |
 | `calls` | `MethodCall[]` | ✓ | — |
 
 ### 📋 `ClassCallChain`
 
-> **File**: `extracted.ts`
-> **Type**: Other
+> **ファイル**: `extracted.ts`
+> **型**: Other
 
 クラスまたは関数の完全なコールチェーン（依存先とメソッド呼び出しを含む）。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `className` | `string` | ✓ | — |
 | `filePath` | `string` | ✓ | — |
@@ -483,14 +483,14 @@ enum宣言の抽出情報。
 
 ### 📋 `CallChainEntry`
 
-> **File**: `extracted.ts`
-> **Type**: Other
+> **ファイル**: `extracted.ts`
+> **型**: Other
 
 LayerExtractionに格納されるシリアライズ可能なコールチェーンエントリ。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `className` | `string` | ✓ | — |
 | `filePath` | `string` | ✓ | — |
@@ -499,14 +499,14 @@ LayerExtractionに格納されるシリアライズ可能なコールチェー�
 
 ### 📋 `LayerExtraction`
 
-> **File**: `extracted.ts`
-> **Type**: Other
+> **ファイル**: `extracted.ts`
+> **型**: Other
 
 単一アーキテクチャレイヤーの完全な抽出結果。
 
-**Properties**
+**プロパティ**
 
-| Property | Type | Required | Description |
+| プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `layerName` | `string` | ✓ | — |
 | `classes` | `ClassInfo[]` | ✓ | — |
@@ -520,8 +520,8 @@ LayerExtractionに格納されるシリアライズ可能なコールチェー�
 
 ### 📝 `LayerType`
 
-> **File**: `config.ts`
-> **Type**: Other
+> **ファイル**: `config.ts`
+> **型**: Other
 
 DDDアーキテクチャで使用するレイヤー種別。
 
@@ -531,8 +531,8 @@ DDDアーキテクチャで使用するレイヤー種別。
 
 ### 📝 `DriftSeverity`
 
-> **File**: `drift.ts`
-> **Type**: Other
+> **ファイル**: `drift.ts`
+> **型**: Other
 
 仕様ドリフト検出の重大度レベル。
 

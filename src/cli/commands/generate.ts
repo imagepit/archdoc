@@ -8,6 +8,7 @@ import { generateLayerMd } from "../../generator/layer-generator.js";
 import { MermaidRenderer } from "../../diagram/mermaid-renderer.js";
 import { SvgRenderer } from "../../diagram/svg-renderer.js";
 import type { DiagramRenderer } from "../../diagram/diagram-renderer.js";
+import { getMessages } from "../../i18n/index.js";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
@@ -63,14 +64,16 @@ export function registerGenerateCommand(program: Command): void {
         ? new SvgRenderer(join(outputDir, "diagrams"), "diagrams")
         : new MermaidRenderer();
 
-      const indexMd = await generateIndexMd(config, extractions, { renderer });
+      const messages = getMessages(config.project.locale ?? "en");
+
+      const indexMd = await generateIndexMd(config, extractions, { renderer, messages });
       writeFileSync(join(outputDir, "index.md"), indexMd);
       console.log(chalk.green(`  Created index.md`));
 
       for (const extraction of extractions) {
         const layerConfig = config.layers.find((l) => l.name === extraction.layerName)!;
         const layerNames = config.layers.map((l) => l.name);
-        const layerMd = await generateLayerMd(layerConfig, extraction, { renderer, layerNames });
+        const layerMd = await generateLayerMd(layerConfig, extraction, { renderer, layerNames, messages });
         const filename = `${layerConfig.name.toLowerCase()}.md`;
         writeFileSync(join(outputDir, filename), layerMd);
         console.log(chalk.green(`  Created ${filename}`));
