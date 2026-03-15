@@ -10,7 +10,7 @@ import { extractTypeAlias } from "./type-alias-extractor.js";
 import { extractEnum } from "./enum-extractor.js";
 import { extractConst } from "./const-extractor.js";
 import { analyzeImports, findForbiddenImports } from "./import-analyzer.js";
-import { analyzeCallChains } from "./call-chain-analyzer.js";
+import { analyzeCallChains, analyzeFunctionCallChains } from "./call-chain-analyzer.js";
 import { createFrameworkExtractor } from "./framework/index.js";
 
 export function createExtractorProject(
@@ -149,7 +149,9 @@ export function extractLayer(
     fwExtractor.resolveMountPrefixes(sourceFiles, allSourceFiles, result.functions);
   }
 
-  result.callChains = analyzeCallChains(sourceFiles);
+  const classChains = analyzeCallChains(sourceFiles);
+  const funcChains = analyzeFunctionCallChains(sourceFiles);
+  result.callChains = [...classChains, ...funcChains];
 
   return result;
 }

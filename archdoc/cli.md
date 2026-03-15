@@ -46,6 +46,17 @@ registerDiagramCommand(program: Command): void
 
 - `createProgram()` — Cli (`index.ts`)
 
+```mermaid
+sequenceDiagram
+  participant Client
+  participant registerDiagramCommand
+  participant Command
+  Client->>+registerDiagramCommand: registerDiagramCommand()
+  registerDiagramCommand->>+Command: command()
+  Command-->>-registerDiagramCommand: result
+  registerDiagramCommand-->>-Client: response
+```
+
 ### 🔧 `registerDriftCommand`
 
 > **File**: `drift.ts`
@@ -61,6 +72,17 @@ registerDriftCommand(program: Command): void
 **Called By**
 
 - `createProgram()` — Cli (`index.ts`)
+
+```mermaid
+sequenceDiagram
+  participant Client
+  participant registerDriftCommand
+  participant Command
+  Client->>+registerDriftCommand: registerDriftCommand()
+  registerDriftCommand->>+Command: command()
+  Command-->>-registerDriftCommand: result
+  registerDriftCommand-->>-Client: response
+```
 
 ### 🔧 `registerGenerateCommand`
 
@@ -78,6 +100,17 @@ registerGenerateCommand(program: Command): void
 
 - `createProgram()` — Cli (`index.ts`)
 
+```mermaid
+sequenceDiagram
+  participant Client
+  participant registerGenerateCommand
+  participant Command
+  Client->>+registerGenerateCommand: registerGenerateCommand()
+  registerGenerateCommand->>+Command: command()
+  Command-->>-registerGenerateCommand: result
+  registerGenerateCommand-->>-Client: response
+```
+
 ### 🔧 `registerInitCommand`
 
 > **File**: `init.ts`
@@ -93,3 +126,14 @@ registerInitCommand(program: Command): void
 **Called By**
 
 - `createProgram()` — Cli (`index.ts`)
+
+```mermaid
+sequenceDiagram
+  participant Client
+  participant registerInitCommand
+  participant Command
+  Client->>+registerInitCommand: registerInitCommand()
+  registerInitCommand->>+Command: command()
+  Command-->>-registerInitCommand: result
+  registerInitCommand-->>-Client: response
+```

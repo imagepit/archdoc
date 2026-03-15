@@ -379,6 +379,56 @@ description: 共通型定義の提供
 | `valuePreview` | `string` | ✓ | — |
 | `isExported` | `boolean` | ✓ | — |
 
+### 📋 `ConstructorDep`
+
+> **File**: `extracted.ts`
+> **Type**: Other
+
+**Properties**
+
+| Property | Type | Required | Description |
+| --- | --- | --- | --- |
+| `paramName` | `string` | ✓ | — |
+| `typeName` | `string` | ✓ | — |
+
+### 📋 `MethodCall`
+
+> **File**: `extracted.ts`
+> **Type**: Other
+
+**Properties**
+
+| Property | Type | Required | Description |
+| --- | --- | --- | --- |
+| `target` | `string` | ✓ | — |
+| `method` | `string` | ✓ | — |
+
+### 📋 `MethodCallChain`
+
+> **File**: `extracted.ts`
+> **Type**: Other
+
+**Properties**
+
+| Property | Type | Required | Description |
+| --- | --- | --- | --- |
+| `methodName` | `string` | ✓ | — |
+| `calls` | `MethodCall[]` | ✓ | — |
+
+### 📋 `ClassCallChain`
+
+> **File**: `extracted.ts`
+> **Type**: Other
+
+**Properties**
+
+| Property | Type | Required | Description |
+| --- | --- | --- | --- |
+| `className` | `string` | ✓ | — |
+| `filePath` | `string` | ✓ | — |
+| `constructorDeps` | `ConstructorDep[]` | ✓ | — |
+| `methods` | `MethodCallChain[]` | ✓ | — |
+
 ### 📋 `CallChainEntry`
 
 > **File**: `extracted.ts`

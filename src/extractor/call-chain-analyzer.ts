@@ -1,4 +1,4 @@
-import type { ClassDeclaration, SourceFile } from "ts-morph";
+import type { ClassDeclaration, FunctionDeclaration, SourceFile } from "ts-morph";
 import { SyntaxKind } from "ts-morph";
 import type { ClassCallChain, ConstructorDep, MethodCall, MethodCallChain } from "../types/extracted.js";
 
@@ -104,6 +104,101 @@ function extractMethodCalls(
             seen.add(key);
             calls.push({ target: depName, method: methodName });
           }
+        }
+      }
+    }
+  }
+
+  return calls;
+}
+
+export function analyzeFunctionCallChains(sourceFiles: SourceFile[]): ClassCallChain[] {
+  const results: ClassCallChain[] = [];
+
+  for (const file of sourceFiles) {
+    for (const func of file.getFunctions()) {
+      if (!func.isExported()) continue;
+      const chain = analyzeFunctionCallChain(func);
+      if (chain.constructorDeps.length > 0 && chain.methods.length > 0) {
+        results.push(chain);
+      }
+    }
+  }
+
+  return results;
+}
+
+function analyzeFunctionCallChain(func: FunctionDeclaration): ClassCallChain {
+  const deps = extractFunctionParamDeps(func);
+  const depNames = new Set(deps.map((d) => d.paramName));
+
+  const calls = extractFunctionBodyCalls(func, depNames);
+
+  const methods: MethodCallChain[] = [];
+  if (calls.length > 0) {
+    methods.push({
+      methodName: func.getName() ?? "anonymous",
+      calls,
+    });
+  }
+
+  return {
+    className: func.getName() ?? "anonymous",
+    filePath: func.getSourceFile().getFilePath(),
+    constructorDeps: deps,
+    methods,
+  };
+}
+
+function extractFunctionParamDeps(func: FunctionDeclaration): ConstructorDep[] {
+  const PRIMITIVE_TYPES = new Set(["string", "number", "boolean", "void", "undefined", "null", "never", "unknown", "any"]);
+  const deps: ConstructorDep[] = [];
+
+  for (const param of func.getParameters()) {
+    const typeNode = param.getTypeNode();
+    if (!typeNode) continue;
+
+    const typeName = typeNode.getText();
+    if (PRIMITIVE_TYPES.has(typeName)) continue;
+    // Skip array/union/literal types
+    if (typeName.includes("[") || typeName.includes("|") || typeName.includes("\"") || typeName.includes("'")) continue;
+
+    deps.push({
+      paramName: param.getName(),
+      typeName: cleanTypeName(typeName),
+    });
+  }
+
+  return deps;
+}
+
+function extractFunctionBodyCalls(
+  func: FunctionDeclaration,
+  depNames: Set<string>,
+): MethodCall[] {
+  const calls: MethodCall[] = [];
+  const seen = new Set<string>();
+
+  const callExprs = func.getDescendantsOfKind(SyntaxKind.CallExpression);
+
+  for (const callExpr of callExprs) {
+    const expr = callExpr.getExpression();
+    if (expr.getKind() !== SyntaxKind.PropertyAccessExpression) continue;
+
+    const propAccess = expr.asKind(SyntaxKind.PropertyAccessExpression);
+    if (!propAccess) continue;
+
+    const methodName = propAccess.getName();
+    const obj = propAccess.getExpression();
+
+    // Pattern: param.method() (direct identifier call)
+    if (obj.getKind() === SyntaxKind.Identifier) {
+      const paramName = obj.getText();
+      if (depNames.has(paramName)) {
+        const key = `${paramName}.${methodName}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          calls.push({ target: paramName, method: methodName });
         }
       }
     }

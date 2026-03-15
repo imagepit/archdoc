@@ -144,7 +144,7 @@ async function renderGroupDiagramAndItems(
         renderInterface(md, item.data as InterfaceInfo, headingLevel);
         break;
       case "function":
-        await renderFunction(md, item.data as FunctionInfo, headingLevel, selfLayerName, layerNames, renderer);
+        await renderFunction(md, item.data as FunctionInfo, headingLevel, selfLayerName, layerNames, callChains, renderer);
         break;
       case "type":
         renderTypeAlias(md, item.data as TypeAliasInfo, headingLevel);
@@ -358,6 +358,7 @@ async function renderFunction(
   headingLevel: number = 3,
   selfLayerName?: string,
   layerNames?: string[],
+  callChains?: CallChainEntry[],
   renderer?: DiagramRenderer,
 ): Promise<void> {
   md.heading(headingLevel, `${kindEmoji("function")} ${formatName(func.name, "function", func.category)}`);
@@ -398,6 +399,10 @@ async function renderFunction(
   if (func.businessRules.length > 0) {
     md.paragraph("**Business Rules**");
     md.list(func.businessRules);
+  }
+
+  if (callChains && renderer) {
+    await renderFunctionSequenceDiagram(md, func.name, callChains, renderer);
   }
 
   if (func.routes && func.routes.length > 0 && renderer) {
@@ -563,6 +568,21 @@ async function renderMethodSequenceDiagram(
   };
 
   const diagram = await renderer.renderSequenceDiagram(singleMethodChain);
+  if (diagram) {
+    md.rawBlock(diagram);
+  }
+}
+
+async function renderFunctionSequenceDiagram(
+  md: MarkdownBuilder,
+  funcName: string,
+  callChains: CallChainEntry[],
+  renderer: DiagramRenderer,
+): Promise<void> {
+  const chain = callChains.find((c) => c.className === funcName);
+  if (!chain || chain.methods.length === 0) return;
+
+  const diagram = await renderer.renderSequenceDiagram(chain);
   if (diagram) {
     md.rawBlock(diagram);
   }

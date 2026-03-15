@@ -103,56 +103,6 @@ createFrameworkExtractor(framework?: string | undefined): FrameworkExtractor | n
 
 ![Class Diagram](diagrams/detail-3.svg)
 
-### 📋 `ConstructorDep`
-
-> **File**: `call-chain-analyzer.ts`
-> **Type**: Other
-
-**Properties**
-
-| Property | Type | Required | Description |
-| --- | --- | --- | --- |
-| `paramName` | `string` | ✓ | — |
-| `typeName` | `string` | ✓ | — |
-
-### 📋 `MethodCall`
-
-> **File**: `call-chain-analyzer.ts`
-> **Type**: Other
-
-**Properties**
-
-| Property | Type | Required | Description |
-| --- | --- | --- | --- |
-| `target` | `string` | ✓ | — |
-| `method` | `string` | ✓ | — |
-
-### 📋 `MethodCallChain`
-
-> **File**: `call-chain-analyzer.ts`
-> **Type**: Other
-
-**Properties**
-
-| Property | Type | Required | Description |
-| --- | --- | --- | --- |
-| `methodName` | `string` | ✓ | — |
-| `calls` | `MethodCall[]` | ✓ | — |
-
-### 📋 `ClassCallChain`
-
-> **File**: `call-chain-analyzer.ts`
-> **Type**: Other
-
-**Properties**
-
-| Property | Type | Required | Description |
-| --- | --- | --- | --- |
-| `className` | `string` | ✓ | — |
-| `filePath` | `string` | ✓ | — |
-| `constructorDeps` | `ConstructorDep[]` | ✓ | — |
-| `methods` | `MethodCallChain[]` | ✓ | — |
-
 ### 📋 `ParsedJsDoc`
 
 > **File**: `jsdoc-parser.ts`
@@ -187,6 +137,24 @@ analyzeCallChains(sourceFiles: SourceFile[]): ClassCallChain[]
 
 - `extractLayer()` — Extractor (`project.ts`)
 
+### 🔧 `analyzeFunctionCallChains`
+
+> **File**: `call-chain-analyzer.ts`
+
+```ts
+analyzeFunctionCallChains(sourceFiles: SourceFile[]): ClassCallChain[]
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `sourceFiles` | `SourceFile[]` | — |
+
+**Returns**: `ClassCallChain[]` 
+
+**Called By**
+
+- `extractLayer()` — Extractor (`project.ts`)
+
 ### 🔧 `analyzeCallerReferences`
 
 > **File**: `caller-analyzer.ts`
@@ -209,6 +177,17 @@ analyzeCallerReferences(project: Project, extractions: LayerExtraction[], layers
 
 - `registerGenerateCommand()` — Cli (`generate.ts`)
 
+```mermaid
+sequenceDiagram
+  participant Client
+  participant analyzeCallerReferences
+  participant Project
+  Client->>+analyzeCallerReferences: analyzeCallerReferences()
+  analyzeCallerReferences->>+Project: getSourceFiles()
+  Project-->>-analyzeCallerReferences: result
+  analyzeCallerReferences-->>-Client: response
+```
+
 ### 🔧 `extractClass`
 
 > **File**: `class-extractor.ts`
@@ -227,6 +206,29 @@ extractClass(classDecl: ClassDeclaration, category: string): ClassInfo
 **Called By**
 
 - `extractLayer()` — Extractor (`project.ts`)
+
+```mermaid
+sequenceDiagram
+  participant Client
+  participant extractClass
+  participant ClassDeclaration
+  Client->>+extractClass: extractClass()
+  extractClass->>+ClassDeclaration: getExtends()
+  ClassDeclaration-->>-extractClass: result
+  extractClass->>+ClassDeclaration: getImplements()
+  ClassDeclaration-->>-extractClass: result
+  extractClass->>+ClassDeclaration: getName()
+  ClassDeclaration-->>-extractClass: result
+  extractClass->>+ClassDeclaration: getSourceFile()
+  ClassDeclaration-->>-extractClass: result
+  extractClass->>+ClassDeclaration: getProperties()
+  ClassDeclaration-->>-extractClass: result
+  extractClass->>+ClassDeclaration: getMethods()
+  ClassDeclaration-->>-extractClass: result
+  extractClass->>+ClassDeclaration: isExported()
+  ClassDeclaration-->>-extractClass: result
+  extractClass-->>-Client: response
+```
 
 ### 🔧 `extractConst`
 
@@ -247,6 +249,25 @@ extractConst(decl: VariableDeclaration, category: string): ConstInfo
 
 - `extractLayer()` — Extractor (`project.ts`)
 
+```mermaid
+sequenceDiagram
+  participant Client
+  participant extractConst
+  participant VariableDeclaration
+  Client->>+extractConst: extractConst()
+  extractConst->>+VariableDeclaration: getVariableStatement()
+  VariableDeclaration-->>-extractConst: result
+  extractConst->>+VariableDeclaration: getInitializer()
+  VariableDeclaration-->>-extractConst: result
+  extractConst->>+VariableDeclaration: getName()
+  VariableDeclaration-->>-extractConst: result
+  extractConst->>+VariableDeclaration: getSourceFile()
+  VariableDeclaration-->>-extractConst: result
+  extractConst->>+VariableDeclaration: getType()
+  VariableDeclaration-->>-extractConst: result
+  extractConst-->>-Client: response
+```
+
 ### 🔧 `extractEnum`
 
 > **File**: `enum-extractor.ts`
@@ -265,6 +286,23 @@ extractEnum(decl: EnumDeclaration, category: string): EnumInfo
 **Called By**
 
 - `extractLayer()` — Extractor (`project.ts`)
+
+```mermaid
+sequenceDiagram
+  participant Client
+  participant extractEnum
+  participant EnumDeclaration
+  Client->>+extractEnum: extractEnum()
+  extractEnum->>+EnumDeclaration: getMembers()
+  EnumDeclaration-->>-extractEnum: result
+  extractEnum->>+EnumDeclaration: getName()
+  EnumDeclaration-->>-extractEnum: result
+  extractEnum->>+EnumDeclaration: getSourceFile()
+  EnumDeclaration-->>-extractEnum: result
+  extractEnum->>+EnumDeclaration: isExported()
+  EnumDeclaration-->>-extractEnum: result
+  extractEnum-->>-Client: response
+```
 
 ### 🔧 `extractFunction`
 
@@ -285,6 +323,25 @@ extractFunction(funcDecl: FunctionDeclaration, category: string): FunctionInfo
 
 - `extractLayer()` — Extractor (`project.ts`)
 
+```mermaid
+sequenceDiagram
+  participant Client
+  participant extractFunction
+  participant FunctionDeclaration
+  Client->>+extractFunction: extractFunction()
+  extractFunction->>+FunctionDeclaration: getName()
+  FunctionDeclaration-->>-extractFunction: result
+  extractFunction->>+FunctionDeclaration: getParameters()
+  FunctionDeclaration-->>-extractFunction: result
+  extractFunction->>+FunctionDeclaration: getReturnType()
+  FunctionDeclaration-->>-extractFunction: result
+  extractFunction->>+FunctionDeclaration: getSourceFile()
+  FunctionDeclaration-->>-extractFunction: result
+  extractFunction->>+FunctionDeclaration: isExported()
+  FunctionDeclaration-->>-extractFunction: result
+  extractFunction-->>-Client: response
+```
+
 ### 🔧 `analyzeImports`
 
 > **File**: `import-analyzer.ts`
@@ -304,6 +361,19 @@ analyzeImports(sourceFile: SourceFile, layers: LayerConfig[]): DependencyInfo[]
 
 - `findForbiddenImports()` — Extractor (`import-analyzer.ts`)
 - `extractLayer()` — Extractor (`project.ts`)
+
+```mermaid
+sequenceDiagram
+  participant Client
+  participant analyzeImports
+  participant SourceFile
+  Client->>+analyzeImports: analyzeImports()
+  analyzeImports->>+SourceFile: getFilePath()
+  SourceFile-->>-analyzeImports: result
+  analyzeImports->>+SourceFile: getImportDeclarations()
+  SourceFile-->>-analyzeImports: result
+  analyzeImports-->>-Client: response
+```
 
 ### 🔧 `findForbiddenImports`
 
@@ -344,6 +414,27 @@ extractInterface(ifaceDecl: InterfaceDeclaration, category: string): InterfaceIn
 
 - `extractLayer()` — Extractor (`project.ts`)
 
+```mermaid
+sequenceDiagram
+  participant Client
+  participant extractInterface
+  participant InterfaceDeclaration
+  Client->>+extractInterface: extractInterface()
+  extractInterface->>+InterfaceDeclaration: getExtends()
+  InterfaceDeclaration-->>-extractInterface: result
+  extractInterface->>+InterfaceDeclaration: getName()
+  InterfaceDeclaration-->>-extractInterface: result
+  extractInterface->>+InterfaceDeclaration: getSourceFile()
+  InterfaceDeclaration-->>-extractInterface: result
+  extractInterface->>+InterfaceDeclaration: getProperties()
+  InterfaceDeclaration-->>-extractInterface: result
+  extractInterface->>+InterfaceDeclaration: getMethods()
+  InterfaceDeclaration-->>-extractInterface: result
+  extractInterface->>+InterfaceDeclaration: isExported()
+  InterfaceDeclaration-->>-extractInterface: result
+  extractInterface-->>-Client: response
+```
+
 ### 🔧 `parseJsDoc`
 
 > **File**: `jsdoc-parser.ts`
@@ -371,6 +462,17 @@ parseJsDoc(node: JSDocableNode): ParsedJsDoc
 - `extractMethodSignature()` — Extractor (`interface-extractor.ts`)
 - `extractTypeAlias()` — Extractor (`type-alias-extractor.ts`)
 
+```mermaid
+sequenceDiagram
+  participant Client
+  participant parseJsDoc
+  participant JSDocableNode
+  Client->>+parseJsDoc: parseJsDoc()
+  parseJsDoc->>+JSDocableNode: getJsDocs()
+  JSDocableNode-->>-parseJsDoc: result
+  parseJsDoc-->>-Client: response
+```
+
 ### 🔧 `mergeParamDescriptions`
 
 > **File**: `jsdoc-parser.ts`
@@ -391,6 +493,17 @@ mergeParamDescriptions(params: ParameterInfo[], jsDocParams: Map<string, string>
 - `extractMethod()` — Extractor (`class-extractor.ts`)
 - `extractFunction()` — Extractor (`function-extractor.ts`)
 - `extractMethodSignature()` — Extractor (`interface-extractor.ts`)
+
+```mermaid
+sequenceDiagram
+  participant Client
+  participant mergeParamDescriptions
+  participant Map<string, string>
+  Client->>+mergeParamDescriptions: mergeParamDescriptions()
+  mergeParamDescriptions->>+Map<string, string>: get()
+  Map<string, string>-->>-mergeParamDescriptions: result
+  mergeParamDescriptions-->>-Client: response
+```
 
 ### 🔧 `createExtractorProject`
 
@@ -436,6 +549,20 @@ extractLayer(project: Project, layer: LayerConfig, allLayers?: LayerConfig[] | u
 - `registerDriftCommand()` — Cli (`drift.ts`)
 - `registerGenerateCommand()` — Cli (`generate.ts`)
 
+```mermaid
+sequenceDiagram
+  participant Client
+  participant extractLayer
+  participant Project
+  participant LayerConfig
+  Client->>+extractLayer: extractLayer()
+  extractLayer->>+Project: addSourceFilesAtPaths()
+  Project-->>-extractLayer: result
+  extractLayer->>+Project: getSourceFiles()
+  Project-->>-extractLayer: result
+  extractLayer-->>-Client: response
+```
+
 ### 🔧 `extractTypeAlias`
 
 > **File**: `type-alias-extractor.ts`
@@ -454,3 +581,20 @@ extractTypeAlias(decl: TypeAliasDeclaration, category: string): TypeAliasInfo
 **Called By**
 
 - `extractLayer()` — Extractor (`project.ts`)
+
+```mermaid
+sequenceDiagram
+  participant Client
+  participant extractTypeAlias
+  participant TypeAliasDeclaration
+  Client->>+extractTypeAlias: extractTypeAlias()
+  extractTypeAlias->>+TypeAliasDeclaration: getType()
+  TypeAliasDeclaration-->>-extractTypeAlias: result
+  extractTypeAlias->>+TypeAliasDeclaration: getName()
+  TypeAliasDeclaration-->>-extractTypeAlias: result
+  extractTypeAlias->>+TypeAliasDeclaration: getSourceFile()
+  TypeAliasDeclaration-->>-extractTypeAlias: result
+  extractTypeAlias->>+TypeAliasDeclaration: isExported()
+  TypeAliasDeclaration-->>-extractTypeAlias: result
+  extractTypeAlias-->>-Client: response
+```

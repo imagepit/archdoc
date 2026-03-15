@@ -58,17 +58,6 @@ description: archdoc DDD layered architecture overview
 
 ![Project Overview](diagrams/project-overview.svg)
 
-## Import Violations
-
-**4 forbidden import(s) detected.**
-
-| Source Layer | File | Forbidden Import | Target Layer |
-| --- | --- | --- | --- |
-| Diagram | `diagram-renderer.ts` | `../extractor/call-chain-analyzer.js` | Extractor |
-| Diagram | `mermaid-renderer.ts` | `../extractor/call-chain-analyzer.js` | Extractor |
-| Diagram | `sequence-diagram-builder.ts` | `../extractor/call-chain-analyzer.js` | Extractor |
-| Diagram | `svg-renderer.ts` | `../extractor/call-chain-analyzer.js` | Extractor |
-
 ## Non-Standard Layer Warnings
 
 以下のレイヤーはDDD標準4層（Domain / Application / Infrastructure / Presentation）に属しません。責務の重複・散在に注意してください。
@@ -109,6 +98,10 @@ description: archdoc DDD layered architecture overview
 | `EnumMemberInfo` | 📋 interface | Other | — |
 | `EnumInfo` | 📋 interface | Other | — |
 | `ConstInfo` | 📋 interface | Other | — |
+| `ConstructorDep` | 📋 interface | Other | — |
+| `MethodCall` | 📋 interface | Other | — |
+| `MethodCallChain` | 📋 interface | Other | — |
+| `ClassCallChain` | 📋 interface | Other | — |
 | `CallChainEntry` | 📋 interface | Other | — |
 | `LayerExtraction` | 📋 interface | Other | — |
 | `LayerType` | 📝 type | Other | — |
@@ -127,13 +120,10 @@ description: archdoc DDD layered architecture overview
 | Component | Kind | Category | Description |
 | --- | --- | --- | --- |
 | `ExpressExtractor` | 🏗️ class | Framework Extractor | — |
-| `ConstructorDep` | 📋 interface | Other | — |
-| `MethodCall` | 📋 interface | Other | — |
-| `MethodCallChain` | 📋 interface | Other | — |
-| `ClassCallChain` | 📋 interface | Other | — |
 | `ParsedJsDoc` | 📋 interface | Other | — |
 | `FrameworkExtractor` | 📋 interface | Framework Extractor | — |
 | `analyzeCallChains` | 🔧 function | Other | — |
+| `analyzeFunctionCallChains` | 🔧 function | Other | — |
 | `analyzeCallerReferences` | 🔧 function | Other | Post-process: analyze caller references for all methods and… |
 | `extractClass` | 🔧 function | Other | — |
 | `extractConst` | 🔧 function | Other | — |

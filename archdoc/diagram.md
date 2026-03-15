@@ -68,6 +68,7 @@ Returns Mermaid code blocks ready to embed in Markdown.
 **Called By**
 
 - `renderMethodSequenceDiagram()` — Generator (`layer-generator.ts`) via `DiagramRenderer`
+- `renderFunctionSequenceDiagram()` — Generator (`layer-generator.ts`) via `DiagramRenderer`
 
 #### `renderRouteSequenceDiagram(funcName: string, route: RouteInfo): Promise<string | null>`
 
@@ -141,6 +142,7 @@ Generates DOT → SVG files and returns Markdown image references.
 **Called By**
 
 - `renderMethodSequenceDiagram()` — Generator (`layer-generator.ts`) via `DiagramRenderer`
+- `renderFunctionSequenceDiagram()` — Generator (`layer-generator.ts`) via `DiagramRenderer`
 
 #### `renderRouteSequenceDiagram(funcName: string, route: RouteInfo): Promise<string | null>`
 

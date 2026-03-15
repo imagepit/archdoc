@@ -177,6 +177,7 @@ index.md（全体概要）とレイヤー別ドキュメントを出力。
 - `renderGroupDiagramAndItems()` — Generator (`layer-generator.ts`)
 - `renderFunction()` — Generator (`layer-generator.ts`)
 - `renderMethodSequenceDiagram()` — Generator (`layer-generator.ts`)
+- `renderFunctionSequenceDiagram()` — Generator (`layer-generator.ts`)
 
 #### `build(): string`
 
