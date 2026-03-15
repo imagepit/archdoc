@@ -96,6 +96,19 @@ Markdownに埋め込み可能なMermaidコードブロックを返す。
 
 - `generateIndexMd()` — Generator (`index-generator.ts`) via `DiagramRenderer`
 
+#### `renderLayerDependency(extractions: LayerExtraction[], layers?: LayerConfig[] | undefined): Promise<string | null>`
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `extractions` | `LayerExtraction[]` | — |
+| `layers` | `LayerConfig[] or undefined` | — |
+
+**Returns**: `Promise<string or null>` 
+
+**Called By**
+
+- `generateIndexMd()` — Generator (`index-generator.ts`) via `DiagramRenderer`
+
 ### 🏗️ `SvgRenderer`
 
 > **File**: `svg-renderer.ts`
@@ -158,6 +171,19 @@ DOT → SVGファイルを生成し、Markdown画像参照文字列を返す。
 - `renderFunction()` — Generator (`layer-generator.ts`) via `DiagramRenderer`
 
 #### `renderProjectOverview(extractions: LayerExtraction[], layers?: LayerConfig[] | undefined): Promise<string | null>`
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `extractions` | `LayerExtraction[]` | — |
+| `layers` | `LayerConfig[] or undefined` | — |
+
+**Returns**: `Promise<string or null>` 
+
+**Called By**
+
+- `generateIndexMd()` — Generator (`index-generator.ts`) via `DiagramRenderer`
+
+#### `renderLayerDependency(extractions: LayerExtraction[], layers?: LayerConfig[] | undefined): Promise<string | null>`
 
 | Parameter | Type | Description |
 | --- | --- | --- |
@@ -259,6 +285,18 @@ Markdownスニペットを生成し、ドキュメントに埋め込める形式
 
 レイヤー横断のプロジェクト概要ダイアグラムをレンダリングする。
 レイヤー別にグループ化した全オブジェクトを表示し、依存違反のみ線を引く。
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `extractions` | `LayerExtraction[]` | 全レイヤーの抽出結果 |
+| `layers` | `LayerConfig[] or undefined` | レイヤー設定配列（省略可） |
+
+**Returns**: `Promise<string or null>` Markdownスニペット文字列、またはnull
+
+#### `renderLayerDependency(extractions: LayerExtraction[], layers?: LayerConfig[] | undefined): Promise<string | null>`
+
+レイヤー間の依存関係をシンプルなフローチャートでレンダリングする。
+各レイヤーをボックスで表示し、実際のインポート依存関係を矢印で描画する。
 
 | Parameter | Type | Description |
 | --- | --- | --- |
@@ -458,6 +496,52 @@ buildProjectOverviewDot(extractions: LayerExtraction[], layers?: LayerConfig[] |
 
 - `SvgRenderer.renderProjectOverview()` — Diagram (`svg-renderer.ts`)
 
+### 🔧 `buildLayerDependencyMermaid`
+
+> **File**: `project-overview-builder.ts`
+
+エントリーポイントからの依存フローを示すシンプルなMermaidフローチャートを生成する。
+各レイヤーはボックスで表示され、実際のインポート依存関係が矢印で描画される。
+禁止インポート違反は赤色の破線で表示される。
+
+```ts
+buildLayerDependencyMermaid(extractions: LayerExtraction[], layers?: LayerConfig[] | undefined): string
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `extractions` | `LayerExtraction[]` | 全レイヤーの抽出結果 |
+| `layers` | `LayerConfig[] or undefined` | レイヤー設定配列（省略可） |
+
+**Returns**: `string` Mermaidフローチャート文字列
+
+**Called By**
+
+- `MermaidRenderer.renderLayerDependency()` — Diagram (`mermaid-renderer.ts`)
+
+### 🔧 `buildLayerDependencyDot`
+
+> **File**: `project-overview-builder.ts`
+
+エントリーポイントからの依存フローを示すシンプルなDOTダイアグラムを生成する。
+各レイヤーはボックスで表示され、実際のインポート依存関係が矢印で描画される。
+禁止インポート違反は赤色の破線で表示される。
+
+```ts
+buildLayerDependencyDot(extractions: LayerExtraction[], layers?: LayerConfig[] | undefined): string
+```
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `extractions` | `LayerExtraction[]` | 全レイヤーの抽出結果 |
+| `layers` | `LayerConfig[] or undefined` | レイヤー設定配列（省略可） |
+
+**Returns**: `string` DOT形式のグラフ文字列
+
+**Called By**
+
+- `SvgRenderer.renderLayerDependency()` — Diagram (`svg-renderer.ts`)
+
 ### 🔧 `buildRouteSequenceDiagram`
 
 > **File**: `route-sequence-builder.ts`
@@ -541,3 +625,4 @@ renderDotToSvg(dotCode: string, engine?: "dot" | "fdp" | "neato"): Promise<strin
 - `SvgRenderer.renderLayerOverview()` — Diagram (`svg-renderer.ts`)
 - `SvgRenderer.renderDetailClassDiagram()` — Diagram (`svg-renderer.ts`)
 - `SvgRenderer.renderProjectOverview()` — Diagram (`svg-renderer.ts`)
+- `SvgRenderer.renderLayerDependency()` — Diagram (`svg-renderer.ts`)

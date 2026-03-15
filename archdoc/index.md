@@ -25,6 +25,10 @@ description: archdoc DDD layered architecture overview
 | **Drift** (ドリフト検出層) | `src/drift/` | 設定と実態の乖離検出 | `src/cli`, `src/diagram`, `src/generator` | [drift.md](./drift.md) |
 | **Cli** (CLI層) | `src/cli/` | CLIインターフェースの提供 | — | [cli.md](./cli.md) |
 
+## Layer Dependency
+
+![Layer Dependency](diagrams/layer-dependency.svg)
+
 ## Legend
 
 **Kind** — Object type indicators
@@ -157,6 +161,8 @@ description: archdoc DDD layered architecture overview
 | `buildDetailDotDiagram` | 🔧 function | Other | クラス/インターフェースグループの完全なメンバー詳細を含むDOTダイアグラムを生成する。 |
 | `buildProjectOverviewMermaid` | 🔧 function | Other | 全レイヤーにわたる全オブジェクトを表示するMermaidクラス図を生成する。 |
 | `buildProjectOverviewDot` | 🔧 function | Other | 全レイヤーにわたる全オブジェクトを表示するDOTダイアグラムを生成する。 |
+| `buildLayerDependencyMermaid` | 🔧 function | Other | エントリーポイントからの依存フローを示すシンプルなMermaidフローチャートを生成する。 |
+| `buildLayerDependencyDot` | 🔧 function | Other | エントリーポイントからの依存フローを示すシンプルなDOTダイアグラムを生成する。 |
 | `buildRouteSequenceDiagram` | 🔧 function | Other | 単一ルートハンドラーのコールチェーンからMermaidシーケンス図を生成する。 |
 | `buildSequenceDiagram` | 🔧 function | Other | 単一コールチェーンエントリからMermaidシーケンス図を生成する。 |
 | `buildMultiSequenceDiagrams` | 🔧 function | Other | 複数コールチェーンからクラス名をキーとするシーケンス図を生成する。 |

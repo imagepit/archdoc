@@ -50,4 +50,13 @@ export interface DiagramRenderer {
    * @returns Markdownスニペット文字列、またはnull
    */
   renderProjectOverview(extractions: LayerExtraction[], layers?: LayerConfig[]): Promise<string | null>;
+
+  /**
+   * レイヤー間の依存関係をシンプルなフローチャートでレンダリングする。
+   * 各レイヤーをボックスで表示し、実際のインポート依存関係を矢印で描画する。
+   * @param extractions - 全レイヤーの抽出結果
+   * @param layers - レイヤー設定配列（省略可）
+   * @returns Markdownスニペット文字列、またはnull
+   */
+  renderLayerDependency(extractions: LayerExtraction[], layers?: LayerConfig[]): Promise<string | null>;
 }

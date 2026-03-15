@@ -18,7 +18,7 @@
 <title>MermaidRenderer</title>
 <path fill="white" stroke="black" d="M110.32,-219.2C110.32,-219.2 29.68,-219.2 29.68,-219.2 23.68,-219.2 17.68,-213.2 17.68,-207.2 17.68,-207.2 17.68,-195.2 17.68,-195.2 17.68,-189.2 23.68,-183.2 29.68,-183.2 29.68,-183.2 110.32,-183.2 110.32,-183.2 116.32,-183.2 122.32,-189.2 122.32,-195.2 122.32,-195.2 122.32,-207.2 122.32,-207.2 122.32,-213.2 116.32,-219.2 110.32,-219.2"/>
 <text xml:space="preserve" text-anchor="middle" x="70" y="-204.5" font-family="Helvetica,sans-Serif" font-size="11.00">MermaidRenderer</text>
-<text xml:space="preserve" text-anchor="middle" x="70" y="-191.3" font-family="Helvetica,sans-Serif" font-size="11.00">(5 members)</text>
+<text xml:space="preserve" text-anchor="middle" x="70" y="-191.3" font-family="Helvetica,sans-Serif" font-size="11.00">(6 members)</text>
 </g>
 <!-- DependencyGraph -->
 <g id="node3" class="node">
@@ -35,7 +35,7 @@
 <path fill="white" stroke="black" stroke-dasharray="5,2" d="M186.71,-63.6C186.71,-63.6 107.29,-63.6 107.29,-63.6 101.29,-63.6 95.29,-57.6 95.29,-51.6 95.29,-51.6 95.29,-28 95.29,-28 95.29,-22 101.29,-16 107.29,-16 107.29,-16 186.71,-16 186.71,-16 192.71,-16 198.71,-22 198.71,-28 198.71,-28 198.71,-51.6 198.71,-51.6 198.71,-57.6 192.71,-63.6 186.71,-63.6"/>
 <text xml:space="preserve" text-anchor="middle" x="147" y="-49.7" font-family="Helvetica,sans-Serif" font-size="11.00">≪interface≫</text>
 <text xml:space="preserve" text-anchor="middle" x="147" y="-36.5" font-family="Helvetica,sans-Serif" font-size="11.00">DiagramRenderer</text>
-<text xml:space="preserve" text-anchor="middle" x="147" y="-23.3" font-family="Helvetica,sans-Serif" font-size="11.00">(5 members)</text>
+<text xml:space="preserve" text-anchor="middle" x="147" y="-23.3" font-family="Helvetica,sans-Serif" font-size="11.00">(6 members)</text>
 </g>
 <!-- MermaidRenderer&#45;&gt;DiagramRenderer -->
 <g id="edge3" class="edge">
@@ -48,7 +48,7 @@
 <title>SvgRenderer</title>
 <path fill="white" stroke="black" d="M213.41,-219.2C213.41,-219.2 156.59,-219.2 156.59,-219.2 150.59,-219.2 144.59,-213.2 144.59,-207.2 144.59,-207.2 144.59,-195.2 144.59,-195.2 144.59,-189.2 150.59,-183.2 156.59,-183.2 156.59,-183.2 213.41,-183.2 213.41,-183.2 219.41,-183.2 225.41,-189.2 225.41,-195.2 225.41,-195.2 225.41,-207.2 225.41,-207.2 225.41,-213.2 219.41,-219.2 213.41,-219.2"/>
 <text xml:space="preserve" text-anchor="middle" x="185" y="-204.5" font-family="Helvetica,sans-Serif" font-size="11.00">SvgRenderer</text>
-<text xml:space="preserve" text-anchor="middle" x="185" y="-191.3" font-family="Helvetica,sans-Serif" font-size="11.00">(5 members)</text>
+<text xml:space="preserve" text-anchor="middle" x="185" y="-191.3" font-family="Helvetica,sans-Serif" font-size="11.00">(6 members)</text>
 </g>
 <!-- SvgRenderer&#45;&gt;DiagramRenderer -->
 <g id="edge4" class="edge">

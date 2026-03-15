@@ -654,3 +654,163 @@ function escapeLabel(text: string): string {
     .replace(/\}/g, "\\}")
     .replace(/\|/g, "\\|");
 }
+
+// --- Layer Dependency Diagram ---
+
+interface LayerDep {
+  source: string;
+  target: string;
+  isForbidden: boolean;
+  count: number;
+}
+
+/**
+ * 全レイヤーの抽出結果からレイヤー間のインポート依存関係をユニークに集計する。
+ * @param extractions - 全レイヤーの抽出結果
+ * @returns レイヤー間依存関係の配列
+ */
+function collectLayerDependencies(extractions: LayerExtraction[]): LayerDep[] {
+  const map = new Map<string, LayerDep>();
+  for (const ext of extractions) {
+    for (const dep of ext.dependencies) {
+      if (dep.type !== "import") continue;
+      const key = `${dep.source}->${dep.target}`;
+      const existing = map.get(key);
+      if (existing) {
+        existing.count++;
+        if (dep.isForbidden) existing.isForbidden = true;
+      } else {
+        map.set(key, {
+          source: dep.source,
+          target: dep.target,
+          isForbidden: dep.isForbidden ?? false,
+          count: 1,
+        });
+      }
+    }
+  }
+  return [...map.values()];
+}
+
+/**
+ * エントリーポイントからの依存フローを示すシンプルなMermaidフローチャートを生成する。
+ * 各レイヤーはボックスで表示され、実際のインポート依存関係が矢印で描画される。
+ * 禁止インポート違反は赤色の破線で表示される。
+ * @param extractions - 全レイヤーの抽出結果
+ * @param layers - レイヤー設定配列（省略可）
+ * @returns Mermaidフローチャート文字列
+ */
+export function buildLayerDependencyMermaid(
+  extractions: LayerExtraction[],
+  layers?: LayerConfig[],
+): string {
+  const layerMap = layers
+    ? new Map(layers.map((l) => [l.name, l]))
+    : undefined;
+
+  const deps = collectLayerDependencies(extractions);
+  if (deps.length === 0) return "";
+
+  const layerNames = extractions.map((e) => e.layerName);
+  const lines: string[] = ["graph TD"];
+
+  // Node definitions
+  for (const name of layerNames) {
+    const config = layerMap?.get(name);
+    const nameJa = config?.nameJa ?? "";
+    const id = sanitizeId(name);
+    lines.push(`  ${id}["${name}<br/><small>${nameJa}</small>"]`);
+  }
+  lines.push("");
+
+  // Normal dependencies
+  for (const dep of deps) {
+    if (dep.isForbidden) continue;
+    const src = sanitizeId(dep.source);
+    const tgt = sanitizeId(dep.target);
+    lines.push(`  ${src} --> ${tgt}`);
+  }
+
+  // Forbidden dependencies (red dashed)
+  const forbidden = deps.filter((d) => d.isForbidden);
+  if (forbidden.length > 0) {
+    lines.push("");
+    for (const dep of forbidden) {
+      const src = sanitizeId(dep.source);
+      const tgt = sanitizeId(dep.target);
+      lines.push(`  ${src} -. "⛔ forbidden" .-> ${tgt}`);
+    }
+    lines.push("");
+    lines.push("  linkStyle " + deps.filter((d) => !d.isForbidden).length + " stroke:#d32f2f,stroke-dasharray:5");
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * エントリーポイントからの依存フローを示すシンプルなDOTダイアグラムを生成する。
+ * 各レイヤーはボックスで表示され、実際のインポート依存関係が矢印で描画される。
+ * 禁止インポート違反は赤色の破線で表示される。
+ * @param extractions - 全レイヤーの抽出結果
+ * @param layers - レイヤー設定配列（省略可）
+ * @returns DOT形式のグラフ文字列
+ */
+export function buildLayerDependencyDot(
+  extractions: LayerExtraction[],
+  layers?: LayerConfig[],
+): string {
+  const layerMap = layers
+    ? new Map(layers.map((l) => [l.name, l]))
+    : undefined;
+
+  const deps = collectLayerDependencies(extractions);
+  if (deps.length === 0) return "";
+
+  const layerNames = extractions.map((e) => e.layerName);
+  const lines: string[] = [];
+  lines.push("digraph {");
+  lines.push("  rankdir=TB");
+  lines.push("  nodesep=0.6");
+  lines.push("  ranksep=0.8");
+  lines.push('  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=12, width=2.2, height=0.6]');
+  lines.push('  edge [fontname="Helvetica", fontsize=9, color="#546e7a", arrowhead=vee]');
+  lines.push("");
+
+  // Node definitions with layer colors
+  for (let i = 0; i < layerNames.length; i++) {
+    const name = layerNames[i];
+    const config = layerMap?.get(name);
+    const nameJa = config?.nameJa ?? "";
+    const id = sanitizeId(name);
+    const color = LAYER_COLORS[i % LAYER_COLORS.length];
+    const label = `${escapeLabel(name)}\\n${escapeLabel(nameJa)}`;
+    lines.push(`  ${id} [label="${label}", fillcolor="${color.bg}", color="${color.border}", penwidth=2]`);
+  }
+  lines.push("");
+
+  // Normal dependency edges
+  const normalDeps = deps.filter((d) => !d.isForbidden);
+  if (normalDeps.length > 0) {
+    lines.push("  // Layer dependencies");
+    for (const dep of normalDeps) {
+      const src = sanitizeId(dep.source);
+      const tgt = sanitizeId(dep.target);
+      lines.push(`  ${src} -> ${tgt}`);
+    }
+  }
+
+  // Forbidden dependency edges (red dashed)
+  const forbiddenDeps = deps.filter((d) => d.isForbidden);
+  if (forbiddenDeps.length > 0) {
+    lines.push("");
+    lines.push("  // Forbidden imports (violations)");
+    for (const dep of forbiddenDeps) {
+      const src = sanitizeId(dep.source);
+      const tgt = sanitizeId(dep.target);
+      lines.push(`  ${src} -> ${tgt} [color="#d32f2f", style=dashed, penwidth=2, label="forbidden", fontcolor="#d32f2f"]`);
+    }
+  }
+
+  lines.push("}");
+  return lines.join("\n");
+}

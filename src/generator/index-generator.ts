@@ -57,6 +57,15 @@ export async function generateIndexMd(
     ]),
   );
 
+  // Layer Dependency diagram
+  if (options?.renderer) {
+    const layerDep = await options.renderer.renderLayerDependency(extractions, config.layers);
+    if (layerDep) {
+      md.heading(2, "Layer Dependency");
+      md.rawBlock(layerDep);
+    }
+  }
+
   // Legend
   md.heading(2, "Legend");
 

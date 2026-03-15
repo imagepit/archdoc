@@ -4,7 +4,7 @@ import type { LayerConfig } from "../types/config.js";
 import { buildCompactClassDiagram, buildCategoryClassDiagrams } from "./class-diagram-builder.js";
 import { buildSequenceDiagram } from "./sequence-diagram-builder.js";
 import { buildRouteSequenceDiagram } from "./route-sequence-builder.js";
-import { buildProjectOverviewMermaid } from "./project-overview-builder.js";
+import { buildProjectOverviewMermaid, buildLayerDependencyMermaid } from "./project-overview-builder.js";
 
 /**
  * DiagramRendererのMermaid実装。
@@ -41,6 +41,12 @@ export class MermaidRenderer implements DiagramRenderer {
 
   async renderProjectOverview(extractions: LayerExtraction[], layers?: LayerConfig[]): Promise<string | null> {
     const diagram = buildProjectOverviewMermaid(extractions, layers);
+    if (!diagram) return null;
+    return wrapMermaid(diagram);
+  }
+
+  async renderLayerDependency(extractions: LayerExtraction[], layers?: LayerConfig[]): Promise<string | null> {
+    const diagram = buildLayerDependencyMermaid(extractions, layers);
     if (!diagram) return null;
     return wrapMermaid(diagram);
   }

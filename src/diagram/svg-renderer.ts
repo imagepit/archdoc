@@ -7,7 +7,7 @@ import type { LayerConfig } from "../types/config.js";
 import { buildLayerDotDiagram, buildDetailDotDiagram } from "./dot-class-builder.js";
 import { buildSequenceDiagram } from "./sequence-diagram-builder.js";
 import { buildRouteSequenceDiagram } from "./route-sequence-builder.js";
-import { buildProjectOverviewDot } from "./project-overview-builder.js";
+import { buildProjectOverviewDot, buildLayerDependencyDot } from "./project-overview-builder.js";
 
 /**
  * DOTグラフ文字列をviz.jsでSVGにレンダリングする。
@@ -87,5 +87,16 @@ export class SvgRenderer implements DiagramRenderer {
     writeFileSync(join(this.diagramDir, filename), svg);
 
     return `![Project Overview](${this.relativeDir}/${filename})`;
+  }
+
+  async renderLayerDependency(extractions: LayerExtraction[], layers?: LayerConfig[]): Promise<string | null> {
+    const dot = buildLayerDependencyDot(extractions, layers);
+    if (!dot) return null;
+
+    const filename = "layer-dependency.svg";
+    const svg = await renderDotToSvg(dot);
+    writeFileSync(join(this.diagramDir, filename), svg);
+
+    return `![Layer Dependency](${this.relativeDir}/${filename})`;
   }
 }
