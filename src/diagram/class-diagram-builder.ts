@@ -4,6 +4,11 @@ import type {
   InterfaceInfo,
 } from "../types/extracted.js";
 
+/**
+ * メンバー情報を含む詳細なMermaidクラス図を生成する。
+ * @param extraction - レイヤーの抽出結果
+ * @returns Mermaidクラス図文字列
+ */
 export function buildClassDiagram(extraction: LayerExtraction): string {
   const classes = extraction.classes.filter((c) => c.isExported);
   const interfaces = extraction.interfaces.filter((i) => i.isExported);
@@ -16,8 +21,10 @@ export function buildClassDiagram(extraction: LayerExtraction): string {
 }
 
 /**
- * Build a compact overview class diagram for the entire layer.
- * Shows only class/interface names (no member details) with relationships.
+ * レイヤー全体のコンパクトな概要クラス図を生成する。
+ * クラス/インターフェース名と関係のみを表示し、メンバー詳細は含まない。
+ * @param extraction - レイヤーの抽出結果
+ * @returns Mermaidクラス図文字列
  */
 export function buildCompactClassDiagram(extraction: LayerExtraction): string {
   const classes = deduplicateByName(extraction.classes.filter((c) => c.isExported));
@@ -67,6 +74,12 @@ export function buildCompactClassDiagram(extraction: LayerExtraction): string {
   return lines.join("\n");
 }
 
+/**
+ * カテゴリ別に分割したクラス図を生成する。
+ * @param classes - クラス情報配列
+ * @param interfaces - インターフェース情報配列
+ * @returns クラス図文字列の配列
+ */
 export function buildCategoryClassDiagrams(
   classes: ClassInfo[],
   interfaces: InterfaceInfo[],
@@ -132,9 +145,9 @@ function buildDiagramFromItems(
 }
 
 /**
- * Detect composition/association relationships by analyzing property types.
- * If a property type references another class/interface in the diagram,
- * an arrow is added: composition (*--) for collections, association (-->) for single refs.
+ * プロパティ型を分析してコンポジション/関連関係を検出する。
+ * プロパティ型がダイアグラム内の別クラス/インターフェースを参照する場合、
+ * コレクション型は (*--)、単一参照は (-->) の矢印を追加する。
  */
 function detectPropertyRelationships(
   classes: ClassInfo[],
@@ -185,8 +198,11 @@ function detectPropsRelationships(
 }
 
 /**
- * Check if a type string references a given class/interface name.
- * Matches whole words to avoid false positives (e.g. "OrderItem" should not match "Order").
+ * 型文字列が指定のクラス/インターフェース名を参照しているか確認する。
+ * 誤検知を防ぐため単語境界でマッチする（例: "OrderItem" は "Order" にマッチしない）。
+ * @param typeStr - 確認対象の型文字列
+ * @param name - 検索するクラス/インターフェース名
+ * @returns 参照している場合はtrue
  */
 function typeReferences(typeStr: string, name: string): boolean {
   const regex = new RegExp(`\\b${escapeRegex(name)}\\b`);
@@ -198,7 +214,10 @@ function escapeRegex(str: string): string {
 }
 
 /**
- * Check if a type represents a collection of the target type.
+ * 型がターゲット型のコレクションを表しているか確認する。
+ * @param typeStr - 確認対象の型文字列
+ * @param targetName - ターゲット型名
+ * @returns コレクション型の場合はtrue
  */
 function isCollectionType(typeStr: string, targetName: string): boolean {
   return (

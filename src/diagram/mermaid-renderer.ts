@@ -7,8 +7,8 @@ import { buildRouteSequenceDiagram } from "./route-sequence-builder.js";
 import { buildProjectOverviewMermaid } from "./project-overview-builder.js";
 
 /**
- * Mermaid implementation of DiagramRenderer.
- * Returns Mermaid code blocks ready to embed in Markdown.
+ * DiagramRendererのMermaid実装。
+ * Markdownに埋め込み可能なMermaidコードブロックを返す。
  */
 export class MermaidRenderer implements DiagramRenderer {
   async renderLayerOverview(extraction: LayerExtraction): Promise<string | null> {

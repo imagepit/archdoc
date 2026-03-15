@@ -1,3 +1,4 @@
+/** DDDアーキテクチャで使用するレイヤー種別。 */
 export type LayerType =
   | "domain"
   | "application"
@@ -5,11 +6,13 @@ export type LayerType =
   | "infrastructure"
   | "custom";
 
+/** パターンベースのカテゴリ上書き設定。 */
 export interface CategoryOverride {
   pattern: string;
   category: string;
 }
 
+/** 単一アーキテクチャレイヤーの設定。 */
 export interface LayerConfig {
   name: string;
   nameJa: string;
@@ -19,14 +22,15 @@ export interface LayerConfig {
   responsibility: string;
   forbiddenImports: string[];
   categories: Record<string, string>;
-  /** Allowed dependency targets (layer names). If omitted, inferred from type. */
+  /** 許可する依存先レイヤー名。省略時はtypeから推論される。 */
   dependsOn?: string[];
-  /** Name-pattern-based category overrides applied after directory-based resolution */
+  /** ディレクトリベースの解決後に適用される名前パターンベースのカテゴリ上書き。 */
   categoryOverrides?: CategoryOverride[];
-  /** Framework identifier for framework-specific extraction (e.g. "express") */
+  /** フレームワーク固有の抽出に使用するフレームワーク識別子（例: "express"）。 */
   framework?: string;
 }
 
+/** layers.yamlから読み込まれるプロジェクト設定。 */
 export interface ProjectConfig {
   project: {
     name: string;

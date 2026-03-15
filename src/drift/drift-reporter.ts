@@ -1,6 +1,11 @@
 import chalk from "chalk";
 import type { DriftResult } from "../types/drift.js";
 
+/**
+ * ドリフト検出結果を人間が読みやすいテキストレポートに整形する。
+ * @param result - ドリフト検出結果
+ * @returns テキストレポート文字列
+ */
 export function formatDriftReport(result: DriftResult): string {
   const lines: string[] = [];
 
@@ -26,6 +31,11 @@ export function formatDriftReport(result: DriftResult): string {
   return lines.join("\n");
 }
 
+/**
+ * ドリフト検出結果をMarkdownレポートに整形する。
+ * @param result - ドリフト検出結果
+ * @returns Markdownレポート文字列
+ */
 export function formatDriftReportMd(result: DriftResult): string {
   const lines: string[] = [];
 

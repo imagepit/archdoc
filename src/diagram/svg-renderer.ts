@@ -9,14 +9,20 @@ import { buildSequenceDiagram } from "./sequence-diagram-builder.js";
 import { buildRouteSequenceDiagram } from "./route-sequence-builder.js";
 import { buildProjectOverviewDot } from "./project-overview-builder.js";
 
+/**
+ * DOTグラフ文字列をviz.jsでSVGにレンダリングする。
+ * @param dotCode - DOT形式のグラフ文字列
+ * @param engine - レンダリングエンジン（デフォルト: "dot"）
+ * @returns SVG文字列
+ */
 export async function renderDotToSvg(dotCode: string, engine: "dot" | "fdp" | "neato" = "dot"): Promise<string> {
   const viz = await instance();
   return viz.renderString(dotCode, { format: "svg", engine });
 }
 
 /**
- * SVG implementation of DiagramRenderer.
- * Generates DOT → SVG files and returns Markdown image references.
+ * DiagramRendererのSVG実装。
+ * DOT → SVGファイルを生成し、Markdown画像参照文字列を返す。
  */
 export class SvgRenderer implements DiagramRenderer {
   private fileCounter = 0;

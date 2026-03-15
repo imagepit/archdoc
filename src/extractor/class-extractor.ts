@@ -2,6 +2,12 @@ import { type ClassDeclaration, Scope } from "ts-morph";
 import type { ClassInfo, PropertyInfo, MethodInfo, ParameterInfo } from "../types/extracted.js";
 import { parseJsDoc, mergeParamDescriptions } from "./jsdoc-parser.js";
 
+/**
+ * ts-morph ASTを使用してTypeScriptクラス宣言からメタデータを抽出する。
+ * @param classDecl - クラス宣言ノード
+ * @param category - 所属カテゴリ名
+ * @returns 抽出されたクラス情報
+ */
 export function extractClass(classDecl: ClassDeclaration, category: string): ClassInfo {
   const jsdoc = parseJsDoc(classDecl);
 

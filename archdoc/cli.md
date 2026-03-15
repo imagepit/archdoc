@@ -22,11 +22,13 @@ init / generate / drift サブコマンドの実装。
 
 > **File**: `index.ts`
 
+全CLIサブコマンドを登録したCommander.jsプログラムを作成する。
+
 ```ts
 createProgram(): Command
 ```
 
-**Returns**: `Command` 
+**Returns**: `Command` 設定済みのCommanderプログラム
 
 ## Command
 
@@ -34,13 +36,15 @@ createProgram(): Command
 
 > **File**: `diagram.ts`
 
+単体ダイアグラム生成用の'diagram'サブコマンドを登録する。
+
 ```ts
 registerDiagramCommand(program: Command): void
 ```
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `program` | `Command` | — |
+| `program` | `Command` | Commanderプログラム |
 
 **Called By**
 
@@ -61,13 +65,15 @@ sequenceDiagram
 
 > **File**: `drift.ts`
 
+仕様ドリフト検出用の'drift'サブコマンドを登録する。
+
 ```ts
 registerDriftCommand(program: Command): void
 ```
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `program` | `Command` | — |
+| `program` | `Command` | Commanderプログラム |
 
 **Called By**
 
@@ -88,13 +94,15 @@ sequenceDiagram
 
 > **File**: `generate.ts`
 
+ドキュメント生成用の'generate'サブコマンドを登録する。
+
 ```ts
 registerGenerateCommand(program: Command): void
 ```
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `program` | `Command` | — |
+| `program` | `Command` | Commanderプログラム |
 
 **Called By**
 
@@ -115,13 +123,15 @@ sequenceDiagram
 
 > **File**: `init.ts`
 
+layers.yaml初期化用の'init'サブコマンドを登録する。
+
 ```ts
 registerInitCommand(program: Command): void
 ```
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `program` | `Command` | — |
+| `program` | `Command` | Commanderプログラム |
 
 **Called By**
 

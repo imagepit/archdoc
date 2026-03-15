@@ -13,6 +13,12 @@ import { analyzeImports, findForbiddenImports } from "./import-analyzer.js";
 import { analyzeCallChains, analyzeFunctionCallChains } from "./call-chain-analyzer.js";
 import { createFrameworkExtractor } from "./framework/index.js";
 
+/**
+ * ソースコード解析用のts-morph Projectインスタンスを作成する。
+ * @param sourceRoot - ソースルートディレクトリ
+ * @param tsConfigPath - tsconfig.jsonのパス（省略可）
+ * @returns 設定済みのProjectインスタンス
+ */
 export function createExtractorProject(
   sourceRoot: string,
   tsConfigPath?: string,
@@ -29,6 +35,14 @@ export function createExtractorProject(
   });
 }
 
+/**
+ * 単一アーキテクチャレイヤーから全コンポーネントを抽出する。
+ * @param project - ts-morph Projectインスタンス
+ * @param layer - レイヤー設定
+ * @param allLayers - 全レイヤーの設定
+ * @param sourceRoot - ソースルートディレクトリ（フレームワーク抽出時に使用）
+ * @returns レイヤーの抽出結果
+ */
 export function extractLayer(
   project: Project,
   layer: LayerConfig,

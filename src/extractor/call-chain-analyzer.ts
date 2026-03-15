@@ -4,6 +4,11 @@ import type { ClassCallChain, ConstructorDep, MethodCall, MethodCallChain } from
 
 export type { ClassCallChain, ConstructorDep, MethodCall, MethodCallChain };
 
+/**
+ * エクスポートされた全クラスのコンストラクタインジェクションによるコールチェーンを解析する。
+ * @param sourceFiles - 解析対象のソースファイル群
+ * @returns クラスごとのコールチェーン配列
+ */
 export function analyzeCallChains(sourceFiles: SourceFile[]): ClassCallChain[] {
   const results: ClassCallChain[] = [];
 
@@ -112,6 +117,11 @@ function extractMethodCalls(
   return calls;
 }
 
+/**
+ * エクスポートされた全関数の引数ベースのコールチェーンを解析する。
+ * @param sourceFiles - 解析対象のソースファイル群
+ * @returns 関数ごとのコールチェーン配列
+ */
 export function analyzeFunctionCallChains(sourceFiles: SourceFile[]): ClassCallChain[] {
   const results: ClassCallChain[] = [];
 

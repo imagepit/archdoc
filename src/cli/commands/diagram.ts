@@ -7,6 +7,10 @@ import { buildDependencyGraph } from "../../diagram/dependency-graph.js";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
+/**
+ * 単体ダイアグラム生成用の'diagram'サブコマンドを登録する。
+ * @param program - Commanderプログラム
+ */
 export function registerDiagramCommand(program: Command): void {
   program
     .command("diagram")

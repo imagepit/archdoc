@@ -6,6 +6,10 @@ import { loadSpec, saveSpec } from "../../drift/spec-store.js";
 import { compareSpecs } from "../../drift/spec-comparator.js";
 import { formatDriftReport } from "../../drift/drift-reporter.js";
 
+/**
+ * 仕様ドリフト検出用の'drift'サブコマンドを登録する。
+ * @param program - Commanderプログラム
+ */
 export function registerDriftCommand(program: Command): void {
   program
     .command("drift")

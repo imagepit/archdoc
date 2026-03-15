@@ -39,12 +39,14 @@ const CATEGORY_BORDER_COLORS = [
 ];
 
 /**
- * Build a compact overview DOT diagram for the entire layer.
- * Nodes show only class/interface name (no members) for readability.
- * Detailed member info is in the Markdown text.
+ * レイヤー全体のコンパクトな概要DOTダイアグラムを生成する。
+ * 可読性のためノードはクラス/インターフェース名のみ表示し、メンバーは含まない。
+ * 詳細なメンバー情報はMarkdownテキスト側に記載される。
  *
- * Groups by category. If all items share a single category,
- * falls back to subDirectory-based grouping.
+ * カテゴリでグループ化する。全アイテムが単一カテゴリの場合は
+ * サブディレクトリベースのグループ化にフォールバックする。
+ * @param extraction - レイヤーの抽出結果
+ * @returns DOT形式のグラフ文字列
  */
 export function buildLayerDotDiagram(extraction: LayerExtraction): string {
   const classes = extraction.classes.filter((c) => c.isExported);
@@ -169,8 +171,11 @@ export function buildLayerDotDiagram(extraction: LayerExtraction): string {
 }
 
 /**
- * Build a DOT diagram with full member details for a group of classes/interfaces.
- * Uses the same visual style as the overview (colored subgraph, 2-column grid, rounded nodes).
+ * クラス/インターフェースグループの完全なメンバー詳細を含むDOTダイアグラムを生成する。
+ * 概要図と同じビジュアルスタイル（カラーサブグラフ、2列グリッド、丸角ノード）を使用する。
+ * @param classes - クラス情報配列
+ * @param interfaces - インターフェース情報配列
+ * @returns DOT形式のグラフ文字列
  */
 export function buildDetailDotDiagram(
   classes: ClassInfo[],
@@ -298,8 +303,11 @@ interface CategorizedItem {
 }
 
 /**
- * Smart grouping: use category by default.
- * If all items share a single category, fall back to subDirectory grouping.
+ * スマートグループ化: デフォルトはカテゴリでグループ化する。
+ * 全アイテムが単一カテゴリの場合はサブディレクトリベースのグループ化にフォールバックする。
+ * @param classes - クラス情報配列
+ * @param interfaces - インターフェース情報配列
+ * @returns グループラベルをキーとするアイテムのMap
  */
 function smartGroup(
   classes: ClassInfo[],

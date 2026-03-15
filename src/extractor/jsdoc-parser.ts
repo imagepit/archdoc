@@ -1,6 +1,7 @@
 import type { JSDocableNode } from "ts-morph";
 import type { ParameterInfo, ThrowInfo, DependencyInfo } from "../types/extracted.js";
 
+/** 説明文・引数・throws・ビジネスルールを含むJSDoc解析結果。 */
 export interface ParsedJsDoc {
   description: string;
   params: Map<string, string>;
@@ -10,6 +11,11 @@ export interface ParsedJsDoc {
   see: DependencyInfo[];
 }
 
+/**
+ * ts-morphノードからJSDocコメントを構造化データに変換する。
+ * @param node - JSDocを持つts-morphノード
+ * @returns 解析されたJSDoc情報
+ */
 export function parseJsDoc(node: JSDocableNode): ParsedJsDoc {
   const result: ParsedJsDoc = {
     description: "",
@@ -82,6 +88,12 @@ function cleanDescription(text: string): string {
     .trim();
 }
 
+/**
+ * JSDoc @param記述を抽出済みの引数メタデータにマージする。
+ * @param params - 抽出済みの引数情報配列
+ * @param jsDocParams - 解析済みJSDoc情報（引数名と説明文のMap）
+ * @returns マージ済みの引数情報配列
+ */
 export function mergeParamDescriptions(
   params: ParameterInfo[],
   jsDocParams: Map<string, string>,

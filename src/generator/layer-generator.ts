@@ -16,12 +16,20 @@ import type { CallChainEntry } from "../types/extracted.js";
 import type { DiagramRenderer } from "../diagram/diagram-renderer.js";
 import { formatName, kindEmoji, type ObjectKind } from "./emoji.js";
 
+/** ダイアグラムレンダラーを含むレイヤードキュメント生成オプション。 */
 export interface GenerateOptions {
   renderer: DiagramRenderer;
-  /** Ordered layer names (inner → outer) for dependency direction checks */
+  /** 依存方向チェック用のレイヤー名順序配列（内側 → 外側） */
   layerNames?: string[];
 }
 
+/**
+ * 単一アーキテクチャレイヤーのMarkdownドキュメントを生成する。
+ * @param layer - レイヤー設定
+ * @param extraction - レイヤーの抽出結果
+ * @param options - 生成オプション
+ * @returns 生成されたMarkdown文字列
+ */
 export async function generateLayerMd(
   layer: LayerConfig,
   extraction: LayerExtraction,
@@ -111,8 +119,15 @@ interface CategorizedItem {
 }
 
 /**
- * Render the class diagram and individual items for a group.
- * headingLevel controls where individual class/interface headings start.
+ * グループのクラス図と個別アイテムをレンダリングする。
+ * headingLevel でクラス/インターフェース見出しの開始レベルを制御する。
+ * @param md - Markdownビルダー
+ * @param items - レンダリング対象のアイテム配列
+ * @param callChains - コールチェーンエントリ配列
+ * @param renderer - ダイアグラムレンダラー
+ * @param headingLevel - 見出しレベル
+ * @param selfLayerName - 自レイヤー名（省略可）
+ * @param layerNames - 全レイヤー名の順序配列（省略可）
  */
 async function renderGroupDiagramAndItems(
   md: MarkdownBuilder,
@@ -223,8 +238,10 @@ function groupByCategory(
 }
 
 /**
- * Group items by their subDirectory field.
- * Items with empty subDirectory are grouped under "".
+ * アイテムをsubDirectoryフィールドでグループ化する。
+ * subDirectoryが空のアイテムは "" キーでグループ化される。
+ * @param items - グループ化対象のアイテム配列
+ * @returns サブディレクトリをキーとするアイテムのMap
  */
 function groupBySubDirectory(
   items: CategorizedItem[],
@@ -246,8 +263,10 @@ function getSubDirectory(item: CategorizedItem): string {
 }
 
 /**
- * Format a subdirectory path into a readable section label.
- * e.g. "order" → "Order", "create-order" → "Create Order"
+ * サブディレクトリパスを読みやすいセクションラベルに整形する。
+ * 例: "order" → "Order"、"create-order" → "Create Order"
+ * @param subDir - サブディレクトリパス
+ * @returns 整形済みラベル文字列
  */
 function formatSubDirLabel(subDir: string): string {
   if (!subDir) return "General";
@@ -683,9 +702,13 @@ function getFilename(filePath: string): string {
 }
 
 /**
- * Check if a direct call goes against the expected dependency direction.
- * Layer order in config is inner → outer (e.g. Domain, Application, Infrastructure, Presentation).
- * Returns true when the caller is from an inner layer calling an outer layer directly.
+ * 直接呼び出しが期待される依存方向に反しているか確認する。
+ * 設定のレイヤー順序は内側 → 外側（例: Domain, Application, Infrastructure, Presentation）。
+ * 内側レイヤーから外側レイヤーへの直接呼び出しの場合にtrueを返す。
+ * @param callerLayerName - 呼び出し元レイヤー名
+ * @param targetLayerName - 呼び出し先レイヤー名
+ * @param layerNames - 全レイヤー名の順序配列
+ * @returns 内側から外側への呼び出しの場合はtrue
  */
 function isInwardToOutwardCall(
   callerLayerName: string | undefined,
@@ -700,7 +723,11 @@ function isInwardToOutwardCall(
   return callerIdx < targetIdx;
 }
 
-/** Replace `|` with `or` for safe Markdown table rendering */
+/**
+ * Markdownテーブルで安全にレンダリングするため `|` を `or` に置換する。
+ * @param type - 型文字列
+ * @returns サニタイズ済みの型文字列
+ */
 function sanitizeTableType(type: string): string {
   return type.replace(/\s*\|\s*/g, " or ");
 }

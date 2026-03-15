@@ -27,6 +27,7 @@ const layerConfigSchema = z.object({
   framework: z.string().optional(),
 });
 
+/** layers.yamlプロジェクト設定のバリデーション用Zodスキーマ。 */
 export const projectConfigSchema = z.object({
   project: z.object({
     name: z.string().min(1),

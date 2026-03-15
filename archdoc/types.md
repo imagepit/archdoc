@@ -27,6 +27,8 @@ description: 共通型定義の提供
 > **File**: `config.ts`
 > **Type**: Other
 
+パターンベースのカテゴリ上書き設定。
+
 **Properties**
 
 | Property | Type | Required | Description |
@@ -38,6 +40,8 @@ description: 共通型定義の提供
 
 > **File**: `config.ts`
 > **Type**: Other
+
+単一アーキテクチャレイヤーの設定。
 
 **Properties**
 
@@ -51,14 +55,16 @@ description: 共通型定義の提供
 | `responsibility` | `string` | ✓ | — |
 | `forbiddenImports` | `string[]` | ✓ | — |
 | `categories` | `Record<string, string>` | ✓ | — |
-| `dependsOn` | `string[] or undefined` | — | Allowed dependency targets (layer names). If omitted, inferred from type. |
-| `categoryOverrides` | `CategoryOverride[] or undefined` | — | Name-pattern-based category overrides applied after directory-based resolution |
-| `framework` | `string or undefined` | — | Framework identifier for framework-specific extraction (e.g. "express") |
+| `dependsOn` | `string[] or undefined` | — | 許可する依存先レイヤー名。省略時はtypeから推論される。 |
+| `categoryOverrides` | `CategoryOverride[] or undefined` | — | ディレクトリベースの解決後に適用される名前パターンベースのカテゴリ上書き。 |
+| `framework` | `string or undefined` | — | フレームワーク固有の抽出に使用するフレームワーク識別子（例: "express"）。 |
 
 ### 📋 `ProjectConfig`
 
 > **File**: `config.ts`
 > **Type**: Other
+
+layers.yamlから読み込まれるプロジェクト設定。
 
 **Properties**
 
@@ -71,6 +77,8 @@ description: 共通型定義の提供
 
 > **File**: `drift.ts`
 > **Type**: Other
+
+2つの仕様スナップショット間で検出された単一の差分。
 
 **Properties**
 
@@ -89,6 +97,8 @@ description: 共通型定義の提供
 > **File**: `drift.ts`
 > **Type**: Other
 
+レイヤーのドリフト検出結果。
+
 **Properties**
 
 | Property | Type | Required | Description |
@@ -101,6 +111,8 @@ description: 共通型定義の提供
 
 > **File**: `extracted.ts`
 > **Type**: Other
+
+クラスまたはインターフェースから抽出されたプロパティ情報。
 
 **Properties**
 
@@ -118,6 +130,8 @@ description: 共通型定義の提供
 > **File**: `extracted.ts`
 > **Type**: Other
 
+関数またはメソッドから抽出された引数情報。
+
 **Properties**
 
 | Property | Type | Required | Description |
@@ -133,6 +147,8 @@ description: 共通型定義の提供
 > **File**: `extracted.ts`
 > **Type**: Other
 
+JSDoc
+
 **Properties**
 
 | Property | Type | Required | Description |
@@ -144,6 +160,8 @@ description: 共通型定義の提供
 
 > **File**: `extracted.ts`
 > **Type**: Other
+
+このメソッドまたは関数を呼び出しているコンポーネントの参照情報。
 
 **Properties**
 
@@ -159,6 +177,8 @@ description: 共通型定義の提供
 
 > **File**: `extracted.ts`
 > **Type**: Other
+
+シグネチャ・引数・ビジネスルールを含むメソッド情報。
 
 **Properties**
 
@@ -180,6 +200,8 @@ description: 共通型定義の提供
 > **File**: `extracted.ts`
 > **Type**: Other
 
+インターフェース宣言から抽出されたメソッドシグネチャ。
+
 **Properties**
 
 | Property | Type | Required | Description |
@@ -196,6 +218,8 @@ description: 共通型定義の提供
 > **File**: `extracted.ts`
 > **Type**: Other
 
+レイヤー間のインポート依存関係（禁止インポート検出含む）。
+
 **Properties**
 
 | Property | Type | Required | Description |
@@ -211,6 +235,8 @@ description: 共通型定義の提供
 
 > **File**: `extracted.ts`
 > **Type**: Other
+
+プロパティ・メソッド・依存関係を含むクラス情報。
 
 **Properties**
 
@@ -234,6 +260,8 @@ description: 共通型定義の提供
 > **File**: `extracted.ts`
 > **Type**: Other
 
+プロパティ・メソッドシグネチャを含むインターフェース情報。
+
 **Properties**
 
 | Property | Type | Required | Description |
@@ -253,6 +281,8 @@ description: 共通型定義の提供
 > **File**: `extracted.ts`
 > **Type**: Other
 
+Expressルートハンドラ内のメソッド呼び出し。
+
 **Properties**
 
 | Property | Type | Required | Description |
@@ -264,6 +294,8 @@ description: 共通型定義の提供
 
 > **File**: `extracted.ts`
 > **Type**: Other
+
+Expressルートハンドラから抽出されたJSDocタグ。
 
 **Properties**
 
@@ -277,6 +309,8 @@ description: 共通型定義の提供
 
 > **File**: `extracted.ts`
 > **Type**: Other
+
+ミドルウェアとコールチェーンを含むExpressルート定義。
 
 **Properties**
 
@@ -293,6 +327,8 @@ description: 共通型定義の提供
 
 > **File**: `extracted.ts`
 > **Type**: Other
+
+シグネチャ・引数・ルート情報を含む関数情報。
 
 **Properties**
 
@@ -318,6 +354,8 @@ description: 共通型定義の提供
 > **File**: `extracted.ts`
 > **Type**: Other
 
+型エイリアスの抽出情報。
+
 **Properties**
 
 | Property | Type | Required | Description |
@@ -336,6 +374,8 @@ description: 共通型定義の提供
 > **File**: `extracted.ts`
 > **Type**: Other
 
+enum宣言の個別メンバー情報。
+
 **Properties**
 
 | Property | Type | Required | Description |
@@ -348,6 +388,8 @@ description: 共通型定義の提供
 
 > **File**: `extracted.ts`
 > **Type**: Other
+
+enum宣言の抽出情報。
 
 **Properties**
 
@@ -365,6 +407,8 @@ description: 共通型定義の提供
 
 > **File**: `extracted.ts`
 > **Type**: Other
+
+エクスポートされた定数の抽出情報。
 
 **Properties**
 
@@ -384,6 +428,8 @@ description: 共通型定義の提供
 > **File**: `extracted.ts`
 > **Type**: Other
 
+コールチェーン解析用のコンストラクタ依存パラメータ。
+
 **Properties**
 
 | Property | Type | Required | Description |
@@ -395,6 +441,8 @@ description: 共通型定義の提供
 
 > **File**: `extracted.ts`
 > **Type**: Other
+
+クラスメソッドまたは関数内での依存先への単一メソッド呼び出し。
 
 **Properties**
 
@@ -408,6 +456,8 @@ description: 共通型定義の提供
 > **File**: `extracted.ts`
 > **Type**: Other
 
+単一メソッド内のすべての依存先呼び出し。
+
 **Properties**
 
 | Property | Type | Required | Description |
@@ -419,6 +469,8 @@ description: 共通型定義の提供
 
 > **File**: `extracted.ts`
 > **Type**: Other
+
+クラスまたは関数の完全なコールチェーン（依存先とメソッド呼び出しを含む）。
 
 **Properties**
 
@@ -434,6 +486,8 @@ description: 共通型定義の提供
 > **File**: `extracted.ts`
 > **Type**: Other
 
+LayerExtractionに格納されるシリアライズ可能なコールチェーンエントリ。
+
 **Properties**
 
 | Property | Type | Required | Description |
@@ -447,6 +501,8 @@ description: 共通型定義の提供
 
 > **File**: `extracted.ts`
 > **Type**: Other
+
+単一アーキテクチャレイヤーの完全な抽出結果。
 
 **Properties**
 
@@ -467,6 +523,8 @@ description: 共通型定義の提供
 > **File**: `config.ts`
 > **Type**: Other
 
+DDDアーキテクチャで使用するレイヤー種別。
+
 ```typescript
 "domain" | "application" | "presentation" | "infrastructure" | "custom"
 ```
@@ -475,6 +533,8 @@ description: 共通型定義の提供
 
 > **File**: `drift.ts`
 > **Type**: Other
+
+仕様ドリフト検出の重大度レベル。
 
 ```typescript
 "added" | "removed" | "changed"

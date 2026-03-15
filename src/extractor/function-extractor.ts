@@ -2,6 +2,12 @@ import type { FunctionDeclaration } from "ts-morph";
 import type { FunctionInfo, ParameterInfo } from "../types/extracted.js";
 import { parseJsDoc, mergeParamDescriptions } from "./jsdoc-parser.js";
 
+/**
+ * TypeScript関数宣言からメタデータを抽出する。
+ * @param funcDecl - 関数宣言ノード
+ * @param category - 所属カテゴリ名
+ * @returns 抽出された関数情報
+ */
 export function extractFunction(
   funcDecl: FunctionDeclaration,
   category: string,

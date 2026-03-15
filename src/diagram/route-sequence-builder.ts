@@ -1,8 +1,11 @@
 import type { RouteInfo } from "../types/extracted.js";
 
 /**
- * Build a Mermaid sequence diagram for a single route handler call chain.
- * Shared between MermaidRenderer and SvgRenderer (fallback).
+ * 単一ルートハンドラーのコールチェーンからMermaidシーケンス図を生成する。
+ * MermaidRendererとSvgRenderer（フォールバック）で共有される。
+ * @param funcName - ルートハンドラー関数名
+ * @param route - ルート情報
+ * @returns Mermaidシーケンス図文字列、またはnull
  */
 export function buildRouteSequenceDiagram(funcName: string, route: RouteInfo): string | null {
   if (route.calls.length === 0) return null;

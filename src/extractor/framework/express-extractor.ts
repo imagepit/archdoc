@@ -10,6 +10,7 @@ import type { FrameworkExtractor } from "./framework-extractor.js";
 
 const HTTP_METHODS = new Set(["get", "post", "put", "delete", "patch"]);
 
+/** FrameworkExtractorを実装するExpress.jsルート抽出器。 */
 export class ExpressExtractor implements FrameworkExtractor {
   extractRoutes(sourceFile: SourceFile, funcName: string): RouteInfo[] {
     const funcDecl = sourceFile.getFunction(funcName);
@@ -82,8 +83,10 @@ export class ExpressExtractor implements FrameworkExtractor {
 }
 
 /**
- * Build a map from variable names to their constructor type names.
- * Matches: const x = new TypeName(...)
+ * 変数名からコンストラクタ型名へのマップを構築する。
+ * `const x = new TypeName(...)` パターンにマッチする。
+ * @param funcDecl - 解析対象の関数宣言ノード
+ * @returns 変数名と型名のマッピング
  */
 function buildVarTypeMap(
   funcDecl: FunctionDeclaration,
@@ -107,7 +110,10 @@ function buildVarTypeMap(
 }
 
 /**
- * Parse a router.METHOD('/path', ...middlewares, handler) call.
+ * `router.METHOD('/path', ...middlewares, handler)` 形式の呼び出しを解析する。
+ * @param callExpr - 解析対象の呼び出し式ノード
+ * @param varTypeMap - 変数名と型名のマッピング
+ * @returns 解析されたルート情報、またはルートでない場合はnull
  */
 function parseRouterCall(
   callExpr: CallExpression,
@@ -190,8 +196,11 @@ function extractMiddlewareName(node: Node): string | null {
 }
 
 /**
- * Extract calls to known variables (use cases, services) from handler body.
- * Matches: variable.method() where variable is in varTypeMap.
+ * ハンドラ本体から既知の変数（ユースケース・サービス等）への呼び出しを抽出する。
+ * `variable.method()` パターンにマッチする（variableがvarTypeMapに存在する場合）。
+ * @param handler - ハンドラのASTノード
+ * @param varTypeMap - 変数名と型名のマッピング
+ * @returns ルート呼び出し情報配列
  */
 function extractHandlerCalls(
   handler: Node,
@@ -226,7 +235,9 @@ function extractHandlerCalls(
 }
 
 /**
- * Parse router.use('/prefix', createXxxRouter()) patterns.
+ * `router.use('/prefix', createXxxRouter())` パターンを解析する。
+ * @param callExpr - 解析対象の呼び出し式ノード
+ * @returns マウントプレフィックスとルーター関数名、またはパターン不一致の場合はnull
  */
 function parseRouterUse(
   callExpr: CallExpression,
@@ -262,7 +273,9 @@ function joinPaths(prefix: string, path: string): string {
 }
 
 /**
- * Extract route description and JSDoc tags from preceding comment block.
+ * 直前のコメントブロックからルートの説明とJSDocタグを抽出する。
+ * @param callExpr - ルート呼び出し式ノード
+ * @returns ルートの説明文とJSDocタグの配列
  */
 function extractRouteJSDoc(
   callExpr: CallExpression,

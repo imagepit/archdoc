@@ -25,6 +25,11 @@ const DEFAULT_CATEGORIES: Record<LayerType, Record<string, string>> = {
   custom: {},
 };
 
+/**
+ * 指定されたレイヤー種別に対応するデフォルトカテゴリマッピングを返す。
+ * @param layerType - レイヤー種別
+ * @returns カテゴリ名のマッピング
+ */
 export function getDefaultCategories(layerType: LayerType): Record<string, string> {
   return { ...DEFAULT_CATEGORIES[layerType] };
 }

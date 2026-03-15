@@ -76,125 +76,125 @@ description: archdoc DDD layered architecture overview
 
 | Component | Kind | Category | Description |
 | --- | --- | --- | --- |
-| `CategoryOverride` | 📋 interface | Other | — |
-| `LayerConfig` | 📋 interface | Other | — |
-| `ProjectConfig` | 📋 interface | Other | — |
-| `SpecDiff` | 📋 interface | Other | — |
-| `DriftResult` | 📋 interface | Other | — |
-| `PropertyInfo` | 📋 interface | Other | — |
-| `ParameterInfo` | 📋 interface | Other | — |
-| `ThrowInfo` | 📋 interface | Other | — |
-| `CallerReference` | 📋 interface | Other | — |
-| `MethodInfo` | 📋 interface | Other | — |
-| `MethodSignatureInfo` | 📋 interface | Other | — |
-| `DependencyInfo` | 📋 interface | Other | — |
-| `ClassInfo` | 📋 interface | Other | — |
-| `InterfaceInfo` | 📋 interface | Other | — |
-| `RouteCallInfo` | 📋 interface | Other | — |
-| `RouteJSDocTag` | 📋 interface | Other | — |
-| `RouteInfo` | 📋 interface | Other | — |
-| `FunctionInfo` | 📋 interface | Other | — |
-| `TypeAliasInfo` | 📋 interface | Other | — |
-| `EnumMemberInfo` | 📋 interface | Other | — |
-| `EnumInfo` | 📋 interface | Other | — |
-| `ConstInfo` | 📋 interface | Other | — |
-| `ConstructorDep` | 📋 interface | Other | — |
-| `MethodCall` | 📋 interface | Other | — |
-| `MethodCallChain` | 📋 interface | Other | — |
-| `ClassCallChain` | 📋 interface | Other | — |
-| `CallChainEntry` | 📋 interface | Other | — |
-| `LayerExtraction` | 📋 interface | Other | — |
-| `LayerType` | 📝 type | Other | — |
-| `DriftSeverity` | 📝 type | Other | — |
+| `CategoryOverride` | 📋 interface | Other | パターンベースのカテゴリ上書き設定。 |
+| `LayerConfig` | 📋 interface | Other | 単一アーキテクチャレイヤーの設定。 |
+| `ProjectConfig` | 📋 interface | Other | layers.yamlから読み込まれるプロジェクト設定。 |
+| `SpecDiff` | 📋 interface | Other | 2つの仕様スナップショット間で検出された単一の差分。 |
+| `DriftResult` | 📋 interface | Other | レイヤーのドリフト検出結果。 |
+| `PropertyInfo` | 📋 interface | Other | クラスまたはインターフェースから抽出されたプロパティ情報。 |
+| `ParameterInfo` | 📋 interface | Other | 関数またはメソッドから抽出された引数情報。 |
+| `ThrowInfo` | 📋 interface | Other | JSDoc |
+| `CallerReference` | 📋 interface | Other | このメソッドまたは関数を呼び出しているコンポーネントの参照情報。 |
+| `MethodInfo` | 📋 interface | Other | シグネチャ・引数・ビジネスルールを含むメソッド情報。 |
+| `MethodSignatureInfo` | 📋 interface | Other | インターフェース宣言から抽出されたメソッドシグネチャ。 |
+| `DependencyInfo` | 📋 interface | Other | レイヤー間のインポート依存関係（禁止インポート検出含む）。 |
+| `ClassInfo` | 📋 interface | Other | プロパティ・メソッド・依存関係を含むクラス情報。 |
+| `InterfaceInfo` | 📋 interface | Other | プロパティ・メソッドシグネチャを含むインターフェース情報。 |
+| `RouteCallInfo` | 📋 interface | Other | Expressルートハンドラ内のメソッド呼び出し。 |
+| `RouteJSDocTag` | 📋 interface | Other | Expressルートハンドラから抽出されたJSDocタグ。 |
+| `RouteInfo` | 📋 interface | Other | ミドルウェアとコールチェーンを含むExpressルート定義。 |
+| `FunctionInfo` | 📋 interface | Other | シグネチャ・引数・ルート情報を含む関数情報。 |
+| `TypeAliasInfo` | 📋 interface | Other | 型エイリアスの抽出情報。 |
+| `EnumMemberInfo` | 📋 interface | Other | enum宣言の個別メンバー情報。 |
+| `EnumInfo` | 📋 interface | Other | enum宣言の抽出情報。 |
+| `ConstInfo` | 📋 interface | Other | エクスポートされた定数の抽出情報。 |
+| `ConstructorDep` | 📋 interface | Other | コールチェーン解析用のコンストラクタ依存パラメータ。 |
+| `MethodCall` | 📋 interface | Other | クラスメソッドまたは関数内での依存先への単一メソッド呼び出し。 |
+| `MethodCallChain` | 📋 interface | Other | 単一メソッド内のすべての依存先呼び出し。 |
+| `ClassCallChain` | 📋 interface | Other | クラスまたは関数の完全なコールチェーン（依存先とメソッド呼び出しを含む）。 |
+| `CallChainEntry` | 📋 interface | Other | LayerExtractionに格納されるシリアライズ可能なコールチェーンエントリ。 |
+| `LayerExtraction` | 📋 interface | Other | 単一アーキテクチャレイヤーの完全な抽出結果。 |
+| `LayerType` | 📝 type | Other | DDDアーキテクチャで使用するレイヤー種別。 |
+| `DriftSeverity` | 📝 type | Other | 仕様ドリフト検出の重大度レベル。 |
 
 ### Config (設定層)
 
 | Component | Kind | Category | Description |
 | --- | --- | --- | --- |
-| `getDefaultCategories` | 🔧 function | Other | — |
-| `loadConfig` | 🔧 function | Other | — |
-| `projectConfigSchema` | 📌 const | Other | — |
+| `getDefaultCategories` | 🔧 function | Other | 指定されたレイヤー種別に対応するデフォルトカテゴリマッピングを返す。 |
+| `loadConfig` | 🔧 function | Other | layers.yamlファイルからプロジェクト設定を読み込みバリデーションする。 |
+| `projectConfigSchema` | 📌 const | Other | layers.yamlプロジェクト設定のバリデーション用Zodスキーマ。 |
 
 ### Extractor (抽出層)
 
 | Component | Kind | Category | Description |
 | --- | --- | --- | --- |
-| `ExpressExtractor` | 🏗️ class | Framework Extractor | — |
-| `ParsedJsDoc` | 📋 interface | Other | — |
-| `FrameworkExtractor` | 📋 interface | Framework Extractor | — |
-| `analyzeCallChains` | 🔧 function | Other | — |
-| `analyzeFunctionCallChains` | 🔧 function | Other | — |
+| `ExpressExtractor` | 🏗️ class | Framework Extractor | FrameworkExtractorを実装するExpress.jsルート抽出器。 |
+| `ParsedJsDoc` | 📋 interface | Other | 説明文・引数・throws・ビジネスルールを含むJSDoc解析結果。 |
+| `FrameworkExtractor` | 📋 interface | Framework Extractor | フレームワーク固有のルート抽出用ストラテジーインターフェース。 |
+| `analyzeCallChains` | 🔧 function | Other | エクスポートされた全クラスのコンストラクタインジェクションによるコールチェーンを解析する。 |
+| `analyzeFunctionCallChains` | 🔧 function | Other | エクスポートされた全関数の引数ベースのコールチェーンを解析する。 |
 | `analyzeCallerReferences` | 🔧 function | Other | Post-process: analyze caller references for all methods and… |
-| `extractClass` | 🔧 function | Other | — |
-| `extractConst` | 🔧 function | Other | — |
-| `extractEnum` | 🔧 function | Other | — |
-| `extractFunction` | 🔧 function | Other | — |
-| `analyzeImports` | 🔧 function | Other | — |
-| `findForbiddenImports` | 🔧 function | Other | — |
-| `extractInterface` | 🔧 function | Other | — |
-| `parseJsDoc` | 🔧 function | Other | — |
-| `mergeParamDescriptions` | 🔧 function | Other | — |
-| `createExtractorProject` | 🔧 function | Other | — |
-| `extractLayer` | 🔧 function | Other | — |
-| `extractTypeAlias` | 🔧 function | Other | — |
-| `createFrameworkExtractor` | 🔧 function | Framework Extractor | — |
+| `extractClass` | 🔧 function | Other | ts-morph ASTを使用してTypeScriptクラス宣言からメタデータを抽出する。 |
+| `extractConst` | 🔧 function | Other | エクスポートされた定数宣言からメタデータを抽出する。 |
+| `extractEnum` | 🔧 function | Other | TypeScript enum宣言からメタデータを抽出する。 |
+| `extractFunction` | 🔧 function | Other | TypeScript関数宣言からメタデータを抽出する。 |
+| `analyzeImports` | 🔧 function | Other | ソースファイルの全インポート文を解析し、対象レイヤーを特定する。 |
+| `findForbiddenImports` | 🔧 function | Other | レイヤー設定に基づいて禁止されたクロスレイヤーインポートを検出する。 |
+| `extractInterface` | 🔧 function | Other | TypeScriptインターフェース宣言からメタデータを抽出する。 |
+| `parseJsDoc` | 🔧 function | Other | ts-morphノードからJSDocコメントを構造化データに変換する。 |
+| `mergeParamDescriptions` | 🔧 function | Other | JSDoc |
+| `createExtractorProject` | 🔧 function | Other | ソースコード解析用のts-morph Projectインスタンスを作成する。 |
+| `extractLayer` | 🔧 function | Other | 単一アーキテクチャレイヤーから全コンポーネントを抽出する。 |
+| `extractTypeAlias` | 🔧 function | Other | TypeScript型エイリアス宣言からメタデータを抽出する。 |
+| `createFrameworkExtractor` | 🔧 function | Framework Extractor | レイヤー設定に基づいてFrameworkExtractorを生成するファクトリ関数。 |
 
 ### Diagram (ダイアグラム層)
 
 | Component | Kind | Category | Description |
 | --- | --- | --- | --- |
-| `MermaidRenderer` | 🏗️ class | Other | Mermaid implementation of DiagramRenderer. |
-| `SvgRenderer` | 🏗️ class | Other | SVG implementation of DiagramRenderer. |
-| `DependencyGraph` | 📋 interface | Other | — |
-| `DependencyEdge` | 📋 interface | Other | — |
-| `DiagramRenderer` | 📋 interface | Other | Strategy interface for diagram rendering. |
-| `buildC4ComponentDiagram` | 🔧 function | Other | — |
-| `buildClassDiagram` | 🔧 function | Other | — |
-| `buildCompactClassDiagram` | 🔧 function | Other | Build a compact overview class diagram for the entire layer. |
-| `buildCategoryClassDiagrams` | 🔧 function | Other | — |
-| `buildDependencyGraph` | 🔧 function | Other | — |
-| `buildLayerDotDiagram` | 🔧 function | Other | Build a compact overview DOT diagram for the entire layer. |
-| `buildDetailDotDiagram` | 🔧 function | Other | Build a DOT diagram with full member details for a group of… |
-| `buildProjectOverviewMermaid` | 🔧 function | Other | Build a Mermaid classDiagram showing all objects across all… |
-| `buildProjectOverviewDot` | 🔧 function | Other | Build a DOT digraph showing all objects across all layers. |
-| `buildRouteSequenceDiagram` | 🔧 function | Other | Build a Mermaid sequence diagram for a single route handler… |
-| `buildSequenceDiagram` | 🔧 function | Other | — |
-| `buildMultiSequenceDiagrams` | 🔧 function | Other | — |
-| `renderDotToSvg` | 🔧 function | Other | — |
+| `MermaidRenderer` | 🏗️ class | Other | DiagramRendererのMermaid実装。 |
+| `SvgRenderer` | 🏗️ class | Other | DiagramRendererのSVG実装。 |
+| `DependencyGraph` | 📋 interface | Other | レイヤー間依存関係を表すグラフ構造。 |
+| `DependencyEdge` | 📋 interface | Other | 依存関係グラフの単一有向辺。 |
+| `DiagramRenderer` | 📋 interface | Other | ダイアグラムレンダリングのストラテジーインターフェース。 |
+| `buildC4ComponentDiagram` | 🔧 function | Other | プロジェクト設定からMermaid構文のC4コンポーネント図を生成する。 |
+| `buildClassDiagram` | 🔧 function | Other | メンバー情報を含む詳細なMermaidクラス図を生成する。 |
+| `buildCompactClassDiagram` | 🔧 function | Other | レイヤー全体のコンパクトな概要クラス図を生成する。 |
+| `buildCategoryClassDiagrams` | 🔧 function | Other | カテゴリ別に分割したクラス図を生成する。 |
+| `buildDependencyGraph` | 🔧 function | Other | レイヤー抽出結果と設定から依存関係グラフを構築する。 |
+| `buildLayerDotDiagram` | 🔧 function | Other | レイヤー全体のコンパクトな概要DOTダイアグラムを生成する。 |
+| `buildDetailDotDiagram` | 🔧 function | Other | クラス/インターフェースグループの完全なメンバー詳細を含むDOTダイアグラムを生成する。 |
+| `buildProjectOverviewMermaid` | 🔧 function | Other | 全レイヤーにわたる全オブジェクトを表示するMermaidクラス図を生成する。 |
+| `buildProjectOverviewDot` | 🔧 function | Other | 全レイヤーにわたる全オブジェクトを表示するDOTダイアグラムを生成する。 |
+| `buildRouteSequenceDiagram` | 🔧 function | Other | 単一ルートハンドラーのコールチェーンからMermaidシーケンス図を生成する。 |
+| `buildSequenceDiagram` | 🔧 function | Other | 単一コールチェーンエントリからMermaidシーケンス図を生成する。 |
+| `buildMultiSequenceDiagrams` | 🔧 function | Other | 複数コールチェーンからクラス名をキーとするシーケンス図を生成する。 |
+| `renderDotToSvg` | 🔧 function | Other | DOTグラフ文字列をviz.jsでSVGにレンダリングする。 |
 
 ### Generator (生成層)
 
 | Component | Kind | Category | Description |
 | --- | --- | --- | --- |
-| `MarkdownBuilder` | 🏗️ class | Other | — |
-| `IndexGenerateOptions` | 📋 interface | Other | — |
-| `GenerateOptions` | 📋 interface | Other | — |
-| `kindEmoji` | 🔧 function | Other | — |
-| `categoryEmoji` | 🔧 function | Other | — |
-| `formatName` | 🔧 function | Other | — |
-| `kindLabel` | 🔧 function | Other | — |
-| `kindLegendRows` | 🔧 function | Other | — |
-| `categoryLegendRows` | 🔧 function | Other | — |
-| `generateIndexMd` | 🔧 function | Other | — |
-| `generateLayerMd` | 🔧 function | Other | — |
-| `ObjectKind` | 📝 type | Other | — |
+| `MarkdownBuilder` | 🏗️ class | Other | Markdownドキュメントをプログラマティックに構築するFluentビルダー。 |
+| `IndexGenerateOptions` | 📋 interface | Other | ダイアグラムレンダラーを含むindex.md生成オプション。 |
+| `GenerateOptions` | 📋 interface | Other | ダイアグラムレンダラーを含むレイヤードキュメント生成オプション。 |
+| `kindEmoji` | 🔧 function | Other | オブジェクト種別に対応する絵文字アイコンを返す。 |
+| `categoryEmoji` | 🔧 function | Other | ドメインカテゴリに対応する絵文字アイコンを返す。 |
+| `formatName` | 🔧 function | Other | カテゴリ絵文字プレフィックス付きのコンポーネント名を整形する。 |
+| `kindLabel` | 🔧 function | Other | 絵文字と種別名を組み合わせた表示ラベルを返す。 |
+| `kindLegendRows` | 🔧 function | Other | 全オブジェクト種別アイコンの凡例テーブル行を生成する。 |
+| `categoryLegendRows` | 🔧 function | Other | 全カテゴリアイコンの凡例テーブル行を生成する。 |
+| `generateIndexMd` | 🔧 function | Other | プロジェクト全体の概要ドキュメントindex.mdを生成する。 |
+| `generateLayerMd` | 🔧 function | Other | 単一アーキテクチャレイヤーのMarkdownドキュメントを生成する。 |
+| `ObjectKind` | 📝 type | Other | ドキュメント出力で使用するオブジェクト種別。 |
 
 ### Drift (ドリフト検出層)
 
 | Component | Kind | Category | Description |
 | --- | --- | --- | --- |
-| `formatDriftReport` | 🔧 function | Other | — |
-| `formatDriftReportMd` | 🔧 function | Other | — |
-| `compareSpecs` | 🔧 function | Other | — |
-| `saveSpec` | 🔧 function | Other | — |
-| `loadSpec` | 🔧 function | Other | — |
+| `formatDriftReport` | 🔧 function | Other | ドリフト検出結果を人間が読みやすいテキストレポートに整形する。 |
+| `formatDriftReportMd` | 🔧 function | Other | ドリフト検出結果をMarkdownレポートに整形する。 |
+| `compareSpecs` | 🔧 function | Other | 2つのレイヤー抽出スナップショットを比較し、仕様ドリフトを検出する。 |
+| `saveSpec` | 🔧 function | Other | レイヤー抽出スナップショットをJSONファイルに保存する。 |
+| `loadSpec` | 🔧 function | Other | 保存済みのレイヤー抽出スナップショットをJSONファイルから読み込む。 |
 
 ### Cli (CLI層)
 
 | Component | Kind | Category | Description |
 | --- | --- | --- | --- |
-| `createProgram` | 🔧 function | Other | — |
-| `registerDiagramCommand` | 🔧 function | Command | — |
-| `registerDriftCommand` | 🔧 function | Command | — |
-| `registerGenerateCommand` | 🔧 function | Command | — |
-| `registerInitCommand` | 🔧 function | Command | — |
+| `createProgram` | 🔧 function | Other | 全CLIサブコマンドを登録したCommander.jsプログラムを作成する。 |
+| `registerDiagramCommand` | 🔧 function | Command | 単体ダイアグラム生成用の'diagram'サブコマンドを登録する。 |
+| `registerDriftCommand` | 🔧 function | Command | 仕様ドリフト検出用の'drift'サブコマンドを登録する。 |
+| `registerGenerateCommand` | 🔧 function | Command | ドキュメント生成用の'generate'サブコマンドを登録する。 |
+| `registerInitCommand` | 🔧 function | Command | layers.yaml初期化用の'init'サブコマンドを登録する。 |

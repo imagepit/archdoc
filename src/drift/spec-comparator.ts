@@ -1,6 +1,13 @@
 import type { LayerExtraction, ClassInfo, InterfaceInfo } from "../types/extracted.js";
 import type { DriftResult, SpecDiff } from "../types/drift.js";
 
+/**
+ * 2つのレイヤー抽出スナップショットを比較し、仕様ドリフトを検出する。
+ * @param layerName - レイヤー名
+ * @param baseline - ベースライン（前回の抽出結果）
+ * @param current - 現在の抽出結果
+ * @returns ドリフト検出結果
+ */
 export function compareSpecs(
   layerName: string,
   baseline: LayerExtraction,

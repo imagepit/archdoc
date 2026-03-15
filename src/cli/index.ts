@@ -4,6 +4,10 @@ import { registerInitCommand } from "./commands/init.js";
 import { registerDriftCommand } from "./commands/drift.js";
 import { registerDiagramCommand } from "./commands/diagram.js";
 
+/**
+ * 全CLIサブコマンドを登録したCommander.jsプログラムを作成する。
+ * @returns 設定済みのCommanderプログラム
+ */
 export function createProgram(): Command {
   const program = new Command();
 

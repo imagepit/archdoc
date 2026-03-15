@@ -4,6 +4,11 @@ import { projectConfigSchema } from "./schema.js";
 import { getDefaultCategories } from "./defaults.js";
 import type { ProjectConfig } from "../types/config.js";
 
+/**
+ * layers.yamlファイルからプロジェクト設定を読み込みバリデーションする。
+ * @param configPath - 設定ファイルのパス
+ * @returns バリデーション済みのプロジェクト設定
+ */
 export function loadConfig(configPath: string = "layers.yaml"): ProjectConfig {
   let content: string;
   try {

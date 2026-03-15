@@ -1,3 +1,4 @@
+/** ドキュメント出力で使用するオブジェクト種別。 */
 export type ObjectKind =
   | "class"
   | "interface"
@@ -29,10 +30,20 @@ const CATEGORY_PATTERNS: [RegExp, string][] = [
   [/External\s*Service/i, "\u{1F517}"],      // 🔗
 ];
 
+/**
+ * オブジェクト種別に対応する絵文字アイコンを返す。
+ * @param kind - オブジェクト種別
+ * @returns 絵文字文字列
+ */
 export function kindEmoji(kind: ObjectKind): string {
   return KIND_EMOJI[kind];
 }
 
+/**
+ * ドメインカテゴリに対応する絵文字アイコンを返す。
+ * @param category - カテゴリ名
+ * @returns 絵文字文字列（該当なしの場合は空文字列）
+ */
 export function categoryEmoji(category: string): string {
   for (const [pattern, emoji] of CATEGORY_PATTERNS) {
     if (pattern.test(category)) return emoji;
@@ -40,6 +51,13 @@ export function categoryEmoji(category: string): string {
   return "";
 }
 
+/**
+ * カテゴリ絵文字プレフィックス付きのコンポーネント名を整形する。
+ * @param name - コンポーネント名
+ * @param kind - オブジェクト種別
+ * @param category - カテゴリ名
+ * @returns 整形済みの名前文字列
+ */
 export function formatName(
   name: string,
   kind: ObjectKind,
@@ -49,16 +67,29 @@ export function formatName(
   return cat ? `${cat} \`${name}\`` : `\`${name}\``;
 }
 
+/**
+ * 絵文字と種別名を組み合わせた表示ラベルを返す。
+ * @param kind - オブジェクト種別
+ * @returns 表示ラベル文字列
+ */
 export function kindLabel(kind: ObjectKind): string {
   return `${KIND_EMOJI[kind]} ${kind}`;
 }
 
+/**
+ * 全オブジェクト種別アイコンの凡例テーブル行を生成する。
+ * @returns 凡例行の二次元配列
+ */
 export function kindLegendRows(): string[][] {
   return (Object.entries(KIND_EMOJI) as [ObjectKind, string][]).map(
     ([kind, emoji]) => [`${emoji} ${kind}`, kindDescription(kind)],
   );
 }
 
+/**
+ * 全カテゴリアイコンの凡例テーブル行を生成する。
+ * @returns 凡例行の二次元配列
+ */
 export function categoryLegendRows(): string[][] {
   return CATEGORY_PATTERNS.map(([pattern, emoji]) => [
     `${emoji}`,

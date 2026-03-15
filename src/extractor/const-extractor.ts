@@ -4,6 +4,12 @@ import { parseJsDoc } from "./jsdoc-parser.js";
 
 const MAX_VALUE_PREVIEW = 80;
 
+/**
+ * エクスポートされた定数宣言からメタデータを抽出する。
+ * @param decl - 変数宣言ノード
+ * @param category - 所属カテゴリ名
+ * @returns 抽出された定数情報
+ */
 export function extractConst(
   decl: VariableDeclaration,
   category: string,

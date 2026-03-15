@@ -37,6 +37,10 @@ const KNOWN_CATEGORIES: Record<string, string> = {
   models: "Model",
 };
 
+/**
+ * layers.yaml初期化用の'init'サブコマンドを登録する。
+ * @param program - Commanderプログラム
+ */
 export function registerInitCommand(program: Command): void {
   program
     .command("init")

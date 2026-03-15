@@ -7,6 +7,12 @@ import type {
 } from "../types/extracted.js";
 import { parseJsDoc, mergeParamDescriptions } from "./jsdoc-parser.js";
 
+/**
+ * TypeScriptインターフェース宣言からメタデータを抽出する。
+ * @param ifaceDecl - インターフェース宣言ノード
+ * @param category - 所属カテゴリ名
+ * @returns 抽出されたインターフェース情報
+ */
 export function extractInterface(
   ifaceDecl: InterfaceDeclaration,
   category: string,

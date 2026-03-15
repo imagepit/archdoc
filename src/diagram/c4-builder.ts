@@ -1,6 +1,12 @@
 import type { ProjectConfig } from "../types/config.js";
 import type { DependencyGraph } from "./dependency-graph.js";
 
+/**
+ * プロジェクト設定からMermaid構文のC4コンポーネント図を生成する。
+ * @param config - プロジェクト設定
+ * @param graph - 依存関係グラフ
+ * @returns Mermaid形式のC4図文字列
+ */
 export function buildC4ComponentDiagram(
   config: ProjectConfig,
   graph: DependencyGraph,

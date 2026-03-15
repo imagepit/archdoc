@@ -22,15 +22,17 @@ layers.yamlの定義と実際のソースコードの乖離を検出。
 
 > **File**: `drift-reporter.ts`
 
+ドリフト検出結果を人間が読みやすいテキストレポートに整形する。
+
 ```ts
 formatDriftReport(result: DriftResult): string
 ```
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `result` | `DriftResult` | — |
+| `result` | `DriftResult` | ドリフト検出結果 |
 
-**Returns**: `string` 
+**Returns**: `string` テキストレポート文字列
 
 **Called By**
 
@@ -40,19 +42,23 @@ formatDriftReport(result: DriftResult): string
 
 > **File**: `drift-reporter.ts`
 
+ドリフト検出結果をMarkdownレポートに整形する。
+
 ```ts
 formatDriftReportMd(result: DriftResult): string
 ```
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `result` | `DriftResult` | — |
+| `result` | `DriftResult` | ドリフト検出結果 |
 
-**Returns**: `string` 
+**Returns**: `string` Markdownレポート文字列
 
 ### 🔧 `compareSpecs`
 
 > **File**: `spec-comparator.ts`
+
+2つのレイヤー抽出スナップショットを比較し、仕様ドリフトを検出する。
 
 ```ts
 compareSpecs(layerName: string, baseline: LayerExtraction, current: LayerExtraction): DriftResult
@@ -60,11 +66,11 @@ compareSpecs(layerName: string, baseline: LayerExtraction, current: LayerExtract
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `layerName` | `string` | — |
-| `baseline` | `LayerExtraction` | — |
-| `current` | `LayerExtraction` | — |
+| `layerName` | `string` | レイヤー名 |
+| `baseline` | `LayerExtraction` | ベースライン（前回の抽出結果） |
+| `current` | `LayerExtraction` | 現在の抽出結果 |
 
-**Returns**: `DriftResult` 
+**Returns**: `DriftResult` ドリフト検出結果
 
 **Called By**
 
@@ -74,14 +80,16 @@ compareSpecs(layerName: string, baseline: LayerExtraction, current: LayerExtract
 
 > **File**: `spec-store.ts`
 
+レイヤー抽出スナップショットをJSONファイルに保存する。
+
 ```ts
 saveSpec(layerName: string, extraction: LayerExtraction): void
 ```
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `layerName` | `string` | — |
-| `extraction` | `LayerExtraction` | — |
+| `layerName` | `string` | レイヤー名（ファイル名に使用） |
+| `extraction` | `LayerExtraction` | 保存する抽出結果 |
 
 **Called By**
 
@@ -91,15 +99,17 @@ saveSpec(layerName: string, extraction: LayerExtraction): void
 
 > **File**: `spec-store.ts`
 
+保存済みのレイヤー抽出スナップショットをJSONファイルから読み込む。
+
 ```ts
 loadSpec(layerName: string): LayerExtraction | null
 ```
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `layerName` | `string` | — |
+| `layerName` | `string` | レイヤー名（ファイル名に使用） |
 
-**Returns**: `LayerExtraction | null` 
+**Returns**: `LayerExtraction | null` 抽出結果、またはファイルが存在しない/読み込み失敗時はnull
 
 **Called By**
 

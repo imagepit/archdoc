@@ -1,11 +1,13 @@
 import type { ProjectConfig } from "../types/config.js";
 import type { LayerExtraction, DependencyInfo } from "../types/extracted.js";
 
+/** レイヤー間依存関係を表すグラフ構造。 */
 export interface DependencyGraph {
   nodes: string[];
   edges: DependencyEdge[];
 }
 
+/** 依存関係グラフの単一有向辺。 */
 export interface DependencyEdge {
   source: string;
   target: string;
@@ -13,6 +15,12 @@ export interface DependencyEdge {
   isForbidden: boolean;
 }
 
+/**
+ * レイヤー抽出結果と設定から依存関係グラフを構築する。
+ * @param config - プロジェクト設定
+ * @param extractions - 全レイヤーの抽出結果
+ * @returns 依存関係グラフ
+ */
 export function buildDependencyGraph(
   config: ProjectConfig,
   extractions: LayerExtraction[],

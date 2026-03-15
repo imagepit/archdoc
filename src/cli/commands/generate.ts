@@ -13,6 +13,10 @@ import { join } from "node:path";
 
 type DiagramFormat = "mermaid" | "svg";
 
+/**
+ * ドキュメント生成用の'generate'サブコマンドを登録する。
+ * @param program - Commanderプログラム
+ */
 export function registerGenerateCommand(program: Command): void {
   program
     .command("generate")

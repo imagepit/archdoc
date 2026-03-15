@@ -5,10 +5,18 @@ import type { DiagramRenderer } from "../diagram/diagram-renderer.js";
 import { formatName, kindLabel, kindLegendRows, categoryLegendRows, type ObjectKind } from "./emoji.js";
 import { basename } from "node:path";
 
+/** ダイアグラムレンダラーを含むindex.md生成オプション。 */
 export interface IndexGenerateOptions {
   renderer?: DiagramRenderer;
 }
 
+/**
+ * プロジェクト全体の概要ドキュメントindex.mdを生成する。
+ * @param config - プロジェクト設定
+ * @param extractions - 全レイヤーの抽出結果
+ * @param options - 生成オプション（省略可）
+ * @returns 生成されたMarkdown文字列
+ */
 export async function generateIndexMd(
   config: ProjectConfig,
   extractions: LayerExtraction[],

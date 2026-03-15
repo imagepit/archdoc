@@ -52,8 +52,11 @@ interface ImportViolationEdge {
 // --- Public API ---
 
 /**
- * Build a Mermaid classDiagram showing all objects across all layers.
- * Only cross-layer dependency violations are drawn as relationship lines.
+ * 全レイヤーにわたる全オブジェクトを表示するMermaidクラス図を生成する。
+ * レイヤー横断の依存違反のみ関係線として描画される。
+ * @param extractions - 全レイヤーの抽出結果
+ * @param layers - レイヤー設定配列（省略可）
+ * @returns Mermaidクラス図文字列
  */
 export function buildProjectOverviewMermaid(
   extractions: LayerExtraction[],
@@ -120,8 +123,11 @@ export function buildProjectOverviewMermaid(
 }
 
 /**
- * Build a DOT digraph showing all objects across all layers.
- * Only cross-layer dependency violations are drawn as relationship lines (in red).
+ * 全レイヤーにわたる全オブジェクトを表示するDOTダイアグラムを生成する。
+ * レイヤー横断の依存違反のみ関係線として赤色で描画される。
+ * @param extractions - 全レイヤーの抽出結果
+ * @param layers - レイヤー設定配列（省略可）
+ * @returns DOT形式のグラフ文字列
  */
 export function buildProjectOverviewDot(
   extractions: LayerExtraction[],
@@ -320,7 +326,7 @@ export function buildProjectOverviewDot(
 // --- Internal helpers ---
 
 /**
- * Default allowed dependencies based on layer type (clean architecture).
+ * レイヤータイプに基づくデフォルトの許可依存関係（クリーンアーキテクチャ）。
  * Presentation → Application → Domain ← Infrastructure
  */
 const DEFAULT_ALLOWED_BY_TYPE: Record<string, string[]> = {
@@ -331,9 +337,12 @@ const DEFAULT_ALLOWED_BY_TYPE: Record<string, string[]> = {
 };
 
 /**
- * Build a map of allowed dependency targets for each layer.
- * Uses explicit `dependsOn` from config if provided, otherwise infers from layer type.
- * Returns the transitive closure (if A→B and B→C, then A→C is also allowed).
+ * 各レイヤーの許可依存先マップを構築する。
+ * 設定に `dependsOn` が明示されている場合はそれを使用し、なければレイヤータイプから推論する。
+ * 推移閉包を返す（A→B かつ B→C なら A→C も許可）。
+ * @param extractions - 全レイヤーの抽出結果
+ * @param layers - レイヤー設定配列（省略可）
+ * @returns レイヤー名をキーとする許可依存先のSetのMap
  */
 function buildAllowedDependencyMap(
   extractions: LayerExtraction[],
@@ -386,9 +395,13 @@ function buildAllowedDependencyMap(
 }
 
 /**
- * Filter relationships to only include dependency violations.
- * A violation is a cross-layer dependency where the target layer
- * is NOT in the source layer's allowed dependency set.
+ * 依存違反のみを含むように関係をフィルタリングする。
+ * 違反とは、ターゲットレイヤーがソースレイヤーの許可依存先に含まれない
+ * レイヤー横断依存のことを指す。
+ * @param relationships - 全関係の配列
+ * @param nodeMap - ノード名をキーとするノードのMap
+ * @param allowedDeps - レイヤー名をキーとする許可依存先のSetのMap
+ * @returns 依存違反の関係配列
  */
 function filterViolations(
   relationships: ProjectRelationship[],
@@ -570,7 +583,12 @@ function groupByCategory(nodes: ProjectNode[]): Map<string, ProjectNode[]> {
   return map;
 }
 
-/** Check if a type string references a given name (whole word match) */
+/**
+ * 型文字列が指定名を参照しているか確認する（単語境界でマッチ）。
+ * @param typeStr - 確認対象の型文字列
+ * @param name - 検索する名前
+ * @returns 参照している場合はtrue
+ */
 function typeReferences(typeStr: string, name: string): boolean {
   const regex = new RegExp(`\\b${escapeRegex(name)}\\b`);
   return regex.test(typeStr);
@@ -584,7 +602,12 @@ function sanitizeId(name: string): string {
   return name.replace(/[^a-zA-Z0-9_]/g, "_");
 }
 
-/** Find the first node name in a given layer (for use as cluster anchor). */
+/**
+ * 指定レイヤーの最初のノード名を返す（クラスターアンカーとして使用）。
+ * @param nodes - プロジェクトノード配列
+ * @param layerName - レイヤー名
+ * @returns 最初のノード名、またはundefined
+ */
 function findLayerAnchor(
   nodes: ProjectNode[],
   layerName: string,
@@ -593,7 +616,9 @@ function findLayerAnchor(
 }
 
 /**
- * Collect import-path-level forbidden dependency violations aggregated per layer pair.
+ * インポートパスレベルの禁止依存違反をレイヤーペアごとに集計して収集する。
+ * @param extractions - 全レイヤーの抽出結果
+ * @returns インポート違反辺の配列
  */
 function collectImportViolations(
   extractions: LayerExtraction[],

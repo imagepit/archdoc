@@ -1,5 +1,10 @@
 import type { ClassCallChain } from "../types/extracted.js";
 
+/**
+ * 単一コールチェーンエントリからMermaidシーケンス図を生成する。
+ * @param chain - コールチェーンエントリ
+ * @returns Mermaidシーケンス図文字列
+ */
 export function buildSequenceDiagram(chain: ClassCallChain): string {
   if (chain.methods.length === 0) return "";
 
@@ -44,6 +49,11 @@ export function buildSequenceDiagram(chain: ClassCallChain): string {
   return lines.join("\n");
 }
 
+/**
+ * 複数コールチェーンからクラス名をキーとするシーケンス図を生成する。
+ * @param chains - コールチェーン配列
+ * @returns クラス名をキーとするシーケンス図のMap
+ */
 export function buildMultiSequenceDiagrams(
   chains: ClassCallChain[],
 ): Map<string, string> {

@@ -27,8 +27,8 @@ Mermaid/DOT形式のアーキテクチャ図を生成。
 > **File**: `mermaid-renderer.ts`
 > **Type**: Other
 
-Mermaid implementation of DiagramRenderer.
-Returns Mermaid code blocks ready to embed in Markdown.
+DiagramRendererのMermaid実装。
+Markdownに埋め込み可能なMermaidコードブロックを返す。
 
 **Methods**
 
@@ -101,8 +101,8 @@ Returns Mermaid code blocks ready to embed in Markdown.
 > **File**: `svg-renderer.ts`
 > **Type**: Other
 
-SVG implementation of DiagramRenderer.
-Generates DOT → SVG files and returns Markdown image references.
+DiagramRendererのSVG実装。
+DOT → SVGファイルを生成し、Markdown画像参照文字列を返す。
 
 **Methods**
 
@@ -175,6 +175,8 @@ Generates DOT → SVG files and returns Markdown image references.
 > **File**: `dependency-graph.ts`
 > **Type**: Other
 
+レイヤー間依存関係を表すグラフ構造。
+
 **Properties**
 
 | Property | Type | Required | Description |
@@ -186,6 +188,8 @@ Generates DOT → SVG files and returns Markdown image references.
 
 > **File**: `dependency-graph.ts`
 > **Type**: Other
+
+依存関係グラフの単一有向辺。
 
 **Properties**
 
@@ -201,71 +205,73 @@ Generates DOT → SVG files and returns Markdown image references.
 > **File**: `diagram-renderer.ts`
 > **Type**: Other
 
-Strategy interface for diagram rendering.
-Implementations (MermaidRenderer, SvgRenderer) produce format-specific
-markdown snippets ready to embed in documentation.
+ダイアグラムレンダリングのストラテジーインターフェース。
+実装クラス（MermaidRenderer、SvgRenderer）はフォーマット固有の
+Markdownスニペットを生成し、ドキュメントに埋め込める形式で返す。
 
 **Methods**
 
 #### `renderLayerOverview(extraction: LayerExtraction): Promise<string | null>`
 
-Render a compact overview class diagram for the entire layer.
-Shows class/interface names and relationships only (no member details).
+レイヤー全体のコンパクトな概要クラス図をレンダリングする。
+クラス/インターフェース名と関係のみを表示し、メンバー詳細は含まない。
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `extraction` | `LayerExtraction` | — |
+| `extraction` | `LayerExtraction` | レイヤーの抽出結果 |
 
-**Returns**: `Promise<string or null>` 
+**Returns**: `Promise<string or null>` Markdownスニペット文字列、またはnull
 
 #### `renderDetailClassDiagram(classes: ClassInfo[], interfaces: InterfaceInfo[]): Promise<string | null>`
 
-Render a detailed class diagram for a group of classes/interfaces.
-Shows full member details (properties, methods) with relationships.
+クラス/インターフェースグループの詳細クラス図をレンダリングする。
+プロパティ・メソッドを含む完全なメンバー情報と関係を表示する。
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `classes` | `ClassInfo[]` | — |
-| `interfaces` | `InterfaceInfo[]` | — |
+| `classes` | `ClassInfo[]` | クラス情報配列 |
+| `interfaces` | `InterfaceInfo[]` | インターフェース情報配列 |
 
-**Returns**: `Promise<string or null>` 
+**Returns**: `Promise<string or null>` Markdownスニペット文字列、またはnull
 
 #### `renderSequenceDiagram(chain: ClassCallChain): Promise<string | null>`
 
-Render a sequence diagram for a class call chain.
+クラスコールチェーンのシーケンス図をレンダリングする。
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `chain` | `ClassCallChain` | — |
+| `chain` | `ClassCallChain` | コールチェーンエントリ |
 
-**Returns**: `Promise<string or null>` 
+**Returns**: `Promise<string or null>` Markdownスニペット文字列、またはnull
 
 #### `renderRouteSequenceDiagram(funcName: string, route: RouteInfo): Promise<string | null>`
 
-Render a sequence diagram for a single route handler call chain.
+単一ルートハンドラーのコールチェーンからシーケンス図をレンダリングする。
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `funcName` | `string` | — |
-| `route` | `RouteInfo` | — |
+| `funcName` | `string` | 関数名 |
+| `route` | `RouteInfo` | ルート情報 |
 
-**Returns**: `Promise<string or null>` 
+**Returns**: `Promise<string or null>` Markdownスニペット文字列、またはnull
 
 #### `renderProjectOverview(extractions: LayerExtraction[], layers?: LayerConfig[] | undefined): Promise<string | null>`
 
-Render a cross-layer project overview diagram.
-Shows all objects grouped by layer. Only dependency violations are drawn.
+レイヤー横断のプロジェクト概要ダイアグラムをレンダリングする。
+レイヤー別にグループ化した全オブジェクトを表示し、依存違反のみ線を引く。
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `extractions` | `LayerExtraction[]` | — |
-| `layers` | `LayerConfig[] or undefined` | — |
+| `extractions` | `LayerExtraction[]` | 全レイヤーの抽出結果 |
+| `layers` | `LayerConfig[] or undefined` | レイヤー設定配列（省略可） |
 
-**Returns**: `Promise<string or null>` 
+**Returns**: `Promise<string or null>` Markdownスニペット文字列、またはnull
 
 ### 🔧 `buildC4ComponentDiagram`
 
 > **File**: `c4-builder.ts`
+
+プロジェクト設定からMermaid構文のC4コンポーネント図を生成する。
 
 ```ts
 buildC4ComponentDiagram(config: ProjectConfig, graph: DependencyGraph): string
@@ -273,10 +279,10 @@ buildC4ComponentDiagram(config: ProjectConfig, graph: DependencyGraph): string
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `config` | `ProjectConfig` | — |
-| `graph` | `DependencyGraph` | — |
+| `config` | `ProjectConfig` | プロジェクト設定 |
+| `graph` | `DependencyGraph` | 依存関係グラフ |
 
-**Returns**: `string` 
+**Returns**: `string` Mermaid形式のC4図文字列
 
 **Called By**
 
@@ -286,22 +292,24 @@ buildC4ComponentDiagram(config: ProjectConfig, graph: DependencyGraph): string
 
 > **File**: `class-diagram-builder.ts`
 
+メンバー情報を含む詳細なMermaidクラス図を生成する。
+
 ```ts
 buildClassDiagram(extraction: LayerExtraction): string
 ```
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `extraction` | `LayerExtraction` | — |
+| `extraction` | `LayerExtraction` | レイヤーの抽出結果 |
 
-**Returns**: `string` 
+**Returns**: `string` Mermaidクラス図文字列
 
 ### 🔧 `buildCompactClassDiagram`
 
 > **File**: `class-diagram-builder.ts`
 
-Build a compact overview class diagram for the entire layer.
-Shows only class/interface names (no member details) with relationships.
+レイヤー全体のコンパクトな概要クラス図を生成する。
+クラス/インターフェース名と関係のみを表示し、メンバー詳細は含まない。
 
 ```ts
 buildCompactClassDiagram(extraction: LayerExtraction): string
@@ -309,9 +317,9 @@ buildCompactClassDiagram(extraction: LayerExtraction): string
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `extraction` | `LayerExtraction` | — |
+| `extraction` | `LayerExtraction` | レイヤーの抽出結果 |
 
-**Returns**: `string` 
+**Returns**: `string` Mermaidクラス図文字列
 
 **Called By**
 
@@ -321,16 +329,18 @@ buildCompactClassDiagram(extraction: LayerExtraction): string
 
 > **File**: `class-diagram-builder.ts`
 
+カテゴリ別に分割したクラス図を生成する。
+
 ```ts
 buildCategoryClassDiagrams(classes: ClassInfo[], interfaces: InterfaceInfo[]): string[]
 ```
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `classes` | `ClassInfo[]` | — |
-| `interfaces` | `InterfaceInfo[]` | — |
+| `classes` | `ClassInfo[]` | クラス情報配列 |
+| `interfaces` | `InterfaceInfo[]` | インターフェース情報配列 |
 
-**Returns**: `string[]` 
+**Returns**: `string[]` クラス図文字列の配列
 
 **Called By**
 
@@ -340,16 +350,18 @@ buildCategoryClassDiagrams(classes: ClassInfo[], interfaces: InterfaceInfo[]): s
 
 > **File**: `dependency-graph.ts`
 
+レイヤー抽出結果と設定から依存関係グラフを構築する。
+
 ```ts
 buildDependencyGraph(config: ProjectConfig, extractions: LayerExtraction[]): DependencyGraph
 ```
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `config` | `ProjectConfig` | — |
-| `extractions` | `LayerExtraction[]` | — |
+| `config` | `ProjectConfig` | プロジェクト設定 |
+| `extractions` | `LayerExtraction[]` | 全レイヤーの抽出結果 |
 
-**Returns**: `DependencyGraph` 
+**Returns**: `DependencyGraph` 依存関係グラフ
 
 **Called By**
 
@@ -359,12 +371,12 @@ buildDependencyGraph(config: ProjectConfig, extractions: LayerExtraction[]): Dep
 
 > **File**: `dot-class-builder.ts`
 
-Build a compact overview DOT diagram for the entire layer.
-Nodes show only class/interface name (no members) for readability.
-Detailed member info is in the Markdown text.
+レイヤー全体のコンパクトな概要DOTダイアグラムを生成する。
+可読性のためノードはクラス/インターフェース名のみ表示し、メンバーは含まない。
+詳細なメンバー情報はMarkdownテキスト側に記載される。
 
-Groups by category. If all items share a single category,
-falls back to subDirectory-based grouping.
+カテゴリでグループ化する。全アイテムが単一カテゴリの場合は
+サブディレクトリベースのグループ化にフォールバックする。
 
 ```ts
 buildLayerDotDiagram(extraction: LayerExtraction): string
@@ -372,9 +384,9 @@ buildLayerDotDiagram(extraction: LayerExtraction): string
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `extraction` | `LayerExtraction` | — |
+| `extraction` | `LayerExtraction` | レイヤーの抽出結果 |
 
-**Returns**: `string` 
+**Returns**: `string` DOT形式のグラフ文字列
 
 **Called By**
 
@@ -384,8 +396,8 @@ buildLayerDotDiagram(extraction: LayerExtraction): string
 
 > **File**: `dot-class-builder.ts`
 
-Build a DOT diagram with full member details for a group of classes/interfaces.
-Uses the same visual style as the overview (colored subgraph, 2-column grid, rounded nodes).
+クラス/インターフェースグループの完全なメンバー詳細を含むDOTダイアグラムを生成する。
+概要図と同じビジュアルスタイル（カラーサブグラフ、2列グリッド、丸角ノード）を使用する。
 
 ```ts
 buildDetailDotDiagram(classes: ClassInfo[], interfaces: InterfaceInfo[]): string
@@ -393,10 +405,10 @@ buildDetailDotDiagram(classes: ClassInfo[], interfaces: InterfaceInfo[]): string
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `classes` | `ClassInfo[]` | — |
-| `interfaces` | `InterfaceInfo[]` | — |
+| `classes` | `ClassInfo[]` | クラス情報配列 |
+| `interfaces` | `InterfaceInfo[]` | インターフェース情報配列 |
 
-**Returns**: `string` 
+**Returns**: `string` DOT形式のグラフ文字列
 
 **Called By**
 
@@ -406,8 +418,8 @@ buildDetailDotDiagram(classes: ClassInfo[], interfaces: InterfaceInfo[]): string
 
 > **File**: `project-overview-builder.ts`
 
-Build a Mermaid classDiagram showing all objects across all layers.
-Only cross-layer dependency violations are drawn as relationship lines.
+全レイヤーにわたる全オブジェクトを表示するMermaidクラス図を生成する。
+レイヤー横断の依存違反のみ関係線として描画される。
 
 ```ts
 buildProjectOverviewMermaid(extractions: LayerExtraction[], layers?: LayerConfig[] | undefined): string
@@ -415,10 +427,10 @@ buildProjectOverviewMermaid(extractions: LayerExtraction[], layers?: LayerConfig
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `extractions` | `LayerExtraction[]` | — |
-| `layers` | `LayerConfig[] or undefined` | — |
+| `extractions` | `LayerExtraction[]` | 全レイヤーの抽出結果 |
+| `layers` | `LayerConfig[] or undefined` | レイヤー設定配列（省略可） |
 
-**Returns**: `string` 
+**Returns**: `string` Mermaidクラス図文字列
 
 **Called By**
 
@@ -428,8 +440,8 @@ buildProjectOverviewMermaid(extractions: LayerExtraction[], layers?: LayerConfig
 
 > **File**: `project-overview-builder.ts`
 
-Build a DOT digraph showing all objects across all layers.
-Only cross-layer dependency violations are drawn as relationship lines (in red).
+全レイヤーにわたる全オブジェクトを表示するDOTダイアグラムを生成する。
+レイヤー横断の依存違反のみ関係線として赤色で描画される。
 
 ```ts
 buildProjectOverviewDot(extractions: LayerExtraction[], layers?: LayerConfig[] | undefined): string
@@ -437,10 +449,10 @@ buildProjectOverviewDot(extractions: LayerExtraction[], layers?: LayerConfig[] |
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `extractions` | `LayerExtraction[]` | — |
-| `layers` | `LayerConfig[] or undefined` | — |
+| `extractions` | `LayerExtraction[]` | 全レイヤーの抽出結果 |
+| `layers` | `LayerConfig[] or undefined` | レイヤー設定配列（省略可） |
 
-**Returns**: `string` 
+**Returns**: `string` DOT形式のグラフ文字列
 
 **Called By**
 
@@ -450,8 +462,8 @@ buildProjectOverviewDot(extractions: LayerExtraction[], layers?: LayerConfig[] |
 
 > **File**: `route-sequence-builder.ts`
 
-Build a Mermaid sequence diagram for a single route handler call chain.
-Shared between MermaidRenderer and SvgRenderer (fallback).
+単一ルートハンドラーのコールチェーンからMermaidシーケンス図を生成する。
+MermaidRendererとSvgRenderer（フォールバック）で共有される。
 
 ```ts
 buildRouteSequenceDiagram(funcName: string, route: RouteInfo): string | null
@@ -459,10 +471,10 @@ buildRouteSequenceDiagram(funcName: string, route: RouteInfo): string | null
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `funcName` | `string` | — |
-| `route` | `RouteInfo` | — |
+| `funcName` | `string` | ルートハンドラー関数名 |
+| `route` | `RouteInfo` | ルート情報 |
 
-**Returns**: `string | null` 
+**Returns**: `string | null` Mermaidシーケンス図文字列、またはnull
 
 **Called By**
 
@@ -473,15 +485,17 @@ buildRouteSequenceDiagram(funcName: string, route: RouteInfo): string | null
 
 > **File**: `sequence-diagram-builder.ts`
 
+単一コールチェーンエントリからMermaidシーケンス図を生成する。
+
 ```ts
 buildSequenceDiagram(chain: ClassCallChain): string
 ```
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `chain` | `ClassCallChain` | — |
+| `chain` | `ClassCallChain` | コールチェーンエントリ |
 
-**Returns**: `string` 
+**Returns**: `string` Mermaidシーケンス図文字列
 
 **Called By**
 
@@ -493,19 +507,23 @@ buildSequenceDiagram(chain: ClassCallChain): string
 
 > **File**: `sequence-diagram-builder.ts`
 
+複数コールチェーンからクラス名をキーとするシーケンス図を生成する。
+
 ```ts
 buildMultiSequenceDiagrams(chains: ClassCallChain[]): Map<string, string>
 ```
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `chains` | `ClassCallChain[]` | — |
+| `chains` | `ClassCallChain[]` | コールチェーン配列 |
 
-**Returns**: `Map<string, string>` 
+**Returns**: `Map<string, string>` クラス名をキーとするシーケンス図のMap
 
 ### 🔧 `renderDotToSvg`
 
 > **File**: `svg-renderer.ts`
+
+DOTグラフ文字列をviz.jsでSVGにレンダリングする。
 
 ```ts
 renderDotToSvg(dotCode: string, engine?: "dot" | "fdp" | "neato"): Promise<string>
@@ -513,10 +531,10 @@ renderDotToSvg(dotCode: string, engine?: "dot" | "fdp" | "neato"): Promise<strin
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `dotCode` | `string` | — |
-| `engine` | `"dot" or "fdp" or "neato"` | — |
+| `dotCode` | `string` | DOT形式のグラフ文字列 |
+| `engine` | `"dot" or "fdp" or "neato"` | レンダリングエンジン（デフォルト: "dot"） |
 
-**Returns**: `Promise<string>` 
+**Returns**: `Promise<string>` SVG文字列
 
 **Called By**
 
