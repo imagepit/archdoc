@@ -11,12 +11,14 @@ import type {
   MethodInfo,
   MethodSignatureInfo,
   CallerReference,
+  DddRole,
 } from "../types/extracted.js";
 import type { CallChainEntry } from "../types/extracted.js";
 import type { DiagramRenderer } from "../diagram/diagram-renderer.js";
 import type { LocaleMessages } from "../i18n/types.js";
 import { getMessages } from "../i18n/index.js";
 import { formatName, kindEmoji, type ObjectKind } from "./emoji.js";
+import { relative, dirname } from "node:path";
 
 /** ダイアグラムレンダラーを含むレイヤードキュメント生成オプション。 */
 export interface GenerateOptions {
@@ -77,44 +79,21 @@ export async function generateLayerMd(
     md.rawBlock(overview);
   }
 
-  const categories = groupByCategory(extraction);
+  const dirGroups = groupByDirectory(extraction, layer.path);
 
-  for (const [category, items] of categories) {
-    md.heading(2, category);
+  for (const [relDir, items] of dirGroups) {
+    md.heading(2, formatDirectoryHeading(layer.name, relDir, t));
 
-    // Check if items span multiple subdirectories
-    const subDirGroups = groupBySubDirectory(items);
-
-    if (subDirGroups.size > 1) {
-      // Multiple subdirectories: create sub-sections per subdirectory
-      for (const [subDir, subItems] of subDirGroups) {
-        const subDirLabel = formatSubDirLabel(subDir, t);
-        md.heading(3, subDirLabel);
-
-        await renderGroupDiagramAndItems(
-          md,
-          subItems,
-          extraction.callChains,
-          renderer,
-          4,
-          t,
-          selfLayerName,
-          layerNames,
-        );
-      }
-    } else {
-      // Single group (or no subdirectory): render as before
-      await renderGroupDiagramAndItems(
-        md,
-        items,
-        extraction.callChains,
-        renderer,
-        3,
-        t,
-        selfLayerName,
-        layerNames,
-      );
-    }
+    await renderGroupDiagramAndItems(
+      md,
+      items,
+      extraction.callChains,
+      renderer,
+      3,
+      t,
+      selfLayerName,
+      layerNames,
+    );
   }
 
   return md.build();
@@ -126,8 +105,70 @@ interface CategorizedItem {
 }
 
 /**
+ * ファイルの相対ディレクトリパスでアイテムをグループ化する。
+ * @param extraction - レイヤーの抽出結果
+ * @param layerPath - レイヤーの設定パス
+ * @returns 相対ディレクトリをキーとするアイテムのMap
+ */
+function groupByDirectory(
+  extraction: LayerExtraction,
+  layerPath: string,
+): Map<string, CategorizedItem[]> {
+  const map = new Map<string, CategorizedItem[]>();
+  const seen = new Set<string>();
+
+  const addItem = (kind: ObjectKind, data: { name: string; filePath: string }) => {
+    const key = `${kind}:${data.name}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    const dir = getRelativeDir(data.filePath, layerPath);
+    const items = map.get(dir) ?? [];
+    items.push({ kind, data: data as CategorizedItem["data"] });
+    map.set(dir, items);
+  };
+
+  for (const cls of extraction.classes) addItem("class", cls);
+  for (const iface of extraction.interfaces) addItem("interface", iface);
+  for (const func of extraction.functions) addItem("function", func);
+  for (const ta of extraction.typeAliases) addItem("type", ta);
+  for (const en of extraction.enums) addItem("enum", en);
+  for (const c of extraction.constants) addItem("const", c);
+
+  return map;
+}
+
+/**
+ * ファイルの絶対パスからレイヤーパスを基準とした相対ディレクトリを取得する。
+ * @param filePath - ファイルの絶対パス
+ * @param layerPath - レイヤーの設定パス
+ * @returns 相対ディレクトリパス（ルート直下の場合は空文字列）
+ */
+function getRelativeDir(filePath: string, layerPath: string): string {
+  const relPath = relative(layerPath, filePath);
+  const dir = dirname(relPath);
+  return dir === "." ? "" : dir;
+}
+
+/**
+ * レイヤー名とディレクトリパスからセクション見出しを生成する。
+ * @param layerName - レイヤー名
+ * @param relDir - 相対ディレクトリパス
+ * @param t - ロケールメッセージ
+ * @returns 見出し文字列（例: "Extractor/Framework のコンポーネント"）
+ */
+function formatDirectoryHeading(layerName: string, relDir: string, t: LocaleMessages): string {
+  if (!relDir) {
+    return `${layerName}${t.layer.componentsSuffix}`;
+  }
+  const formattedDir = relDir
+    .split("/")
+    .map((seg) => seg.charAt(0).toUpperCase() + seg.slice(1))
+    .join("/");
+  return `${layerName}/${formattedDir}${t.layer.componentsSuffix}`;
+}
+
+/**
  * グループのクラス図と個別アイテムをレンダリングする。
- * headingLevel でクラス/インターフェース見出しの開始レベルを制御する。
  * @param md - Markdownビルダー
  * @param items - レンダリング対象のアイテム配列
  * @param callChains - コールチェーンエントリ配列
@@ -183,114 +224,6 @@ async function renderGroupDiagramAndItems(
   }
 }
 
-function groupByCategory(
-  extraction: LayerExtraction,
-): Map<string, CategorizedItem[]> {
-  const map = new Map<string, CategorizedItem[]>();
-  const seen = new Set<string>();
-
-  for (const cls of extraction.classes) {
-    const key = `class:${cls.name}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const items = map.get(cls.category) ?? [];
-    items.push({ kind: "class", data: cls });
-    map.set(cls.category, items);
-  }
-
-  for (const iface of extraction.interfaces) {
-    const key = `interface:${iface.name}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const items = map.get(iface.category) ?? [];
-    items.push({ kind: "interface", data: iface });
-    map.set(iface.category, items);
-  }
-
-  for (const func of extraction.functions) {
-    const key = `function:${func.name}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const items = map.get(func.category) ?? [];
-    items.push({ kind: "function", data: func });
-    map.set(func.category, items);
-  }
-
-  for (const ta of extraction.typeAliases) {
-    const key = `type:${ta.name}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const items = map.get(ta.category) ?? [];
-    items.push({ kind: "type", data: ta });
-    map.set(ta.category, items);
-  }
-
-  for (const en of extraction.enums) {
-    const key = `enum:${en.name}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const items = map.get(en.category) ?? [];
-    items.push({ kind: "enum", data: en });
-    map.set(en.category, items);
-  }
-
-  for (const c of extraction.constants) {
-    const key = `const:${c.name}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const items = map.get(c.category) ?? [];
-    items.push({ kind: "const", data: c });
-    map.set(c.category, items);
-  }
-
-  return map;
-}
-
-/**
- * アイテムをsubDirectoryフィールドでグループ化する。
- * subDirectoryが空のアイテムは "" キーでグループ化される。
- * @param items - グループ化対象のアイテム配列
- * @returns サブディレクトリをキーとするアイテムのMap
- */
-function groupBySubDirectory(
-  items: CategorizedItem[],
-): Map<string, CategorizedItem[]> {
-  const map = new Map<string, CategorizedItem[]>();
-
-  for (const item of items) {
-    const subDir = getSubDirectory(item);
-    const group = map.get(subDir) ?? [];
-    group.push(item);
-    map.set(subDir, group);
-  }
-
-  return map;
-}
-
-function getSubDirectory(item: CategorizedItem): string {
-  return (item.data as { subDirectory?: string }).subDirectory ?? "";
-}
-
-/**
- * サブディレクトリパスを読みやすいセクションラベルに整形する。
- * 例: "order" → "Order"、"create-order" → "Create Order"
- * @param subDir - サブディレクトリパス
- * @param t - ロケールメッセージ
- * @returns 整形済みラベル文字列
- */
-function formatSubDirLabel(subDir: string, t: LocaleMessages): string {
-  if (!subDir) return t.layer.labelGeneral;
-  return subDir
-    .split("/")
-    .map((segment) =>
-      segment
-        .split("-")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" "),
-    )
-    .join(" / ");
-}
-
 async function renderClass(
   md: MarkdownBuilder,
   cls: ClassInfo,
@@ -301,7 +234,7 @@ async function renderClass(
   callChains?: CallChainEntry[],
   renderer?: DiagramRenderer,
 ): Promise<void> {
-  md.heading(headingLevel, `${kindEmoji("class")} ${formatName(cls.name, "class", cls.category)}`);
+  md.heading(headingLevel, `${kindEmoji("class")} ${formatName(cls.name, "class", cls.category)} ${t.layer.kindSuffix.class}${formatDddRoleSuffix(cls.dddRole, t)}`);
 
   md.blockquote(
     [
@@ -309,6 +242,8 @@ async function renderClass(
       `${t.layer.labelType}: ${cls.category}`,
     ].join("\n"),
   );
+
+  renderDddWarnings(md, cls, t);
 
   if (cls.description) {
     md.paragraph(cls.description);
@@ -349,7 +284,7 @@ function renderInterface(
   headingLevel: number,
   t: LocaleMessages,
 ): void {
-  md.heading(headingLevel, `${kindEmoji("interface")} ${formatName(iface.name, "interface", iface.category)}`);
+  md.heading(headingLevel, `${kindEmoji("interface")} ${formatName(iface.name, "interface", iface.category)} ${t.layer.kindSuffix.interface}${formatDddRoleSuffix(iface.dddRole, t)}`);
 
   md.blockquote(
     [
@@ -393,7 +328,7 @@ async function renderFunction(
   callChains?: CallChainEntry[],
   renderer?: DiagramRenderer,
 ): Promise<void> {
-  md.heading(headingLevel, `${kindEmoji("function")} ${formatName(func.name, "function", func.category)}`);
+  md.heading(headingLevel, `${kindEmoji("function")} ${formatName(func.name, "function", func.category)} ${t.layer.kindSuffix.function}`);
 
   md.blockquote(`${t.layer.labelFile}: \`${getFilename(func.filePath)}\``);
 
@@ -515,11 +450,13 @@ function renderMethod(
   selfLayerName?: string,
   layerNames?: string[],
 ): void {
-  md.heading(headingLevel, `\`${method.signature}\``);
+  md.heading(headingLevel, `\`${method.name}\` ${t.layer.kindSuffix.method}`);
 
   if (method.description) {
     md.paragraph(method.description);
   }
+
+  md.codeBlock(method.signature);
 
   if (method.parameters.length > 0) {
     md.table(
@@ -560,11 +497,13 @@ function renderMethodSignature(
   headingLevel: number,
   t: LocaleMessages,
 ): void {
-  md.heading(headingLevel, `\`${method.signature}\``);
+  md.heading(headingLevel, `\`${method.name}\` ${t.layer.kindSuffix.method}`);
 
   if (method.description) {
     md.paragraph(method.description);
   }
+
+  md.codeBlock(method.signature);
 
   if (method.parameters.length > 0) {
     md.table(
@@ -629,7 +568,7 @@ function renderTypeAlias(
   headingLevel: number,
   t: LocaleMessages,
 ): void {
-  md.heading(headingLevel, `${kindEmoji("type")} ${formatName(ta.name, "type", ta.category)}`);
+  md.heading(headingLevel, `${kindEmoji("type")} ${formatName(ta.name, "type", ta.category)} ${t.layer.kindSuffix.type}`);
 
   md.blockquote(
     [
@@ -664,7 +603,7 @@ function renderEnum(
   headingLevel: number,
   t: LocaleMessages,
 ): void {
-  md.heading(headingLevel, `${kindEmoji("enum")} ${formatName(en.name, "enum", en.category)}`);
+  md.heading(headingLevel, `${kindEmoji("enum")} ${formatName(en.name, "enum", en.category)} ${t.layer.kindSuffix.enum}`);
 
   md.blockquote(
     [
@@ -696,7 +635,7 @@ function renderConst(
   headingLevel: number,
   t: LocaleMessages,
 ): void {
-  md.heading(headingLevel, `${kindEmoji("const")} ${formatName(c.name, "const", c.category)}`);
+  md.heading(headingLevel, `${kindEmoji("const")} ${formatName(c.name, "const", c.category)} ${t.layer.kindSuffix.const}`);
 
   md.blockquote(
     [
@@ -713,6 +652,41 @@ function renderConst(
 
   if (c.valuePreview) {
     md.codeBlock(c.valuePreview, "typescript");
+  }
+}
+
+function formatDddRoleSuffix(dddRole: DddRole | undefined, t: LocaleMessages): string {
+  if (!dddRole) return "";
+  return ` (${t.ddd.roles[dddRole]})`;
+}
+
+function renderDddWarnings(md: MarkdownBuilder, cls: ClassInfo, t: LocaleMessages): void {
+  if (!cls.dddRole) return;
+
+  switch (cls.dddRole) {
+    case "entity": {
+      const idProp = cls.properties.find((p) => p.name === "id");
+      if (idProp && !idProp.isReadonly) {
+        md.blockquote(`⚠️ ${t.ddd.warnings.messages.mutableEntityId("id")}`);
+      }
+      break;
+    }
+    case "valueObject": {
+      for (const prop of cls.properties) {
+        if (!prop.isReadonly) {
+          md.blockquote(`⚠️ ${t.ddd.warnings.messages.mutableValueObjectProperty(prop.name)}`);
+        }
+      }
+      break;
+    }
+    case "domainService": {
+      for (const prop of cls.properties) {
+        if (!prop.isReadonly) {
+          md.blockquote(`⚠️ ${t.ddd.warnings.messages.statefulDomainService(prop.name)}`);
+        }
+      }
+      break;
+    }
   }
 }
 

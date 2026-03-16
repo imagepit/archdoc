@@ -18,11 +18,11 @@ description: 共通型定義の提供
 
 ![Types Class Diagram](diagrams/types-class.svg)
 
-## Other
+## Typesのコンポーネント
 
 ![Class Diagram](diagrams/detail-1.svg)
 
-### 📋 `CategoryOverride`
+### 📋 `CategoryOverride` インターフェース
 
 > **ファイル**: `config.ts`
 > **型**: Other
@@ -36,7 +36,7 @@ description: 共通型定義の提供
 | `pattern` | `string` | ✓ | — |
 | `category` | `string` | ✓ | — |
 
-### 📋 `LayerConfig`
+### 📋 `LayerConfig` インターフェース
 
 > **ファイル**: `config.ts`
 > **型**: Other
@@ -59,7 +59,7 @@ description: 共通型定義の提供
 | `categoryOverrides` | `CategoryOverride[] or undefined` | — | ディレクトリベースの解決後に適用される名前パターンベースのカテゴリ上書き。 |
 | `framework` | `string or undefined` | — | フレームワーク固有の抽出に使用するフレームワーク識別子（例: "express"）。 |
 
-### 📋 `ProjectConfig`
+### 📋 `ProjectConfig` インターフェース
 
 > **ファイル**: `config.ts`
 > **型**: Other
@@ -73,7 +73,7 @@ layers.yamlから読み込まれるプロジェクト設定。
 | `project` | `{ name: string; description: string; sourceRoot: string; locale?: "en" or "ja"; }` | ✓ | — |
 | `layers` | `LayerConfig[]` | ✓ | — |
 
-### 📋 `SpecDiff`
+### 📋 `SpecDiff` インターフェース
 
 > **ファイル**: `drift.ts`
 > **型**: Other
@@ -92,7 +92,7 @@ layers.yamlから読み込まれるプロジェクト設定。
 | `implementationValue` | `string or undefined` | — | — |
 | `description` | `string` | ✓ | — |
 
-### 📋 `DriftResult`
+### 📋 `DriftResult` インターフェース
 
 > **ファイル**: `drift.ts`
 > **型**: Other
@@ -107,7 +107,24 @@ layers.yamlから読み込まれるプロジェクト設定。
 | `diffs` | `SpecDiff[]` | ✓ | — |
 | `hasDrift` | `boolean` | ✓ | — |
 
-### 📋 `PropertyInfo`
+### 📋 `DddWarning` インターフェース
+
+> **ファイル**: `extracted.ts`
+> **型**: Other
+
+DDD設計原則に反する構造を検出した警告。
+
+**プロパティ**
+
+| プロパティ | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `componentName` | `string` | ✓ | — |
+| `filePath` | `string` | ✓ | — |
+| `role` | `DddRole` | ✓ | — |
+| `warningType` | `DddWarningType` | ✓ | — |
+| `propertyName` | `string` | ✓ | — |
+
+### 📋 `PropertyInfo` インターフェース
 
 > **ファイル**: `extracted.ts`
 > **型**: Other
@@ -125,7 +142,7 @@ layers.yamlから読み込まれるプロジェクト設定。
 | `isOptional` | `boolean` | ✓ | — |
 | `visibility` | `"public" or "protected" or "private"` | ✓ | — |
 
-### 📋 `ParameterInfo`
+### 📋 `ParameterInfo` インターフェース
 
 > **ファイル**: `extracted.ts`
 > **型**: Other
@@ -142,7 +159,7 @@ layers.yamlから読み込まれるプロジェクト設定。
 | `isOptional` | `boolean` | ✓ | — |
 | `defaultValue` | `string or undefined` | — | — |
 
-### 📋 `ThrowInfo`
+### 📋 `ThrowInfo` インターフェース
 
 > **ファイル**: `extracted.ts`
 > **型**: Other
@@ -156,7 +173,7 @@ JSDoc
 | `type` | `string` | ✓ | — |
 | `description` | `string` | ✓ | — |
 
-### 📋 `CallerReference`
+### 📋 `CallerReference` インターフェース
 
 > **ファイル**: `extracted.ts`
 > **型**: Other
@@ -173,7 +190,7 @@ JSDoc
 | `callType` | `"interface" or "direct" or undefined` | — | — |
 | `interfaceName` | `string or undefined` | — | — |
 
-### 📋 `MethodInfo`
+### 📋 `MethodInfo` インターフェース
 
 > **ファイル**: `extracted.ts`
 > **型**: Other
@@ -195,7 +212,7 @@ JSDoc
 | `visibility` | `"public" or "protected" or "private"` | ✓ | — |
 | `calledBy` | `CallerReference[] or undefined` | — | — |
 
-### 📋 `MethodSignatureInfo`
+### 📋 `MethodSignatureInfo` インターフェース
 
 > **ファイル**: `extracted.ts`
 > **型**: Other
@@ -213,7 +230,7 @@ JSDoc
 | `returnType` | `string` | ✓ | — |
 | `returnDescription` | `string` | ✓ | — |
 
-### 📋 `DependencyInfo`
+### 📋 `DependencyInfo` インターフェース
 
 > **ファイル**: `extracted.ts`
 > **型**: Other
@@ -231,7 +248,7 @@ JSDoc
 | `importPath` | `string or undefined` | — | — |
 | `isForbidden` | `boolean or undefined` | — | — |
 
-### 📋 `ClassInfo`
+### 📋 `ClassInfo` インターフェース
 
 > **ファイル**: `extracted.ts`
 > **型**: Other
@@ -254,8 +271,9 @@ JSDoc
 | `isExported` | `boolean` | ✓ | — |
 | `extendsClass` | `string or undefined` | — | — |
 | `implementsInterfaces` | `string[]` | ✓ | — |
+| `dddRole` | `DddRole or undefined` | — | — |
 
-### 📋 `InterfaceInfo`
+### 📋 `InterfaceInfo` インターフェース
 
 > **ファイル**: `extracted.ts`
 > **型**: Other
@@ -275,8 +293,9 @@ JSDoc
 | `methods` | `MethodSignatureInfo[]` | ✓ | — |
 | `isExported` | `boolean` | ✓ | — |
 | `extendsInterfaces` | `string[]` | ✓ | — |
+| `dddRole` | `DddRole or undefined` | — | — |
 
-### 📋 `RouteCallInfo`
+### 📋 `RouteCallInfo` インターフェース
 
 > **ファイル**: `extracted.ts`
 > **型**: Other
@@ -290,7 +309,7 @@ Expressルートハンドラ内のメソッド呼び出し。
 | `target` | `string` | ✓ | — |
 | `method` | `string` | ✓ | — |
 
-### 📋 `RouteJSDocTag`
+### 📋 `RouteJSDocTag` インターフェース
 
 > **ファイル**: `extracted.ts`
 > **型**: Other
@@ -305,7 +324,7 @@ Expressルートハンドラから抽出されたJSDocタグ。
 | `name` | `string or undefined` | — | — |
 | `description` | `string` | ✓ | — |
 
-### 📋 `RouteInfo`
+### 📋 `RouteInfo` インターフェース
 
 > **ファイル**: `extracted.ts`
 > **型**: Other
@@ -323,7 +342,7 @@ Expressルートハンドラから抽出されたJSDocタグ。
 | `jsdocTags` | `RouteJSDocTag[] or undefined` | — | — |
 | `calls` | `RouteCallInfo[]` | ✓ | — |
 
-### 📋 `FunctionInfo`
+### 📋 `FunctionInfo` インターフェース
 
 > **ファイル**: `extracted.ts`
 > **型**: Other
@@ -349,7 +368,7 @@ Expressルートハンドラから抽出されたJSDocタグ。
 | `calledBy` | `CallerReference[] or undefined` | — | — |
 | `routes` | `RouteInfo[] or undefined` | — | — |
 
-### 📋 `TypeAliasInfo`
+### 📋 `TypeAliasInfo` インターフェース
 
 > **ファイル**: `extracted.ts`
 > **型**: Other
@@ -369,7 +388,7 @@ Expressルートハンドラから抽出されたJSDocタグ。
 | `properties` | `PropertyInfo[]` | ✓ | — |
 | `isExported` | `boolean` | ✓ | — |
 
-### 📋 `EnumMemberInfo`
+### 📋 `EnumMemberInfo` インターフェース
 
 > **ファイル**: `extracted.ts`
 > **型**: Other
@@ -384,7 +403,7 @@ enum宣言の個別メンバー情報。
 | `value` | `string` | ✓ | — |
 | `description` | `string` | ✓ | — |
 
-### 📋 `EnumInfo`
+### 📋 `EnumInfo` インターフェース
 
 > **ファイル**: `extracted.ts`
 > **型**: Other
@@ -403,7 +422,7 @@ enum宣言の抽出情報。
 | `members` | `EnumMemberInfo[]` | ✓ | — |
 | `isExported` | `boolean` | ✓ | — |
 
-### 📋 `ConstInfo`
+### 📋 `ConstInfo` インターフェース
 
 > **ファイル**: `extracted.ts`
 > **型**: Other
@@ -423,7 +442,7 @@ enum宣言の抽出情報。
 | `valuePreview` | `string` | ✓ | — |
 | `isExported` | `boolean` | ✓ | — |
 
-### 📋 `ConstructorDep`
+### 📋 `ConstructorDep` インターフェース
 
 > **ファイル**: `extracted.ts`
 > **型**: Other
@@ -437,7 +456,7 @@ enum宣言の抽出情報。
 | `paramName` | `string` | ✓ | — |
 | `typeName` | `string` | ✓ | — |
 
-### 📋 `MethodCall`
+### 📋 `MethodCall` インターフェース
 
 > **ファイル**: `extracted.ts`
 > **型**: Other
@@ -451,7 +470,7 @@ enum宣言の抽出情報。
 | `target` | `string` | ✓ | — |
 | `method` | `string` | ✓ | — |
 
-### 📋 `MethodCallChain`
+### 📋 `MethodCallChain` インターフェース
 
 > **ファイル**: `extracted.ts`
 > **型**: Other
@@ -465,7 +484,7 @@ enum宣言の抽出情報。
 | `methodName` | `string` | ✓ | — |
 | `calls` | `MethodCall[]` | ✓ | — |
 
-### 📋 `ClassCallChain`
+### 📋 `ClassCallChain` インターフェース
 
 > **ファイル**: `extracted.ts`
 > **型**: Other
@@ -481,7 +500,7 @@ enum宣言の抽出情報。
 | `constructorDeps` | `ConstructorDep[]` | ✓ | — |
 | `methods` | `MethodCallChain[]` | ✓ | — |
 
-### 📋 `CallChainEntry`
+### 📋 `CallChainEntry` インターフェース
 
 > **ファイル**: `extracted.ts`
 > **型**: Other
@@ -497,7 +516,7 @@ LayerExtractionに格納されるシリアライズ可能なコールチェー�
 | `constructorDeps` | `{ paramName: string; typeName: string; }[]` | ✓ | — |
 | `methods` | `{ methodName: string; calls: { target: string; method: string; }[]; }[]` | ✓ | — |
 
-### 📋 `LayerExtraction`
+### 📋 `LayerExtraction` インターフェース
 
 > **ファイル**: `extracted.ts`
 > **型**: Other
@@ -517,8 +536,9 @@ LayerExtractionに格納されるシリアライズ可能なコールチェー�
 | `constants` | `ConstInfo[]` | ✓ | — |
 | `dependencies` | `DependencyInfo[]` | ✓ | — |
 | `callChains` | `CallChainEntry[]` | ✓ | — |
+| `dddWarnings` | `DddWarning[]` | ✓ | — |
 
-### 📝 `LayerType`
+### 📝 `LayerType` 型エイリアス
 
 > **ファイル**: `config.ts`
 > **型**: Other
@@ -529,7 +549,7 @@ DDDアーキテクチャで使用するレイヤー種別。
 "domain" | "application" | "presentation" | "infrastructure" | "custom"
 ```
 
-### 📝 `DriftSeverity`
+### 📝 `DriftSeverity` 型エイリアス
 
 > **ファイル**: `drift.ts`
 > **型**: Other
@@ -538,4 +558,26 @@ DDDアーキテクチャで使用するレイヤー種別。
 
 ```typescript
 "added" | "removed" | "changed"
+```
+
+### 📝 `DddRole` 型エイリアス
+
+> **ファイル**: `extracted.ts`
+> **型**: Other
+
+DDDにおけるドメインモデルの役割分類。
+
+```typescript
+"entity" | "valueObject" | "domainService" | "repository" | "domainError"
+```
+
+### 📝 `DddWarningType` 型エイリアス
+
+> **ファイル**: `extracted.ts`
+> **型**: Other
+
+DDD構造警告の種別。
+
+```typescript
+"mutableEntityId" | "mutableValueObjectProperty" | "statefulDomainService"
 ```

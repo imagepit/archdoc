@@ -16,9 +16,9 @@ description: CLIインターフェースの提供
 CLIコマンドの定義とエントリポイント。
 init / generate / drift サブコマンドの実装。
 
-## Other
+## Cliのコンポーネント
 
-### 🔧 `createProgram`
+### 🔧 `createProgram` 関数
 
 > **ファイル**: `index.ts`
 
@@ -30,9 +30,9 @@ createProgram(): Command
 
 **戻り値**: `Command` 設定済みのCommanderプログラム
 
-## Command
+## Cli/Commandsのコンポーネント
 
-### 🔧 `registerDiagramCommand`
+### 🔧 `registerDiagramCommand` 関数
 
 > **ファイル**: `diagram.ts`
 
@@ -61,7 +61,7 @@ sequenceDiagram
   registerDiagramCommand-->>-Client: response
 ```
 
-### 🔧 `registerDriftCommand`
+### 🔧 `registerDriftCommand` 関数
 
 > **ファイル**: `drift.ts`
 
@@ -90,7 +90,7 @@ sequenceDiagram
   registerDriftCommand-->>-Client: response
 ```
 
-### 🔧 `registerGenerateCommand`
+### 🔧 `registerGenerateCommand` 関数
 
 > **ファイル**: `generate.ts`
 
@@ -119,7 +119,7 @@ sequenceDiagram
   registerGenerateCommand-->>-Client: response
 ```
 
-### 🔧 `registerInitCommand`
+### 🔧 `registerInitCommand` 関数
 
 > **ファイル**: `init.ts`
 

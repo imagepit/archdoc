@@ -1,3 +1,18 @@
+/** DDDにおけるドメインモデルの役割分類。 */
+export type DddRole = "entity" | "valueObject" | "domainService" | "repository" | "domainError";
+
+/** DDD構造警告の種別。 */
+export type DddWarningType = "mutableEntityId" | "mutableValueObjectProperty" | "statefulDomainService";
+
+/** DDD設計原則に反する構造を検出した警告。 */
+export interface DddWarning {
+  componentName: string;
+  filePath: string;
+  role: DddRole;
+  warningType: DddWarningType;
+  propertyName: string;
+}
+
 /** クラスまたはインターフェースから抽出されたプロパティ情報。 */
 export interface PropertyInfo {
   name: string;
@@ -80,6 +95,7 @@ export interface ClassInfo {
   isExported: boolean;
   extendsClass?: string;
   implementsInterfaces: string[];
+  dddRole?: DddRole;
 }
 
 /** プロパティ・メソッドシグネチャを含むインターフェース情報。 */
@@ -93,6 +109,7 @@ export interface InterfaceInfo {
   methods: MethodSignatureInfo[];
   isExported: boolean;
   extendsInterfaces: string[];
+  dddRole?: DddRole;
 }
 
 /** Expressルートハンドラ内のメソッド呼び出し。 */
@@ -226,4 +243,5 @@ export interface LayerExtraction {
   constants: ConstInfo[];
   dependencies: DependencyInfo[];
   callChains: CallChainEntry[];
+  dddWarnings: DddWarning[];
 }

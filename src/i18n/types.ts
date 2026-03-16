@@ -1,7 +1,11 @@
 import type { ObjectKind } from "../generator/emoji.js";
+import type { DddRole, DddWarningType } from "../types/extracted.js";
 
 /** Supported locale identifiers. */
 export type Locale = "en" | "ja";
+
+/** Kind suffix keys including method for headings. */
+export type KindSuffixKey = ObjectKind | "method";
 
 /** Category key for domain pattern matching. */
 export type CategoryKey =
@@ -24,12 +28,13 @@ export interface LocaleMessages {
     // Headings
     systemArchitectureOverview: string;
     project: string;
-    layerOverview: string;
+    layers: string;
+    layerList: string;
     layerDependency: string;
-    legend: string;
-    crossLayerViolations: string;
     importViolations: string;
     nonStandardWarnings: string;
+    components: string;
+    legend: string;
 
     // Table headers - project info
     headerItem: string;
@@ -106,6 +111,12 @@ export interface LocaleMessages {
     labelRoutes: string;
     labelMembers: string;
     labelGeneral: string;
+
+    // Directory-based heading
+    componentsSuffix: string;
+
+    // Kind suffix for component headings
+    kindSuffix: Record<KindSuffixKey, string>;
   };
 
   /** Object kind display descriptions. */
@@ -113,4 +124,18 @@ export interface LocaleMessages {
 
   /** Domain category display labels. */
   categories: Record<CategoryKey, string>;
+
+  /** DDD auto-categorization and structural warnings. */
+  ddd: {
+    roles: Record<DddRole, string>;
+    warnings: {
+      sectionTitle: string;
+      warningsDetected: (count: number) => string;
+      messages: Record<DddWarningType, (prop: string) => string>;
+      headerComponent: string;
+      headerRole: string;
+      headerWarning: string;
+      headerDetail: string;
+    };
+  };
 }

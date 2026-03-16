@@ -18,11 +18,11 @@ Mermaid/DOT形式のアーキテクチャ図を生成。
 
 ![Diagram Class Diagram](diagrams/diagram-class.svg)
 
-## Other
+## Diagramのコンポーネント
 
 ![Class Diagram](diagrams/detail-4.svg)
 
-### 🏗️ `MermaidRenderer`
+### 🏗️ `MermaidRenderer` クラス
 
 > **ファイル**: `mermaid-renderer.ts`
 > **型**: Other
@@ -32,7 +32,11 @@ Markdownに埋め込み可能なMermaidコードブロックを返す。
 
 **メソッド**
 
-#### `renderLayerOverview(extraction: LayerExtraction): Promise<string | null>`
+#### `renderLayerOverview` メソッド
+
+```ts
+renderLayerOverview(extraction: LayerExtraction): Promise<string | null>
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -44,7 +48,11 @@ Markdownに埋め込み可能なMermaidコードブロックを返す。
 
 - `generateLayerMd()` — Generator (`layer-generator.ts`) via `DiagramRenderer`
 
-#### `renderDetailClassDiagram(classes: ClassInfo[], interfaces: InterfaceInfo[]): Promise<string | null>`
+#### `renderDetailClassDiagram` メソッド
+
+```ts
+renderDetailClassDiagram(classes: ClassInfo[], interfaces: InterfaceInfo[]): Promise<string | null>
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -57,7 +65,11 @@ Markdownに埋め込み可能なMermaidコードブロックを返す。
 
 - `renderGroupDiagramAndItems()` — Generator (`layer-generator.ts`) via `DiagramRenderer`
 
-#### `renderSequenceDiagram(chain: ClassCallChain): Promise<string | null>`
+#### `renderSequenceDiagram` メソッド
+
+```ts
+renderSequenceDiagram(chain: ClassCallChain): Promise<string | null>
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -70,7 +82,11 @@ Markdownに埋め込み可能なMermaidコードブロックを返す。
 - `renderMethodSequenceDiagram()` — Generator (`layer-generator.ts`) via `DiagramRenderer`
 - `renderFunctionSequenceDiagram()` — Generator (`layer-generator.ts`) via `DiagramRenderer`
 
-#### `renderRouteSequenceDiagram(funcName: string, route: RouteInfo): Promise<string | null>`
+#### `renderRouteSequenceDiagram` メソッド
+
+```ts
+renderRouteSequenceDiagram(funcName: string, route: RouteInfo): Promise<string | null>
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -83,7 +99,11 @@ Markdownに埋め込み可能なMermaidコードブロックを返す。
 
 - `renderFunction()` — Generator (`layer-generator.ts`) via `DiagramRenderer`
 
-#### `renderProjectOverview(extractions: LayerExtraction[], layers?: LayerConfig[] | undefined): Promise<string | null>`
+#### `renderProjectOverview` メソッド
+
+```ts
+renderProjectOverview(extractions: LayerExtraction[], layers?: LayerConfig[] | undefined): Promise<string | null>
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -96,7 +116,11 @@ Markdownに埋め込み可能なMermaidコードブロックを返す。
 
 - `generateIndexMd()` — Generator (`index-generator.ts`) via `DiagramRenderer`
 
-#### `renderLayerDependency(extractions: LayerExtraction[], layers?: LayerConfig[] | undefined): Promise<string | null>`
+#### `renderLayerDependency` メソッド
+
+```ts
+renderLayerDependency(extractions: LayerExtraction[], layers?: LayerConfig[] | undefined): Promise<string | null>
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -109,7 +133,7 @@ Markdownに埋め込み可能なMermaidコードブロックを返す。
 
 - `generateIndexMd()` — Generator (`index-generator.ts`) via `DiagramRenderer`
 
-### 🏗️ `SvgRenderer`
+### 🏗️ `SvgRenderer` クラス
 
 > **ファイル**: `svg-renderer.ts`
 > **型**: Other
@@ -119,7 +143,11 @@ DOT → SVGファイルを生成し、Markdown画像参照文字列を返す。
 
 **メソッド**
 
-#### `renderLayerOverview(extraction: LayerExtraction): Promise<string | null>`
+#### `renderLayerOverview` メソッド
+
+```ts
+renderLayerOverview(extraction: LayerExtraction): Promise<string | null>
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -131,7 +159,11 @@ DOT → SVGファイルを生成し、Markdown画像参照文字列を返す。
 
 - `generateLayerMd()` — Generator (`layer-generator.ts`) via `DiagramRenderer`
 
-#### `renderDetailClassDiagram(classes: ClassInfo[], interfaces: InterfaceInfo[]): Promise<string | null>`
+#### `renderDetailClassDiagram` メソッド
+
+```ts
+renderDetailClassDiagram(classes: ClassInfo[], interfaces: InterfaceInfo[]): Promise<string | null>
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -144,7 +176,11 @@ DOT → SVGファイルを生成し、Markdown画像参照文字列を返す。
 
 - `renderGroupDiagramAndItems()` — Generator (`layer-generator.ts`) via `DiagramRenderer`
 
-#### `renderSequenceDiagram(chain: ClassCallChain): Promise<string | null>`
+#### `renderSequenceDiagram` メソッド
+
+```ts
+renderSequenceDiagram(chain: ClassCallChain): Promise<string | null>
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -157,7 +193,11 @@ DOT → SVGファイルを生成し、Markdown画像参照文字列を返す。
 - `renderMethodSequenceDiagram()` — Generator (`layer-generator.ts`) via `DiagramRenderer`
 - `renderFunctionSequenceDiagram()` — Generator (`layer-generator.ts`) via `DiagramRenderer`
 
-#### `renderRouteSequenceDiagram(funcName: string, route: RouteInfo): Promise<string | null>`
+#### `renderRouteSequenceDiagram` メソッド
+
+```ts
+renderRouteSequenceDiagram(funcName: string, route: RouteInfo): Promise<string | null>
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -170,7 +210,11 @@ DOT → SVGファイルを生成し、Markdown画像参照文字列を返す。
 
 - `renderFunction()` — Generator (`layer-generator.ts`) via `DiagramRenderer`
 
-#### `renderProjectOverview(extractions: LayerExtraction[], layers?: LayerConfig[] | undefined): Promise<string | null>`
+#### `renderProjectOverview` メソッド
+
+```ts
+renderProjectOverview(extractions: LayerExtraction[], layers?: LayerConfig[] | undefined): Promise<string | null>
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -183,7 +227,11 @@ DOT → SVGファイルを生成し、Markdown画像参照文字列を返す。
 
 - `generateIndexMd()` — Generator (`index-generator.ts`) via `DiagramRenderer`
 
-#### `renderLayerDependency(extractions: LayerExtraction[], layers?: LayerConfig[] | undefined): Promise<string | null>`
+#### `renderLayerDependency` メソッド
+
+```ts
+renderLayerDependency(extractions: LayerExtraction[], layers?: LayerConfig[] | undefined): Promise<string | null>
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -196,7 +244,7 @@ DOT → SVGファイルを生成し、Markdown画像参照文字列を返す。
 
 - `generateIndexMd()` — Generator (`index-generator.ts`) via `DiagramRenderer`
 
-### 📋 `DependencyGraph`
+### 📋 `DependencyGraph` インターフェース
 
 > **ファイル**: `dependency-graph.ts`
 > **型**: Other
@@ -210,7 +258,7 @@ DOT → SVGファイルを生成し、Markdown画像参照文字列を返す。
 | `nodes` | `string[]` | ✓ | — |
 | `edges` | `DependencyEdge[]` | ✓ | — |
 
-### 📋 `DependencyEdge`
+### 📋 `DependencyEdge` インターフェース
 
 > **ファイル**: `dependency-graph.ts`
 > **型**: Other
@@ -226,7 +274,7 @@ DOT → SVGファイルを生成し、Markdown画像参照文字列を返す。
 | `count` | `number` | ✓ | — |
 | `isForbidden` | `boolean` | ✓ | — |
 
-### 📋 `DiagramRenderer`
+### 📋 `DiagramRenderer` インターフェース
 
 > **ファイル**: `diagram-renderer.ts`
 > **型**: Other
@@ -237,10 +285,14 @@ Markdownスニペットを生成し、ドキュメントに埋め込める形式
 
 **メソッド**
 
-#### `renderLayerOverview(extraction: LayerExtraction): Promise<string | null>`
+#### `renderLayerOverview` メソッド
 
 レイヤー全体のコンパクトな概要クラス図をレンダリングする。
 クラス/インターフェース名と関係のみを表示し、メンバー詳細は含まない。
+
+```ts
+renderLayerOverview(extraction: LayerExtraction): Promise<string | null>
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -248,10 +300,14 @@ Markdownスニペットを生成し、ドキュメントに埋め込める形式
 
 **戻り値**: `Promise<string or null>` Markdownスニペット文字列、またはnull
 
-#### `renderDetailClassDiagram(classes: ClassInfo[], interfaces: InterfaceInfo[]): Promise<string | null>`
+#### `renderDetailClassDiagram` メソッド
 
 クラス/インターフェースグループの詳細クラス図をレンダリングする。
 プロパティ・メソッドを含む完全なメンバー情報と関係を表示する。
+
+```ts
+renderDetailClassDiagram(classes: ClassInfo[], interfaces: InterfaceInfo[]): Promise<string | null>
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -260,9 +316,13 @@ Markdownスニペットを生成し、ドキュメントに埋め込める形式
 
 **戻り値**: `Promise<string or null>` Markdownスニペット文字列、またはnull
 
-#### `renderSequenceDiagram(chain: ClassCallChain): Promise<string | null>`
+#### `renderSequenceDiagram` メソッド
 
 クラスコールチェーンのシーケンス図をレンダリングする。
+
+```ts
+renderSequenceDiagram(chain: ClassCallChain): Promise<string | null>
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -270,9 +330,13 @@ Markdownスニペットを生成し、ドキュメントに埋め込める形式
 
 **戻り値**: `Promise<string or null>` Markdownスニペット文字列、またはnull
 
-#### `renderRouteSequenceDiagram(funcName: string, route: RouteInfo): Promise<string | null>`
+#### `renderRouteSequenceDiagram` メソッド
 
 単一ルートハンドラーのコールチェーンからシーケンス図をレンダリングする。
+
+```ts
+renderRouteSequenceDiagram(funcName: string, route: RouteInfo): Promise<string | null>
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -281,11 +345,15 @@ Markdownスニペットを生成し、ドキュメントに埋め込める形式
 
 **戻り値**: `Promise<string or null>` Markdownスニペット文字列、またはnull
 
-#### `renderProjectOverview(extractions: LayerExtraction[], layers?: LayerConfig[] | undefined): Promise<string | null>`
+#### `renderProjectOverview` メソッド
 
 レイヤー横断のプロジェクト概要ダイアグラムをレンダリングする。
 レイヤー別にグループ化した全オブジェクトを表示し、依存違反のみ線を引く。
 
+```ts
+renderProjectOverview(extractions: LayerExtraction[], layers?: LayerConfig[] | undefined): Promise<string | null>
+```
+
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `extractions` | `LayerExtraction[]` | 全レイヤーの抽出結果 |
@@ -293,11 +361,15 @@ Markdownスニペットを生成し、ドキュメントに埋め込める形式
 
 **戻り値**: `Promise<string or null>` Markdownスニペット文字列、またはnull
 
-#### `renderLayerDependency(extractions: LayerExtraction[], layers?: LayerConfig[] | undefined): Promise<string | null>`
+#### `renderLayerDependency` メソッド
 
 レイヤー間の依存関係をシンプルなフローチャートでレンダリングする。
 各レイヤーをボックスで表示し、実際のインポート依存関係を矢印で描画する。
 
+```ts
+renderLayerDependency(extractions: LayerExtraction[], layers?: LayerConfig[] | undefined): Promise<string | null>
+```
+
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `extractions` | `LayerExtraction[]` | 全レイヤーの抽出結果 |
@@ -305,7 +377,7 @@ Markdownスニペットを生成し、ドキュメントに埋め込める形式
 
 **戻り値**: `Promise<string or null>` Markdownスニペット文字列、またはnull
 
-### 🔧 `buildC4ComponentDiagram`
+### 🔧 `buildC4ComponentDiagram` 関数
 
 > **ファイル**: `c4-builder.ts`
 
@@ -326,7 +398,7 @@ buildC4ComponentDiagram(config: ProjectConfig, graph: DependencyGraph): string
 
 - `registerDiagramCommand()` — Cli (`diagram.ts`)
 
-### 🔧 `buildClassDiagram`
+### 🔧 `buildClassDiagram` 関数
 
 > **ファイル**: `class-diagram-builder.ts`
 
@@ -342,7 +414,7 @@ buildClassDiagram(extraction: LayerExtraction): string
 
 **戻り値**: `string` Mermaidクラス図文字列
 
-### 🔧 `buildCompactClassDiagram`
+### 🔧 `buildCompactClassDiagram` 関数
 
 > **ファイル**: `class-diagram-builder.ts`
 
@@ -363,7 +435,7 @@ buildCompactClassDiagram(extraction: LayerExtraction): string
 
 - `MermaidRenderer.renderLayerOverview()` — Diagram (`mermaid-renderer.ts`)
 
-### 🔧 `buildCategoryClassDiagrams`
+### 🔧 `buildCategoryClassDiagrams` 関数
 
 > **ファイル**: `class-diagram-builder.ts`
 
@@ -384,7 +456,7 @@ buildCategoryClassDiagrams(classes: ClassInfo[], interfaces: InterfaceInfo[]): s
 
 - `MermaidRenderer.renderDetailClassDiagram()` — Diagram (`mermaid-renderer.ts`)
 
-### 🔧 `buildDependencyGraph`
+### 🔧 `buildDependencyGraph` 関数
 
 > **ファイル**: `dependency-graph.ts`
 
@@ -405,7 +477,7 @@ buildDependencyGraph(config: ProjectConfig, extractions: LayerExtraction[]): Dep
 
 - `registerDiagramCommand()` — Cli (`diagram.ts`)
 
-### 🔧 `buildLayerDotDiagram`
+### 🔧 `buildLayerDotDiagram` 関数
 
 > **ファイル**: `dot-class-builder.ts`
 
@@ -430,7 +502,7 @@ buildLayerDotDiagram(extraction: LayerExtraction): string
 
 - `SvgRenderer.renderLayerOverview()` — Diagram (`svg-renderer.ts`)
 
-### 🔧 `buildDetailDotDiagram`
+### 🔧 `buildDetailDotDiagram` 関数
 
 > **ファイル**: `dot-class-builder.ts`
 
@@ -452,7 +524,7 @@ buildDetailDotDiagram(classes: ClassInfo[], interfaces: InterfaceInfo[]): string
 
 - `SvgRenderer.renderDetailClassDiagram()` — Diagram (`svg-renderer.ts`)
 
-### 🔧 `buildProjectOverviewMermaid`
+### 🔧 `buildProjectOverviewMermaid` 関数
 
 > **ファイル**: `project-overview-builder.ts`
 
@@ -474,7 +546,7 @@ buildProjectOverviewMermaid(extractions: LayerExtraction[], layers?: LayerConfig
 
 - `MermaidRenderer.renderProjectOverview()` — Diagram (`mermaid-renderer.ts`)
 
-### 🔧 `buildProjectOverviewDot`
+### 🔧 `buildProjectOverviewDot` 関数
 
 > **ファイル**: `project-overview-builder.ts`
 
@@ -496,7 +568,7 @@ buildProjectOverviewDot(extractions: LayerExtraction[], layers?: LayerConfig[] |
 
 - `SvgRenderer.renderProjectOverview()` — Diagram (`svg-renderer.ts`)
 
-### 🔧 `buildLayerDependencyMermaid`
+### 🔧 `buildLayerDependencyMermaid` 関数
 
 > **ファイル**: `project-overview-builder.ts`
 
@@ -519,7 +591,7 @@ buildLayerDependencyMermaid(extractions: LayerExtraction[], layers?: LayerConfig
 
 - `MermaidRenderer.renderLayerDependency()` — Diagram (`mermaid-renderer.ts`)
 
-### 🔧 `buildLayerDependencyDot`
+### 🔧 `buildLayerDependencyDot` 関数
 
 > **ファイル**: `project-overview-builder.ts`
 
@@ -542,7 +614,7 @@ buildLayerDependencyDot(extractions: LayerExtraction[], layers?: LayerConfig[] |
 
 - `SvgRenderer.renderLayerDependency()` — Diagram (`svg-renderer.ts`)
 
-### 🔧 `buildRouteSequenceDiagram`
+### 🔧 `buildRouteSequenceDiagram` 関数
 
 > **ファイル**: `route-sequence-builder.ts`
 
@@ -565,7 +637,7 @@ buildRouteSequenceDiagram(funcName: string, route: RouteInfo): string | null
 - `MermaidRenderer.renderRouteSequenceDiagram()` — Diagram (`mermaid-renderer.ts`)
 - `SvgRenderer.renderRouteSequenceDiagram()` — Diagram (`svg-renderer.ts`)
 
-### 🔧 `buildSequenceDiagram`
+### 🔧 `buildSequenceDiagram` 関数
 
 > **ファイル**: `sequence-diagram-builder.ts`
 
@@ -587,7 +659,7 @@ buildSequenceDiagram(chain: ClassCallChain): string
 - `MermaidRenderer.renderSequenceDiagram()` — Diagram (`mermaid-renderer.ts`)
 - `SvgRenderer.renderSequenceDiagram()` — Diagram (`svg-renderer.ts`)
 
-### 🔧 `buildMultiSequenceDiagrams`
+### 🔧 `buildMultiSequenceDiagrams` 関数
 
 > **ファイル**: `sequence-diagram-builder.ts`
 
@@ -603,7 +675,7 @@ buildMultiSequenceDiagrams(chains: ClassCallChain[]): Map<string, string>
 
 **戻り値**: `Map<string, string>` クラス名をキーとするシーケンス図のMap
 
-### 🔧 `renderDotToSvg`
+### 🔧 `renderDotToSvg` 関数
 
 > **ファイル**: `svg-renderer.ts`
 

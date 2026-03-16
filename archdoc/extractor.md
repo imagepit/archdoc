@@ -18,11 +18,11 @@ TypeScriptソースコードからAST解析でクラス・インターフェー�
 
 ![Extractor Class Diagram](diagrams/extractor-class.svg)
 
-## Framework Extractor
+## Extractor/Frameworkのコンポーネント
 
 ![Class Diagram](diagrams/detail-2.svg)
 
-### 🏗️ `ExpressExtractor`
+### 🏗️ `ExpressExtractor` クラス
 
 > **ファイル**: `express-extractor.ts`
 > **型**: Framework Extractor
@@ -31,7 +31,11 @@ FrameworkExtractorを実装するExpress.jsルート抽出器。
 
 **メソッド**
 
-#### `extractRoutes(sourceFile: SourceFile, funcName: string): RouteInfo[]`
+#### `extractRoutes` メソッド
+
+```ts
+extractRoutes(sourceFile: SourceFile, funcName: string): RouteInfo[]
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -44,7 +48,11 @@ FrameworkExtractorを実装するExpress.jsルート抽出器。
 
 - `extractLayer()` — Extractor (`project.ts`) via `FrameworkExtractor`
 
-#### `resolveMountPrefixes(layerSourceFiles: SourceFile[], allSourceFiles: SourceFile[], functions: FunctionInfo[]): void`
+#### `resolveMountPrefixes` メソッド
+
+```ts
+resolveMountPrefixes(layerSourceFiles: SourceFile[], allSourceFiles: SourceFile[], functions: FunctionInfo[]): void
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -56,7 +64,7 @@ FrameworkExtractorを実装するExpress.jsルート抽出器。
 
 - `extractLayer()` — Extractor (`project.ts`) via `FrameworkExtractor`
 
-### 📋 `FrameworkExtractor`
+### 📋 `FrameworkExtractor` インターフェース
 
 > **ファイル**: `framework-extractor.ts`
 > **型**: Framework Extractor
@@ -65,7 +73,11 @@ FrameworkExtractorを実装するExpress.jsルート抽出器。
 
 **メソッド**
 
-#### `extractRoutes(sourceFile: SourceFile, funcName: string): RouteInfo[]`
+#### `extractRoutes` メソッド
+
+```ts
+extractRoutes(sourceFile: SourceFile, funcName: string): RouteInfo[]
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -74,10 +86,14 @@ FrameworkExtractorを実装するExpress.jsルート抽出器。
 
 **戻り値**: `RouteInfo[]` 
 
-#### `resolveMountPrefixes(layerSourceFiles: SourceFile[], allSourceFiles: SourceFile[], functions: FunctionInfo[]): void`
+#### `resolveMountPrefixes` メソッド
 
 後処理ステップ: app.use() / router.use() のマウントパターンを解決し、
 サブルーターのルートにプレフィックスを付与する。
+
+```ts
+resolveMountPrefixes(layerSourceFiles: SourceFile[], allSourceFiles: SourceFile[], functions: FunctionInfo[]): void
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -85,7 +101,7 @@ FrameworkExtractorを実装するExpress.jsルート抽出器。
 | `allSourceFiles` | `SourceFile[]` | プロジェクト全体のソースファイル群（app.tsなどのapp.use()検出用） |
 | `functions` | `FunctionInfo[]` | ルートを更新する対象の抽出済み関数群 |
 
-### 🔧 `createFrameworkExtractor`
+### 🔧 `createFrameworkExtractor` 関数
 
 > **ファイル**: `index.ts`
 
@@ -105,11 +121,11 @@ createFrameworkExtractor(framework?: string | undefined): FrameworkExtractor | n
 
 - `extractLayer()` — Extractor (`project.ts`)
 
-## Other
+## Extractorのコンポーネント
 
 ![Class Diagram](diagrams/detail-3.svg)
 
-### 📋 `ParsedJsDoc`
+### 📋 `ParsedJsDoc` インターフェース
 
 > **ファイル**: `jsdoc-parser.ts`
 > **型**: Other
@@ -127,7 +143,7 @@ createFrameworkExtractor(framework?: string | undefined): FrameworkExtractor | n
 | `businessRules` | `string[]` | ✓ | — |
 | `see` | `DependencyInfo[]` | ✓ | — |
 
-### 🔧 `analyzeCallChains`
+### 🔧 `analyzeCallChains` 関数
 
 > **ファイル**: `call-chain-analyzer.ts`
 
@@ -147,7 +163,7 @@ analyzeCallChains(sourceFiles: SourceFile[]): ClassCallChain[]
 
 - `extractLayer()` — Extractor (`project.ts`)
 
-### 🔧 `analyzeFunctionCallChains`
+### 🔧 `analyzeFunctionCallChains` 関数
 
 > **ファイル**: `call-chain-analyzer.ts`
 
@@ -167,7 +183,7 @@ analyzeFunctionCallChains(sourceFiles: SourceFile[]): ClassCallChain[]
 
 - `extractLayer()` — Extractor (`project.ts`)
 
-### 🔧 `analyzeCallerReferences`
+### 🔧 `analyzeCallerReferences` 関数
 
 > **ファイル**: `caller-analyzer.ts`
 
@@ -200,7 +216,7 @@ sequenceDiagram
   analyzeCallerReferences-->>-Client: response
 ```
 
-### 🔧 `extractClass`
+### 🔧 `extractClass` 関数
 
 > **ファイル**: `class-extractor.ts`
 
@@ -244,7 +260,7 @@ sequenceDiagram
   extractClass-->>-Client: response
 ```
 
-### 🔧 `extractConst`
+### 🔧 `extractConst` 関数
 
 > **ファイル**: `const-extractor.ts`
 
@@ -284,7 +300,7 @@ sequenceDiagram
   extractConst-->>-Client: response
 ```
 
-### 🔧 `extractEnum`
+### 🔧 `extractEnum` 関数
 
 > **ファイル**: `enum-extractor.ts`
 
@@ -322,7 +338,7 @@ sequenceDiagram
   extractEnum-->>-Client: response
 ```
 
-### 🔧 `extractFunction`
+### 🔧 `extractFunction` 関数
 
 > **ファイル**: `function-extractor.ts`
 
@@ -362,7 +378,7 @@ sequenceDiagram
   extractFunction-->>-Client: response
 ```
 
-### 🔧 `analyzeImports`
+### 🔧 `analyzeImports` 関数
 
 > **ファイル**: `import-analyzer.ts`
 
@@ -397,7 +413,7 @@ sequenceDiagram
   analyzeImports-->>-Client: response
 ```
 
-### 🔧 `findForbiddenImports`
+### 🔧 `findForbiddenImports` 関数
 
 > **ファイル**: `import-analyzer.ts`
 
@@ -419,7 +435,7 @@ findForbiddenImports(sourceFile: SourceFile, currentLayer: LayerConfig, layers: 
 
 - `extractLayer()` — Extractor (`project.ts`)
 
-### 🔧 `extractInterface`
+### 🔧 `extractInterface` 関数
 
 > **ファイル**: `interface-extractor.ts`
 
@@ -461,7 +477,7 @@ sequenceDiagram
   extractInterface-->>-Client: response
 ```
 
-### 🔧 `parseJsDoc`
+### 🔧 `parseJsDoc` 関数
 
 > **ファイル**: `jsdoc-parser.ts`
 
@@ -501,7 +517,7 @@ sequenceDiagram
   parseJsDoc-->>-Client: response
 ```
 
-### 🔧 `mergeParamDescriptions`
+### 🔧 `mergeParamDescriptions` 関数
 
 > **ファイル**: `jsdoc-parser.ts`
 
@@ -535,7 +551,7 @@ sequenceDiagram
   mergeParamDescriptions-->>-Client: response
 ```
 
-### 🔧 `createExtractorProject`
+### 🔧 `createExtractorProject` 関数
 
 > **ファイル**: `project.ts`
 
@@ -558,7 +574,7 @@ createExtractorProject(sourceRoot: string, tsConfigPath?: string | undefined): P
 - `registerDriftCommand()` — Cli (`drift.ts`)
 - `registerGenerateCommand()` — Cli (`generate.ts`)
 
-### 🔧 `extractLayer`
+### 🔧 `extractLayer` 関数
 
 > **ファイル**: `project.ts`
 
@@ -597,7 +613,7 @@ sequenceDiagram
   extractLayer-->>-Client: response
 ```
 
-### 🔧 `extractTypeAlias`
+### 🔧 `extractTypeAlias` 関数
 
 > **ファイル**: `type-alias-extractor.ts`
 

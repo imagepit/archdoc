@@ -71,6 +71,7 @@ export function extractLayer(
     constants: [],
     dependencies: [],
     callChains: [],
+    dddWarnings: [],
   };
 
   const fwExtractor = createFrameworkExtractor(layer.framework);

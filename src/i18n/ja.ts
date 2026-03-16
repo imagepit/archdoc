@@ -4,12 +4,13 @@ export const ja: LocaleMessages = {
   index: {
     systemArchitectureOverview: "システムアーキテクチャ概要",
     project: "プロジェクト",
-    layerOverview: "レイヤー概要",
+    layers: "レイヤー",
+    layerList: "レイヤー一覧",
     layerDependency: "レイヤー依存関係",
-    legend: "凡例",
-    crossLayerViolations: "レイヤー間依存違反",
-    importViolations: "インポート違反",
+    importViolations: "レイヤー間依存違反",
     nonStandardWarnings: "非標準レイヤー警告",
+    components: "コンポーネント",
+    legend: "凡例",
 
     headerItem: "項目",
     headerDetail: "詳細",
@@ -72,6 +73,18 @@ export const ja: LocaleMessages = {
     labelRoutes: "**ルート**",
     labelMembers: "**メンバー**",
     labelGeneral: "全般",
+
+    componentsSuffix: "のコンポーネント",
+
+    kindSuffix: {
+      class: "クラス",
+      interface: "インターフェース",
+      function: "関数",
+      type: "型エイリアス",
+      enum: "列挙型",
+      const: "定数",
+      method: "メソッド",
+    },
   },
 
   kinds: {
@@ -95,5 +108,28 @@ export const ja: LocaleMessages = {
     error: "エラー",
     port: "ポート",
     externalService: "外部サービス",
+  },
+
+  ddd: {
+    roles: {
+      entity: "エンティティ",
+      valueObject: "値オブジェクト",
+      domainService: "ドメインサービス",
+      repository: "リポジトリ",
+      domainError: "ドメインエラー",
+    },
+    warnings: {
+      sectionTitle: "DDD構造警告",
+      warningsDetected: (n) => `**${n} 件のDDD構造警告が検出されました。**`,
+      messages: {
+        mutableEntityId: (p) => `プロパティ \`${p}\` が readonly ではありません（エンティティのIDは不変であるべきです）`,
+        mutableValueObjectProperty: (p) => `プロパティ \`${p}\` が readonly ではありません（値オブジェクトのプロパティは不変であるべきです）`,
+        statefulDomainService: (p) => `プロパティ \`${p}\` が readonly ではありません（ドメインサービスは状態を持つべきではありません）`,
+      },
+      headerComponent: "コンポーネント",
+      headerRole: "ロール",
+      headerWarning: "警告",
+      headerDetail: "詳細",
+    },
   },
 };

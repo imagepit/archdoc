@@ -4,12 +4,13 @@ export const en: LocaleMessages = {
   index: {
     systemArchitectureOverview: "System Architecture Overview",
     project: "Project",
-    layerOverview: "Layer Overview",
+    layers: "Layers",
+    layerList: "Layer List",
     layerDependency: "Layer Dependency",
-    legend: "Legend",
-    crossLayerViolations: "Cross-Layer Dependency Violations",
     importViolations: "Import Violations",
     nonStandardWarnings: "Non-Standard Layer Warnings",
+    components: "Components",
+    legend: "Legend",
 
     headerItem: "Item",
     headerDetail: "Detail",
@@ -72,6 +73,18 @@ export const en: LocaleMessages = {
     labelRoutes: "**Routes**",
     labelMembers: "**Members**",
     labelGeneral: "General",
+
+    componentsSuffix: " Components",
+
+    kindSuffix: {
+      class: "Class",
+      interface: "Interface",
+      function: "Function",
+      type: "Type Alias",
+      enum: "Enum",
+      const: "Constant",
+      method: "Method",
+    },
   },
 
   kinds: {
@@ -95,5 +108,28 @@ export const en: LocaleMessages = {
     error: "Error",
     port: "Port",
     externalService: "External Service",
+  },
+
+  ddd: {
+    roles: {
+      entity: "Entity",
+      valueObject: "Value Object",
+      domainService: "Domain Service",
+      repository: "Repository",
+      domainError: "Domain Error",
+    },
+    warnings: {
+      sectionTitle: "DDD Structural Warnings",
+      warningsDetected: (n) => `**${n} DDD structural warning(s) detected.**`,
+      messages: {
+        mutableEntityId: (p) => `Property \`${p}\` is not readonly (Entity id should be immutable)`,
+        mutableValueObjectProperty: (p) => `Property \`${p}\` is not readonly (Value Object properties should be immutable)`,
+        statefulDomainService: (p) => `Property \`${p}\` is not readonly (Domain Service should be stateless)`,
+      },
+      headerComponent: "Component",
+      headerRole: "Role",
+      headerWarning: "Warning",
+      headerDetail: "Detail",
+    },
   },
 };

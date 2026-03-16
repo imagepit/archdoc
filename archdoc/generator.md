@@ -18,11 +18,11 @@ index.md（全体概要）とレイヤー別ドキュメントを出力。
 
 ![Generator Class Diagram](diagrams/generator-class.svg)
 
-## Other
+## Generatorのコンポーネント
 
 ![Class Diagram](diagrams/detail-5.svg)
 
-### 🏗️ `MarkdownBuilder`
+### 🏗️ `MarkdownBuilder` クラス
 
 > **ファイル**: `markdown-builder.ts`
 > **型**: Other
@@ -31,9 +31,13 @@ Markdownドキュメントをプログラマティックに構築するFluentビ
 
 **メソッド**
 
-#### `frontmatter(data: Record<string, string>): this`
+#### `frontmatter` メソッド
 
 YAMLフロントマターブロックを追加する。
+
+```ts
+frontmatter(data: Record<string, string>): this
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -46,9 +50,13 @@ YAMLフロントマターブロックを追加する。
 - `generateIndexMd()` — Generator (`index-generator.ts`)
 - `generateLayerMd()` — Generator (`layer-generator.ts`)
 
-#### `heading(level: number, text: string): this`
+#### `heading` メソッド
 
 指定レベルの見出しを追加する。
+
+```ts
+heading(level: number, text: string): this
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -70,9 +78,13 @@ YAMLフロントマターブロックを追加する。
 - `renderEnum()` — Generator (`layer-generator.ts`)
 - `renderConst()` — Generator (`layer-generator.ts`)
 
-#### `paragraph(text: string): this`
+#### `paragraph` メソッド
 
 段落テキストを追加する。
+
+```ts
+paragraph(text: string): this
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -94,9 +106,13 @@ YAMLフロントマターブロックを追加する。
 - `renderEnum()` — Generator (`layer-generator.ts`)
 - `renderConst()` — Generator (`layer-generator.ts`)
 
-#### `blockquote(text: string): this`
+#### `blockquote` メソッド
 
 引用ブロックを追加する。
+
+```ts
+blockquote(text: string): this
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -112,10 +128,15 @@ YAMLフロントマターブロックを追加する。
 - `renderTypeAlias()` — Generator (`layer-generator.ts`)
 - `renderEnum()` — Generator (`layer-generator.ts`)
 - `renderConst()` — Generator (`layer-generator.ts`)
+- `renderDddWarnings()` — Generator (`layer-generator.ts`)
 
-#### `table(headers: string[], rows: string[][]): this`
+#### `table` メソッド
 
 Markdownテーブルを追加する。
+
+```ts
+table(headers: string[], rows: string[][]): this
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -136,9 +157,13 @@ Markdownテーブルを追加する。
 - `renderTypeAlias()` — Generator (`layer-generator.ts`)
 - `renderEnum()` — Generator (`layer-generator.ts`)
 
-#### `codeBlock(code: string, lang?: string): this`
+#### `codeBlock` メソッド
 
 コードブロックを追加する。
+
+```ts
+codeBlock(code: string, lang?: string): this
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -150,12 +175,18 @@ Markdownテーブルを追加する。
 **呼び出し元**
 
 - `renderFunction()` — Generator (`layer-generator.ts`)
+- `renderMethod()` — Generator (`layer-generator.ts`)
+- `renderMethodSignature()` — Generator (`layer-generator.ts`)
 - `renderTypeAlias()` — Generator (`layer-generator.ts`)
 - `renderConst()` — Generator (`layer-generator.ts`)
 
-#### `list(items: string[]): this`
+#### `list` メソッド
 
 箇条書きリストを追加する。
+
+```ts
+list(items: string[]): this
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -170,9 +201,13 @@ Markdownテーブルを追加する。
 - `renderCalledBy()` — Generator (`layer-generator.ts`)
 - `renderMethod()` — Generator (`layer-generator.ts`)
 
-#### `raw(text: string): this`
+#### `raw` メソッド
 
 テキストをそのままドキュメントに追加する（末尾改行なし）。
+
+```ts
+raw(text: string): this
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -180,9 +215,13 @@ Markdownテーブルを追加する。
 
 **戻り値**: `this` thisを返すメソッドチェーン用
 
-#### `rawBlock(text: string): this`
+#### `rawBlock` メソッド
 
 テキストをブロックとしてドキュメントに追加する（末尾に空行を追加）。
+
+```ts
+rawBlock(text: string): this
+```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
@@ -199,9 +238,13 @@ Markdownテーブルを追加する。
 - `renderMethodSequenceDiagram()` — Generator (`layer-generator.ts`)
 - `renderFunctionSequenceDiagram()` — Generator (`layer-generator.ts`)
 
-#### `build(): string`
+#### `build` メソッド
 
 蓄積したすべての行を結合してMarkdown文字列を返す。
+
+```ts
+build(): string
+```
 
 **戻り値**: `string` 完成したMarkdown文字列
 
@@ -210,7 +253,7 @@ Markdownテーブルを追加する。
 - `generateIndexMd()` — Generator (`index-generator.ts`)
 - `generateLayerMd()` — Generator (`layer-generator.ts`)
 
-### 📋 `IndexGenerateOptions`
+### 📋 `IndexGenerateOptions` インターフェース
 
 > **ファイル**: `index-generator.ts`
 > **型**: Other
@@ -224,7 +267,7 @@ Markdownテーブルを追加する。
 | `renderer` | `DiagramRenderer or undefined` | — | — |
 | `messages` | `LocaleMessages or undefined` | — | — |
 
-### 📋 `GenerateOptions`
+### 📋 `GenerateOptions` インターフェース
 
 > **ファイル**: `layer-generator.ts`
 > **型**: Other
@@ -239,7 +282,7 @@ Markdownテーブルを追加する。
 | `layerNames` | `string[] or undefined` | — | 依存方向チェック用のレイヤー名順序配列（内側 → 外側） |
 | `messages` | `LocaleMessages or undefined` | — | ロケールメッセージ（省略時は英語） |
 
-### 🔧 `kindEmoji`
+### 🔧 `kindEmoji` 関数
 
 > **ファイル**: `emoji.ts`
 
@@ -264,7 +307,7 @@ kindEmoji(kind: ObjectKind): string
 - `renderEnum()` — Generator (`layer-generator.ts`)
 - `renderConst()` — Generator (`layer-generator.ts`)
 
-### 🔧 `categoryEmoji`
+### 🔧 `categoryEmoji` 関数
 
 > **ファイル**: `emoji.ts`
 
@@ -284,7 +327,7 @@ categoryEmoji(category: string): string
 
 - `formatName()` — Generator (`emoji.ts`)
 
-### 🔧 `formatName`
+### 🔧 `formatName` 関数
 
 > **ファイル**: `emoji.ts`
 
@@ -304,7 +347,7 @@ formatName(name: string, kind: ObjectKind, category: string): string
 
 **呼び出し元**
 
-- `addComponent()` — Generator (`index-generator.ts`)
+- `formatComponentWithRole()` — Generator (`index-generator.ts`)
 - `renderClass()` — Generator (`layer-generator.ts`)
 - `renderInterface()` — Generator (`layer-generator.ts`)
 - `renderFunction()` — Generator (`layer-generator.ts`)
@@ -312,7 +355,7 @@ formatName(name: string, kind: ObjectKind, category: string): string
 - `renderEnum()` — Generator (`layer-generator.ts`)
 - `renderConst()` — Generator (`layer-generator.ts`)
 
-### 🔧 `kindLabel`
+### 🔧 `kindLabel` 関数
 
 > **ファイル**: `emoji.ts`
 
@@ -330,9 +373,9 @@ kindLabel(kind: ObjectKind): string
 
 **呼び出し元**
 
-- `addComponent()` — Generator (`index-generator.ts`)
+- `generateIndexMd()` — Generator (`index-generator.ts`)
 
-### 🔧 `kindLegendRows`
+### 🔧 `kindLegendRows` 関数
 
 > **ファイル**: `emoji.ts`
 
@@ -352,7 +395,7 @@ kindLegendRows(messages?: LocaleMessages | undefined): string[][]
 
 - `generateIndexMd()` — Generator (`index-generator.ts`)
 
-### 🔧 `categoryLegendRows`
+### 🔧 `categoryLegendRows` 関数
 
 > **ファイル**: `emoji.ts`
 
@@ -372,7 +415,7 @@ categoryLegendRows(messages?: LocaleMessages | undefined): string[][]
 
 - `generateIndexMd()` — Generator (`index-generator.ts`)
 
-### 🔧 `generateIndexMd`
+### 🔧 `generateIndexMd` 関数
 
 > **ファイル**: `index-generator.ts`
 
@@ -394,7 +437,7 @@ generateIndexMd(config: ProjectConfig, extractions: LayerExtraction[], options?:
 
 - `registerGenerateCommand()` — Cli (`generate.ts`)
 
-### 🔧 `generateLayerMd`
+### 🔧 `generateLayerMd` 関数
 
 > **ファイル**: `layer-generator.ts`
 
@@ -416,7 +459,7 @@ generateLayerMd(layer: LayerConfig, extraction: LayerExtraction, options: Genera
 
 - `registerGenerateCommand()` — Cli (`generate.ts`)
 
-### 📝 `ObjectKind`
+### 📝 `ObjectKind` 型エイリアス
 
 > **ファイル**: `emoji.ts`
 > **型**: Other

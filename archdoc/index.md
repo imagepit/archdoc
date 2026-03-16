@@ -13,7 +13,9 @@ description: archdoc DDDレイヤードアーキテクチャ概要
 | **説明** | DDD layered architecture documentation generator |
 | **ソースルート** | `src/` |
 
-## レイヤー概要
+## レイヤー
+
+### レイヤー一覧
 
 | レイヤー | パス | 責務 | 禁止インポート | 詳細 |
 | --- | --- | --- | --- | --- |
@@ -25,11 +27,29 @@ description: archdoc DDDレイヤードアーキテクチャ概要
 | **Drift** (ドリフト検出層) | `src/drift/` | 設定と実態の乖離検出 | `src/cli`, `src/diagram`, `src/generator` | [drift.md](./drift.md) |
 | **Cli** (CLI層) | `src/cli/` | CLIインターフェースの提供 | — | [cli.md](./cli.md) |
 
-## レイヤー依存関係
+### レイヤー依存関係
 
 ![Layer Dependency](diagrams/layer-dependency.svg)
 
-## 凡例
+![Project Overview](diagrams/project-overview.svg)
+
+### 非標準レイヤー警告
+
+以下のレイヤーはDDD標準4層（Domain / Application / Infrastructure / Presentation）に属しません。責務の重複・散在に注意してください。
+
+| レイヤー | パス | 責務 |
+| --- | --- | --- |
+| **Types** (型定義層) | `src/types/` | 共通型定義の提供 |
+| **Config** (設定層) | `src/config/` | 設定ファイルの解析・バリデーション |
+| **Extractor** (抽出層) | `src/extractor/` | ソースコードの静的解析と情報抽出 |
+| **Diagram** (ダイアグラム層) | `src/diagram/` | ダイアグラム生成 |
+| **Generator** (生成層) | `src/generator/` | Markdownドキュメント生成 |
+| **Drift** (ドリフト検出層) | `src/drift/` | 設定と実態の乖離検出 |
+| **Cli** (CLI層) | `src/cli/` | CLIインターフェースの提供 |
+
+## コンポーネント
+
+### 凡例
 
 **種別** — オブジェクト種別の表示アイコン
 
@@ -58,24 +78,6 @@ description: archdoc DDDレイヤードアーキテクチャ概要
 | 🔌 | ポート |
 | 🔗 | 外部サービス |
 
-## レイヤー間依存違反
-
-![Project Overview](diagrams/project-overview.svg)
-
-## 非標準レイヤー警告
-
-以下のレイヤーはDDD標準4層（Domain / Application / Infrastructure / Presentation）に属しません。責務の重複・散在に注意してください。
-
-| レイヤー | パス | 責務 |
-| --- | --- | --- |
-| **Types** (型定義層) | `src/types/` | 共通型定義の提供 |
-| **Config** (設定層) | `src/config/` | 設定ファイルの解析・バリデーション |
-| **Extractor** (抽出層) | `src/extractor/` | ソースコードの静的解析と情報抽出 |
-| **Diagram** (ダイアグラム層) | `src/diagram/` | ダイアグラム生成 |
-| **Generator** (生成層) | `src/generator/` | Markdownドキュメント生成 |
-| **Drift** (ドリフト検出層) | `src/drift/` | 設定と実態の乖離検出 |
-| **Cli** (CLI層) | `src/cli/` | CLIインターフェースの提供 |
-
 ### Types (型定義層)
 
 | コンポーネント | 種別 | カテゴリ | 説明 |
@@ -85,6 +87,7 @@ description: archdoc DDDレイヤードアーキテクチャ概要
 | `ProjectConfig` | 📋 interface | Other | layers.yamlから読み込まれるプロジェクト設定。 |
 | `SpecDiff` | 📋 interface | Other | 2つの仕様スナップショット間で検出された単一の差分。 |
 | `DriftResult` | 📋 interface | Other | レイヤーのドリフト検出結果。 |
+| `DddWarning` | 📋 interface | Other | DDD設計原則に反する構造を検出した警告。 |
 | `PropertyInfo` | 📋 interface | Other | クラスまたはインターフェースから抽出されたプロパティ情報。 |
 | `ParameterInfo` | 📋 interface | Other | 関数またはメソッドから抽出された引数情報。 |
 | `ThrowInfo` | 📋 interface | Other | JSDoc |
@@ -110,6 +113,8 @@ description: archdoc DDDレイヤードアーキテクチャ概要
 | `LayerExtraction` | 📋 interface | Other | 単一アーキテクチャレイヤーの完全な抽出結果。 |
 | `LayerType` | 📝 type | Other | DDDアーキテクチャで使用するレイヤー種別。 |
 | `DriftSeverity` | 📝 type | Other | 仕様ドリフト検出の重大度レベル。 |
+| `DddRole` | 📝 type | Other | DDDにおけるドメインモデルの役割分類。 |
+| `DddWarningType` | 📝 type | Other | DDD構造警告の種別。 |
 
 ### Config (設定層)
 
@@ -121,11 +126,17 @@ description: archdoc DDDレイヤードアーキテクチャ概要
 
 ### Extractor (抽出層)
 
+#### Framework
+
 | コンポーネント | 種別 | カテゴリ | 説明 |
 | --- | --- | --- | --- |
 | `ExpressExtractor` | 🏗️ class | Framework Extractor | FrameworkExtractorを実装するExpress.jsルート抽出器。 |
-| `ParsedJsDoc` | 📋 interface | Other | 説明文・引数・throws・ビジネスルールを含むJSDoc解析結果。 |
 | `FrameworkExtractor` | 📋 interface | Framework Extractor | フレームワーク固有のルート抽出用ストラテジーインターフェース。 |
+| `createFrameworkExtractor` | 🔧 function | Framework Extractor | レイヤー設定に基づいてFrameworkExtractorを生成するファクトリ関数。 |
+
+| コンポーネント | 種別 | カテゴリ | 説明 |
+| --- | --- | --- | --- |
+| `ParsedJsDoc` | 📋 interface | Other | 説明文・引数・throws・ビジネスルールを含むJSDoc解析結果。 |
 | `analyzeCallChains` | 🔧 function | Other | エクスポートされた全クラスのコンストラクタインジェクションによるコールチェーンを解析する。 |
 | `analyzeFunctionCallChains` | 🔧 function | Other | エクスポートされた全関数の引数ベースのコールチェーンを解析する。 |
 | `analyzeCallerReferences` | 🔧 function | Other | Post-process: analyze caller references for all methods and… |
@@ -141,7 +152,6 @@ description: archdoc DDDレイヤードアーキテクチャ概要
 | `createExtractorProject` | 🔧 function | Other | ソースコード解析用のts-morph Projectインスタンスを作成する。 |
 | `extractLayer` | 🔧 function | Other | 単一アーキテクチャレイヤーから全コンポーネントを抽出する。 |
 | `extractTypeAlias` | 🔧 function | Other | TypeScript型エイリアス宣言からメタデータを抽出する。 |
-| `createFrameworkExtractor` | 🔧 function | Framework Extractor | レイヤー設定に基づいてFrameworkExtractorを生成するファクトリ関数。 |
 
 ### Diagram (ダイアグラム層)
 
@@ -200,6 +210,11 @@ description: archdoc DDDレイヤードアーキテクチャ概要
 | コンポーネント | 種別 | カテゴリ | 説明 |
 | --- | --- | --- | --- |
 | `createProgram` | 🔧 function | Other | 全CLIサブコマンドを登録したCommander.jsプログラムを作成する。 |
+
+#### Commands
+
+| コンポーネント | 種別 | カテゴリ | 説明 |
+| --- | --- | --- | --- |
 | `registerDiagramCommand` | 🔧 function | Command | 単体ダイアグラム生成用の'diagram'サブコマンドを登録する。 |
 | `registerDriftCommand` | 🔧 function | Command | 仕様ドリフト検出用の'drift'サブコマンドを登録する。 |
 | `registerGenerateCommand` | 🔧 function | Command | ドキュメント生成用の'generate'サブコマンドを登録する。 |

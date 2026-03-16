@@ -15,9 +15,9 @@ description: 設定ファイルの解析・バリデーション
 
 layers.yaml設定ファイルの読み込みとバリデーション。
 
-## Other
+## Configのコンポーネント
 
-### 🔧 `getDefaultCategories`
+### 🔧 `getDefaultCategories` 関数
 
 > **ファイル**: `defaults.ts`
 
@@ -37,7 +37,7 @@ getDefaultCategories(layerType: LayerType): Record<string, string>
 
 - `loadConfig()` — Config (`loader.ts`)
 
-### 🔧 `loadConfig`
+### 🔧 `loadConfig` 関数
 
 > **ファイル**: `loader.ts`
 
@@ -59,7 +59,7 @@ loadConfig(configPath?: string): ProjectConfig
 - `registerDriftCommand()` — Cli (`drift.ts`)
 - `registerGenerateCommand()` — Cli (`generate.ts`)
 
-### 📌 `projectConfigSchema`
+### 📌 `projectConfigSchema` 定数
 
 > **ファイル**: `schema.ts`
 > **型**: Other

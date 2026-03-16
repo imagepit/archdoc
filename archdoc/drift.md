@@ -16,9 +16,9 @@ description: 設定と実態の乖離検出
 layers.yamlの定義と実際のソースコードの乖離を検出。
 未定義レイヤー・未分類ファイルの警告。
 
-## Other
+## Driftのコンポーネント
 
-### 🔧 `formatDriftReport`
+### 🔧 `formatDriftReport` 関数
 
 > **ファイル**: `drift-reporter.ts`
 
@@ -38,7 +38,7 @@ formatDriftReport(result: DriftResult): string
 
 - `registerDriftCommand()` — Cli (`drift.ts`)
 
-### 🔧 `formatDriftReportMd`
+### 🔧 `formatDriftReportMd` 関数
 
 > **ファイル**: `drift-reporter.ts`
 
@@ -54,7 +54,7 @@ formatDriftReportMd(result: DriftResult): string
 
 **戻り値**: `string` Markdownレポート文字列
 
-### 🔧 `compareSpecs`
+### 🔧 `compareSpecs` 関数
 
 > **ファイル**: `spec-comparator.ts`
 
@@ -76,7 +76,7 @@ compareSpecs(layerName: string, baseline: LayerExtraction, current: LayerExtract
 
 - `registerDriftCommand()` — Cli (`drift.ts`)
 
-### 🔧 `saveSpec`
+### 🔧 `saveSpec` 関数
 
 > **ファイル**: `spec-store.ts`
 
@@ -95,7 +95,7 @@ saveSpec(layerName: string, extraction: LayerExtraction): void
 
 - `registerDriftCommand()` — Cli (`drift.ts`)
 
-### 🔧 `loadSpec`
+### 🔧 `loadSpec` 関数
 
 > **ファイル**: `spec-store.ts`
 

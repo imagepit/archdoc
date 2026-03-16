@@ -3,6 +3,7 @@ import chalk from "chalk";
 import { loadConfig } from "../../config/loader.js";
 import { createExtractorProject, extractLayer } from "../../extractor/project.js";
 import { analyzeCallerReferences } from "../../extractor/caller-analyzer.js";
+import { classifyDddRoles, checkDddWarnings } from "../../analyzer/ddd-analyzer.js";
 import { generateIndexMd } from "../../generator/index-generator.js";
 import { generateLayerMd } from "../../generator/layer-generator.js";
 import { MermaidRenderer } from "../../diagram/mermaid-renderer.js";
@@ -58,6 +59,16 @@ export function registerGenerateCommand(program: Command): void {
       // Post-process: analyze caller references across all layers
       console.log(chalk.gray("  Analyzing caller references..."));
       analyzeCallerReferences(project, extractions, config.layers);
+
+      // DDD analysis: classify roles and check structural warnings
+      for (const extraction of extractions) {
+        const layerConfig = config.layers.find((l) => l.name === extraction.layerName)!;
+        classifyDddRoles(extraction, layerConfig.type);
+        extraction.dddWarnings = checkDddWarnings(extraction, layerConfig.type);
+        if (extraction.dddWarnings.length > 0) {
+          console.log(chalk.yellow(`  ${extraction.layerName}: ${extraction.dddWarnings.length} DDD warning(s)`));
+        }
+      }
 
       // Create renderer based on diagram format
       const renderer: DiagramRenderer = diagramFormat === "svg"

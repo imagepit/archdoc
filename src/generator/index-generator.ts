@@ -1,11 +1,11 @@
 import { MarkdownBuilder } from "./markdown-builder.js";
 import type { ProjectConfig, LayerConfig } from "../types/config.js";
-import type { LayerExtraction, DependencyInfo } from "../types/extracted.js";
+import type { LayerExtraction, DependencyInfo, DddWarning, DddRole } from "../types/extracted.js";
 import type { DiagramRenderer } from "../diagram/diagram-renderer.js";
 import type { LocaleMessages } from "../i18n/types.js";
 import { getMessages } from "../i18n/index.js";
 import { formatName, kindLabel, kindLegendRows, categoryLegendRows, type ObjectKind } from "./emoji.js";
-import { basename } from "node:path";
+import { basename, relative, dirname } from "node:path";
 
 /** ダイアグラムレンダラーを含むindex.md生成オプション。 */
 export interface IndexGenerateOptions {
@@ -35,6 +35,7 @@ export async function generateIndexMd(
 
   md.heading(1, t.index.systemArchitectureOverview);
 
+  // === H2: Project ===
   md.heading(2, t.index.project);
 
   md.table(
@@ -46,7 +47,11 @@ export async function generateIndexMd(
     ],
   );
 
-  md.heading(2, t.index.layerOverview);
+  // === H2: Layers ===
+  md.heading(2, t.index.layers);
+
+  // H3: Layer List
+  md.heading(3, t.index.layerList);
 
   md.table(
     [t.index.headerLayer, t.index.headerPath, t.index.headerResponsibility, t.index.headerForbiddenImports, t.index.headerDetails],
@@ -61,38 +66,27 @@ export async function generateIndexMd(
     ]),
   );
 
-  // Layer Dependency diagram
+  // H3: Layer Dependency
   if (options?.renderer) {
     const layerDep = await options.renderer.renderLayerDependency(extractions, config.layers);
     if (layerDep) {
-      md.heading(2, t.index.layerDependency);
+      md.heading(3, t.index.layerDependency);
       md.rawBlock(layerDep);
     }
-  }
 
-  // Legend
-  md.heading(2, t.index.legend);
-
-  md.paragraph(t.index.kindLegendLabel);
-  md.table([t.index.headerIcon, t.index.headerDescription], kindLegendRows(t));
-
-  md.paragraph(t.index.categoryLegendLabel);
-  md.table([t.index.headerIcon, t.index.headerCategory], categoryLegendRows(t));
-
-  // Cross-layer object relationship diagram
-  if (options?.renderer) {
-    const diagram = await options.renderer.renderProjectOverview(extractions, config.layers);
-    if (diagram) {
-      md.heading(2, t.index.crossLayerViolations);
-      md.rawBlock(diagram);
+    // Cross-layer object relationship diagram
+    const crossLayerDiagram = await options.renderer.renderProjectOverview(extractions, config.layers);
+    if (crossLayerDiagram) {
+      md.rawBlock(crossLayerDiagram);
     }
   }
 
-  // Import Violations table
+  // H3: Import Violations
   const forbiddenDeps = collectForbiddenDeps(extractions);
   if (forbiddenDeps.length > 0) {
-    md.heading(2, t.index.importViolations);
+    md.heading(3, t.index.importViolations);
     md.paragraph(t.index.forbiddenImportsDetected(forbiddenDeps.length));
+
     md.table(
       [t.index.headerSourceLayer, t.index.headerFile, t.index.headerForbiddenImport, t.index.headerTargetLayer],
       forbiddenDeps.map((dep) => [
@@ -104,10 +98,10 @@ export async function generateIndexMd(
     );
   }
 
-  // Non-Standard Layer Warnings
+  // H3: Non-Standard Layer Warnings
   const customLayers = config.layers.filter((l) => l.type === "custom");
   if (customLayers.length > 0) {
-    md.heading(2, t.index.nonStandardWarnings);
+    md.heading(3, t.index.nonStandardWarnings);
     md.paragraph(t.index.nonStandardWarningText);
     md.table(
       [t.index.headerLayer, t.index.headerPath, t.index.headerResponsibility],
@@ -119,38 +113,65 @@ export async function generateIndexMd(
     );
   }
 
+  // H3: DDD Structural Warnings
+  const allDddWarnings = extractions.flatMap((e) => e.dddWarnings ?? []);
+  if (allDddWarnings.length > 0) {
+    md.heading(3, t.ddd.warnings.sectionTitle);
+    md.paragraph(t.ddd.warnings.warningsDetected(allDddWarnings.length));
+    md.table(
+      [t.ddd.warnings.headerComponent, t.ddd.warnings.headerRole, t.ddd.warnings.headerDetail],
+      allDddWarnings.map((w) => [
+        `\`${w.componentName}\``,
+        t.ddd.roles[w.role],
+        t.ddd.warnings.messages[w.warningType](w.propertyName),
+      ]),
+    );
+  }
+
+  // === H2: Components ===
+  md.heading(2, t.index.components);
+
+  // H3: Legend
+  md.heading(3, t.index.legend);
+
+  md.paragraph(t.index.kindLegendLabel);
+  md.table([t.index.headerIcon, t.index.headerDescription], kindLegendRows(t));
+
+  md.paragraph(t.index.categoryLegendLabel);
+  md.table([t.index.headerIcon, t.index.headerCategory], categoryLegendRows(t));
+
+  // H3: Per-layer component tables (grouped by directory)
   for (const layer of config.layers) {
     const extraction = extractions.find((e) => e.layerName === layer.name);
     if (!extraction) continue;
 
     md.heading(3, `${layer.name} (${layer.nameJa})`);
 
-    const seen = new Set<string>();
-    const components: string[][] = [];
+    const dirGroups = groupComponentsByDir(extraction, layer.path);
 
-    const addComponent = (name: string, kind: ObjectKind, category: string, description: string) => {
-      const key = `${kind}:${name}:${category}`;
-      if (seen.has(key)) return;
-      seen.add(key);
-      components.push([
-        formatName(name, kind, category),
-        kindLabel(kind),
-        category,
-        truncate(firstLine(description), 60),
-      ]);
-    };
-
-    for (const c of extraction.classes) addComponent(c.name, "class", c.category, c.description);
-    for (const i of extraction.interfaces) addComponent(i.name, "interface", i.category, i.description);
-    for (const f of extraction.functions) addComponent(f.name, "function", f.category, f.description);
-    for (const ta of extraction.typeAliases) addComponent(ta.name, "type", ta.category, ta.description);
-    for (const e of extraction.enums) addComponent(e.name, "enum", e.category, e.description);
-    for (const c of extraction.constants) addComponent(c.name, "const", c.category, c.description);
-
-    if (components.length > 0) {
-      md.table([t.index.headerComponent, t.index.headerKind, t.index.headerCategory, t.index.headerDescription], components);
-    } else {
+    if (dirGroups.size === 0) {
       md.paragraph(t.index.noExportedComponents);
+      continue;
+    }
+
+    for (const [relDir, items] of dirGroups) {
+      if (relDir) {
+        const formattedDir = relDir
+          .split("/")
+          .map((seg) => seg.charAt(0).toUpperCase() + seg.slice(1))
+          .join("/");
+        md.heading(4, formattedDir);
+      }
+
+      md.table(
+        [t.index.headerComponent, t.index.headerKind, t.index.headerCategory, t.index.headerDescription],
+        items.map((item) => [
+          formatComponentWithRole(item, t),
+          kindLabel(item.kind),
+          item.category,
+          truncate(firstLine(item.description), 60),
+        ]),
+      );
     }
   }
 
@@ -178,4 +199,58 @@ function firstLine(text: string): string {
 function truncate(text: string, maxLen: number): string {
   if (text.length <= maxLen) return text;
   return text.slice(0, maxLen - 1) + "…";
+}
+
+interface IndexComponentItem {
+  name: string;
+  kind: ObjectKind;
+  category: string;
+  description: string;
+  dddRole?: DddRole;
+}
+
+function groupComponentsByDir(
+  extraction: LayerExtraction,
+  layerPath: string,
+): Map<string, IndexComponentItem[]> {
+  const map = new Map<string, IndexComponentItem[]>();
+  const seen = new Set<string>();
+
+  const addItem = (
+    name: string,
+    kind: ObjectKind,
+    filePath: string,
+    category: string,
+    description: string,
+    dddRole?: DddRole,
+  ) => {
+    const key = `${kind}:${name}:${category}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    const dir = getRelativeDir(filePath, layerPath);
+    const items = map.get(dir) ?? [];
+    items.push({ name, kind, category, description, dddRole });
+    map.set(dir, items);
+  };
+
+  for (const c of extraction.classes) addItem(c.name, "class", c.filePath, c.category, c.description, c.dddRole);
+  for (const i of extraction.interfaces) addItem(i.name, "interface", i.filePath, i.category, i.description, i.dddRole);
+  for (const f of extraction.functions) addItem(f.name, "function", f.filePath, f.category, f.description);
+  for (const ta of extraction.typeAliases) addItem(ta.name, "type", ta.filePath, ta.category, ta.description);
+  for (const e of extraction.enums) addItem(e.name, "enum", e.filePath, e.category, e.description);
+  for (const c of extraction.constants) addItem(c.name, "const", c.filePath, c.category, c.description);
+
+  return map;
+}
+
+function getRelativeDir(filePath: string, layerPath: string): string {
+  const relPath = relative(layerPath, filePath);
+  const dir = dirname(relPath);
+  return dir === "." ? "" : dir;
+}
+
+function formatComponentWithRole(item: IndexComponentItem, t: LocaleMessages): string {
+  const name = formatName(item.name, item.kind, item.category);
+  if (!item.dddRole) return name;
+  return `${name} (${t.ddd.roles[item.dddRole]})`;
 }
