@@ -1,8 +1,9 @@
 import type { Command } from "commander";
 import chalk from "chalk";
 import fg from "fast-glob";
-import { writeFileSync, readFileSync, existsSync } from "node:fs";
-import { basename, relative, join } from "node:path";
+import { writeFileSync, readFileSync, existsSync, mkdirSync, copyFileSync } from "node:fs";
+import { basename, relative, join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import yaml from "js-yaml";
 import type { LayerType } from "../../types/config.js";
 
@@ -48,7 +49,13 @@ export function registerInitCommand(program: Command): void {
     .option("--discover", "Auto-discover layers from directory structure")
     .option("-s, --source <dir>", "Source root directory", "src")
     .option("-o, --output <path>", "Output path for layers.yaml", "layers.yaml")
-    .action(async (options: { discover: boolean; source: string; output: string }) => {
+    .option("--skills", "Install Claude Code skills for archdoc")
+    .action(async (options: { discover: boolean; source: string; output: string; skills: boolean }) => {
+      if (options.skills) {
+        installSkills();
+        if (!options.discover) return;
+      }
+
       if (existsSync(options.output)) {
         console.error(chalk.red(`${options.output} already exists. Remove it first.`));
         process.exit(1);
@@ -157,4 +164,34 @@ function createMinimalConfig(): object {
 
 function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function installSkills(): void {
+  const skillsDir = join(process.cwd(), ".claude", "commands");
+  mkdirSync(skillsDir, { recursive: true });
+
+  // When bundled by tsup, import.meta.url points to dist/bin/archdoc.js
+  // When running via tsx, it points to src/cli/commands/init.ts
+  // Try multiple paths to find the skills directory
+  const thisFile = fileURLToPath(import.meta.url);
+  const candidates = [
+    join(dirname(thisFile), "..", "..", "skills"),         // from dist/bin/
+    join(dirname(thisFile), "..", "..", "..", "skills"),    // from src/cli/commands/
+  ];
+  const skillsSource = candidates.find((c) => existsSync(join(c, "archdoc-jsdoc.md")));
+  if (!skillsSource) {
+    console.error(chalk.red("Skill file not found in archdoc package."));
+    process.exit(1);
+  }
+  const sourceSkill = join(skillsSource, "archdoc-jsdoc.md");
+
+  if (!existsSync(sourceSkill)) {
+    console.error(chalk.red("Skill file not found in archdoc package."));
+    process.exit(1);
+  }
+
+  const destPath = join(skillsDir, "archdoc-jsdoc.md");
+  copyFileSync(sourceSkill, destPath);
+  console.log(chalk.green(`  Installed skill: ${destPath}`));
+  console.log(chalk.gray("  Use with Claude Code: /archdoc-jsdoc <target-directory>"));
 }
