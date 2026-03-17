@@ -90,6 +90,35 @@ sequenceDiagram
   registerDriftCommand-->>-Client: response
 ```
 
+### 🔧 `registerFeaturesCommand` 関数
+
+> **ファイル**: `features.ts`
+
+Register the 'features' subcommand for feature list generation.
+
+```ts
+registerFeaturesCommand(program: Command): void
+```
+
+| 引数 | 型 | 説明 |
+| --- | --- | --- |
+| `program` | `Command` | — |
+
+**呼び出し元**
+
+- `createProgram()` — Cli (`index.ts`)
+
+```mermaid
+sequenceDiagram
+  participant Client
+  participant registerFeaturesCommand
+  participant Command
+  Client->>+registerFeaturesCommand: registerFeaturesCommand()
+  registerFeaturesCommand->>+Command: command()
+  Command-->>-registerFeaturesCommand: result
+  registerFeaturesCommand-->>-Client: response
+```
+
 ### 🔧 `registerGenerateCommand` 関数
 
 > **ファイル**: `generate.ts`

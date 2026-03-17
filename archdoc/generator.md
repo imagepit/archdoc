@@ -47,6 +47,7 @@ frontmatter(data: Record<string, string>): this
 
 **呼び出し元**
 
+- `generateFeaturesMd()` — Generator (`features-generator.ts`)
 - `generateIndexMd()` — Generator (`index-generator.ts`)
 - `generateLayerMd()` — Generator (`layer-generator.ts`)
 
@@ -67,6 +68,9 @@ heading(level: number, text: string): this
 
 **呼び出し元**
 
+- `generateCycleSection()` — Generator (`cycle-section.ts`)
+- `generateFeaturesMd()` — Generator (`features-generator.ts`)
+- `generateResponsibilitySection()` — Generator (`responsibility-section.ts`)
 - `generateIndexMd()` — Generator (`index-generator.ts`)
 - `generateLayerMd()` — Generator (`layer-generator.ts`)
 - `renderClass()` — Generator (`layer-generator.ts`)
@@ -94,6 +98,9 @@ paragraph(text: string): this
 
 **呼び出し元**
 
+- `generateCycleSection()` — Generator (`cycle-section.ts`)
+- `generateFeaturesMd()` — Generator (`features-generator.ts`)
+- `generateResponsibilitySection()` — Generator (`responsibility-section.ts`)
 - `generateIndexMd()` — Generator (`index-generator.ts`)
 - `generateLayerMd()` — Generator (`layer-generator.ts`)
 - `renderClass()` — Generator (`layer-generator.ts`)
@@ -147,6 +154,9 @@ table(headers: string[], rows: string[][]): this
 
 **呼び出し元**
 
+- `generateCycleSection()` — Generator (`cycle-section.ts`)
+- `generateFeaturesMd()` — Generator (`features-generator.ts`)
+- `generateResponsibilitySection()` — Generator (`responsibility-section.ts`)
 - `generateIndexMd()` — Generator (`index-generator.ts`)
 - `generateLayerMd()` — Generator (`layer-generator.ts`)
 - `renderClass()` — Generator (`layer-generator.ts`)
@@ -250,8 +260,24 @@ build(): string
 
 **呼び出し元**
 
+- `generateCycleSection()` — Generator (`cycle-section.ts`)
+- `generateFeaturesMd()` — Generator (`features-generator.ts`)
+- `generateResponsibilitySection()` — Generator (`responsibility-section.ts`)
 - `generateIndexMd()` — Generator (`index-generator.ts`)
 - `generateLayerMd()` — Generator (`layer-generator.ts`)
+
+### 📋 `FeaturesGenerateOptions` インターフェース
+
+> **ファイル**: `features-generator.ts`
+> **型**: Other
+
+Options for features generation.
+
+**プロパティ**
+
+| プロパティ | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `messages` | `LocaleMessages or undefined` | — | — |
 
 ### 📋 `IndexGenerateOptions` インターフェース
 
@@ -266,6 +292,8 @@ build(): string
 | --- | --- | --- | --- |
 | `renderer` | `DiagramRenderer or undefined` | — | — |
 | `messages` | `LocaleMessages or undefined` | — | — |
+| `responsibilityViolations` | `ResponsibilityViolation[] or undefined` | — | Next.js responsibility separation violations to include in output. |
+| `layerCycles` | `LayerCycle[] or undefined` | — | Detected circular layer dependencies to include in output. |
 
 ### 📋 `GenerateOptions` インターフェース
 
@@ -281,6 +309,28 @@ build(): string
 | `renderer` | `DiagramRenderer` | ✓ | — |
 | `layerNames` | `string[] or undefined` | — | 依存方向チェック用のレイヤー名順序配列（内側 → 外側） |
 | `messages` | `LocaleMessages or undefined` | — | ロケールメッセージ（省略時は英語） |
+
+### 🔧 `generateCycleSection` 関数
+
+> **ファイル**: `cycle-section.ts`
+
+Generate a Markdown section for layer circular dependency warnings.
+Returns empty string if no cycles found.
+
+```ts
+generateCycleSection(cycles: LayerCycle[], locale?: "en" | "ja"): string
+```
+
+| 引数 | 型 | 説明 |
+| --- | --- | --- |
+| `cycles` | `LayerCycle[]` | — |
+| `locale` | `"en" or "ja"` | — |
+
+**戻り値**: `string` 
+
+**呼び出し元**
+
+- `generateIndexMd()` — Generator (`index-generator.ts`)
 
 ### 🔧 `kindEmoji` 関数
 
@@ -415,6 +465,30 @@ categoryLegendRows(messages?: LocaleMessages | undefined): string[][]
 
 - `generateIndexMd()` — Generator (`index-generator.ts`)
 
+### 🔧 `generateFeaturesMd` 関数
+
+> **ファイル**: `features-generator.ts`
+
+Generate a feature list Markdown from extracted layer data.
+Groups by use case / endpoint / domain model for easy comparison
+with free-form requirements documents.
+
+```ts
+generateFeaturesMd(config: ProjectConfig, extractions: LayerExtraction[], options?: FeaturesGenerateOptions | undefined): string
+```
+
+| 引数 | 型 | 説明 |
+| --- | --- | --- |
+| `config` | `ProjectConfig` | — |
+| `extractions` | `LayerExtraction[]` | — |
+| `options` | `FeaturesGenerateOptions or undefined` | — |
+
+**戻り値**: `string` 
+
+**呼び出し元**
+
+- `registerFeaturesCommand()` — Cli (`features.ts`)
+
 ### 🔧 `generateIndexMd` 関数
 
 > **ファイル**: `index-generator.ts`
@@ -458,6 +532,28 @@ generateLayerMd(layer: LayerConfig, extraction: LayerExtraction, options: Genera
 **呼び出し元**
 
 - `registerGenerateCommand()` — Cli (`generate.ts`)
+
+### 🔧 `generateResponsibilitySection` 関数
+
+> **ファイル**: `responsibility-section.ts`
+
+Generate a Markdown section for Next.js responsibility separation violations.
+Returns empty string if no violations found.
+
+```ts
+generateResponsibilitySection(violations: ResponsibilityViolation[], locale?: "en" | "ja"): string
+```
+
+| 引数 | 型 | 説明 |
+| --- | --- | --- |
+| `violations` | `ResponsibilityViolation[]` | — |
+| `locale` | `"en" or "ja"` | — |
+
+**戻り値**: `string` 
+
+**呼び出し元**
+
+- `generateIndexMd()` — Generator (`index-generator.ts`)
 
 ### 📝 `ObjectKind` 型エイリアス
 

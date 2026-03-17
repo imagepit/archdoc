@@ -57,6 +57,7 @@ loadConfig(configPath?: string): ProjectConfig
 
 - `registerDiagramCommand()` — Cli (`diagram.ts`)
 - `registerDriftCommand()` — Cli (`drift.ts`)
+- `registerFeaturesCommand()` — Cli (`features.ts`)
 - `registerGenerateCommand()` — Cli (`generate.ts`)
 
 ### 📌 `projectConfigSchema` 定数

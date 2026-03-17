@@ -131,8 +131,12 @@ description: archdoc DDDレイヤードアーキテクチャ概要
 | コンポーネント | 種別 | カテゴリ | 説明 |
 | --- | --- | --- | --- |
 | `ExpressExtractor` | 🏗️ class | Framework Extractor | FrameworkExtractorを実装するExpress.jsルート抽出器。 |
+| `NextjsExtractor` | 🏗️ class | Framework Extractor | Next.js App Router route handler extractor. |
 | `FrameworkExtractor` | 📋 interface | Framework Extractor | フレームワーク固有のルート抽出用ストラテジーインターフェース。 |
+| `NextjsComponentInfo` | 📋 interface | Framework Extractor | Metadata for a Next.js component file. |
 | `createFrameworkExtractor` | 🔧 function | Framework Extractor | レイヤー設定に基づいてFrameworkExtractorを生成するファクトリ関数。 |
+| `classifyNextjsComponent` | 🔧 function | Framework Extractor | Extract page and layout metadata from a Next.js App Router … |
+| `extractServerActions` | 🔧 function | Framework Extractor | Extract Server Action functions from a file with "use serve… |
 
 | コンポーネント | 種別 | カテゴリ | 説明 |
 | --- | --- | --- | --- |
@@ -183,16 +187,20 @@ description: archdoc DDDレイヤードアーキテクチャ概要
 | コンポーネント | 種別 | カテゴリ | 説明 |
 | --- | --- | --- | --- |
 | `MarkdownBuilder` | 🏗️ class | Other | Markdownドキュメントをプログラマティックに構築するFluentビルダー。 |
+| `FeaturesGenerateOptions` | 📋 interface | Other | Options for features generation. |
 | `IndexGenerateOptions` | 📋 interface | Other | ダイアグラムレンダラーを含むindex.md生成オプション。 |
 | `GenerateOptions` | 📋 interface | Other | ダイアグラムレンダラーを含むレイヤードキュメント生成オプション。 |
+| `generateCycleSection` | 🔧 function | Other | Generate a Markdown section for layer circular dependency w… |
 | `kindEmoji` | 🔧 function | Other | オブジェクト種別に対応する絵文字アイコンを返す。 |
 | `categoryEmoji` | 🔧 function | Other | ドメインカテゴリに対応する絵文字アイコンを返す。 |
 | `formatName` | 🔧 function | Other | カテゴリ絵文字プレフィックス付きのコンポーネント名を整形する。 |
 | `kindLabel` | 🔧 function | Other | 絵文字と種別名を組み合わせた表示ラベルを返す。 |
 | `kindLegendRows` | 🔧 function | Other | 全オブジェクト種別アイコンの凡例テーブル行を生成する。 |
 | `categoryLegendRows` | 🔧 function | Other | 全カテゴリアイコンの凡例テーブル行を生成する。 |
+| `generateFeaturesMd` | 🔧 function | Other | Generate a feature list Markdown from extracted layer data. |
 | `generateIndexMd` | 🔧 function | Other | プロジェクト全体の概要ドキュメントindex.mdを生成する。 |
 | `generateLayerMd` | 🔧 function | Other | 単一アーキテクチャレイヤーのMarkdownドキュメントを生成する。 |
+| `generateResponsibilitySection` | 🔧 function | Other | Generate a Markdown section for Next.js responsibility sepa… |
 | `ObjectKind` | 📝 type | Other | ドキュメント出力で使用するオブジェクト種別。 |
 
 ### Drift (ドリフト検出層)
@@ -217,5 +225,6 @@ description: archdoc DDDレイヤードアーキテクチャ概要
 | --- | --- | --- | --- |
 | `registerDiagramCommand` | 🔧 function | Command | 単体ダイアグラム生成用の'diagram'サブコマンドを登録する。 |
 | `registerDriftCommand` | 🔧 function | Command | 仕様ドリフト検出用の'drift'サブコマンドを登録する。 |
+| `registerFeaturesCommand` | 🔧 function | Command | Register the 'features' subcommand for feature list generat… |
 | `registerGenerateCommand` | 🔧 function | Command | ドキュメント生成用の'generate'サブコマンドを登録する。 |
 | `registerInitCommand` | 🔧 function | Command | layers.yaml初期化用の'init'サブコマンドを登録する。 |

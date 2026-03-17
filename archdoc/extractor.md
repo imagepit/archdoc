@@ -64,6 +64,52 @@ resolveMountPrefixes(layerSourceFiles: SourceFile[], allSourceFiles: SourceFile[
 
 - `extractLayer()` — Extractor (`project.ts`) via `FrameworkExtractor`
 
+### 🏗️ `NextjsExtractor` クラス
+
+> **ファイル**: `nextjs-extractor.ts`
+> **型**: Framework Extractor
+
+Next.js App Router route handler extractor.
+
+Detects exported HTTP method functions (GET, POST, etc.) in route.ts files,
+page.tsx/layout.tsx structure, "use client"/"use server" directives,
+and Server Action functions.
+
+**メソッド**
+
+#### `extractRoutes` メソッド
+
+```ts
+extractRoutes(sourceFile: SourceFile, funcName: string): RouteInfo[]
+```
+
+| 引数 | 型 | 説明 |
+| --- | --- | --- |
+| `sourceFile` | `SourceFile` | — |
+| `funcName` | `string` | — |
+
+**戻り値**: `RouteInfo[]` 
+
+**呼び出し元**
+
+- `extractLayer()` — Extractor (`project.ts`) via `FrameworkExtractor`
+
+#### `resolveMountPrefixes` メソッド
+
+```ts
+resolveMountPrefixes(_layerSourceFiles: SourceFile[], _allSourceFiles: SourceFile[], _functions: FunctionInfo[]): void
+```
+
+| 引数 | 型 | 説明 |
+| --- | --- | --- |
+| `_layerSourceFiles` | `SourceFile[]` | — |
+| `_allSourceFiles` | `SourceFile[]` | — |
+| `_functions` | `FunctionInfo[]` | — |
+
+**呼び出し元**
+
+- `extractLayer()` — Extractor (`project.ts`) via `FrameworkExtractor`
+
 ### 📋 `FrameworkExtractor` インターフェース
 
 > **ファイル**: `framework-extractor.ts`
@@ -101,6 +147,22 @@ resolveMountPrefixes(layerSourceFiles: SourceFile[], allSourceFiles: SourceFile[
 | `allSourceFiles` | `SourceFile[]` | プロジェクト全体のソースファイル群（app.tsなどのapp.use()検出用） |
 | `functions` | `FunctionInfo[]` | ルートを更新する対象の抽出済み関数群 |
 
+### 📋 `NextjsComponentInfo` インターフェース
+
+> **ファイル**: `nextjs-extractor.ts`
+> **型**: Framework Extractor
+
+Metadata for a Next.js component file.
+
+**プロパティ**
+
+| プロパティ | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `filePath` | `string` | ✓ | — |
+| `fileType` | `"page" or "layout" or "route"` | ✓ | — |
+| `componentType` | `"server" or "client" or "server-action"` | ✓ | — |
+| `routePath` | `string` | ✓ | — |
+
 ### 🔧 `createFrameworkExtractor` 関数
 
 > **ファイル**: `index.ts`
@@ -120,6 +182,65 @@ createFrameworkExtractor(framework?: string | undefined): FrameworkExtractor | n
 **呼び出し元**
 
 - `extractLayer()` — Extractor (`project.ts`)
+
+### 🔧 `classifyNextjsComponent` 関数
+
+> **ファイル**: `nextjs-extractor.ts`
+
+Extract page and layout metadata from a Next.js App Router source file.
+Returns component type classification: Server Component, Client Component, or Server Action.
+
+```ts
+classifyNextjsComponent(sourceFile: SourceFile): NextjsComponentInfo | null
+```
+
+| 引数 | 型 | 説明 |
+| --- | --- | --- |
+| `sourceFile` | `SourceFile` | — |
+
+**戻り値**: `NextjsComponentInfo | null` 
+
+```mermaid
+sequenceDiagram
+  participant Client
+  participant classifyNextjsComponent
+  participant SourceFile
+  Client->>+classifyNextjsComponent: classifyNextjsComponent()
+  classifyNextjsComponent->>+SourceFile: getFilePath()
+  SourceFile-->>-classifyNextjsComponent: result
+  classifyNextjsComponent->>+SourceFile: getFullText()
+  SourceFile-->>-classifyNextjsComponent: result
+  classifyNextjsComponent-->>-Client: response
+```
+
+### 🔧 `extractServerActions` 関数
+
+> **ファイル**: `nextjs-extractor.ts`
+
+Extract Server Action functions from a file with "use server" directive.
+
+```ts
+extractServerActions(sourceFile: SourceFile): string[]
+```
+
+| 引数 | 型 | 説明 |
+| --- | --- | --- |
+| `sourceFile` | `SourceFile` | — |
+
+**戻り値**: `string[]` 
+
+```mermaid
+sequenceDiagram
+  participant Client
+  participant extractServerActions
+  participant SourceFile
+  Client->>+extractServerActions: extractServerActions()
+  extractServerActions->>+SourceFile: getFullText()
+  SourceFile-->>-extractServerActions: result
+  extractServerActions->>+SourceFile: getFunctions()
+  SourceFile-->>-extractServerActions: result
+  extractServerActions-->>-Client: response
+```
 
 ## Extractorのコンポーネント
 
@@ -203,6 +324,7 @@ analyzeCallerReferences(project: Project, extractions: LayerExtraction[], layers
 
 **呼び出し元**
 
+- `registerFeaturesCommand()` — Cli (`features.ts`)
 - `registerGenerateCommand()` — Cli (`generate.ts`)
 
 ```mermaid
@@ -572,6 +694,7 @@ createExtractorProject(sourceRoot: string, tsConfigPath?: string | undefined): P
 
 - `registerDiagramCommand()` — Cli (`diagram.ts`)
 - `registerDriftCommand()` — Cli (`drift.ts`)
+- `registerFeaturesCommand()` — Cli (`features.ts`)
 - `registerGenerateCommand()` — Cli (`generate.ts`)
 
 ### 🔧 `extractLayer` 関数
@@ -597,6 +720,7 @@ extractLayer(project: Project, layer: LayerConfig, allLayers?: LayerConfig[] | u
 
 - `registerDiagramCommand()` — Cli (`diagram.ts`)
 - `registerDriftCommand()` — Cli (`drift.ts`)
+- `registerFeaturesCommand()` — Cli (`features.ts`)
 - `registerGenerateCommand()` — Cli (`generate.ts`)
 
 ```mermaid
