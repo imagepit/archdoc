@@ -3,6 +3,7 @@ import { registerGenerateCommand } from "./commands/generate.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerDriftCommand } from "./commands/drift.js";
 import { registerDiagramCommand } from "./commands/diagram.js";
+import { registerFeaturesCommand } from "./commands/features.js";
 
 /**
  * 全CLIサブコマンドを登録したCommander.jsプログラムを作成する。
@@ -22,6 +23,7 @@ export function createProgram(): Command {
   registerGenerateCommand(program);
   registerDriftCommand(program);
   registerDiagramCommand(program);
+  registerFeaturesCommand(program);
 
   return program;
 }

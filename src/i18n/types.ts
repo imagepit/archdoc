@@ -125,6 +125,9 @@ export interface LocaleMessages {
   /** Domain category display labels. */
   categories: Record<CategoryKey, string>;
 
+  /** Strings used in features.md generation. */
+  features: FeaturesMessages;
+
   /** DDD auto-categorization and structural warnings. */
   ddd: {
     roles: Record<DddRole, string>;
@@ -138,4 +141,27 @@ export interface LocaleMessages {
       headerDetail: string;
     };
   };
+}
+
+/** Translatable messages for the feature list output. */
+export interface FeaturesMessages {
+  title: string;
+  description: string;
+  generatedNote: string;
+  apiEndpoints: string;
+  useCases: string;
+  domainModels: string;
+  featureSummaryByLayer: string;
+  businessRulesSummary: string;
+  headerMethod: string;
+  headerPath: string;
+  headerDescription: string;
+  headerLayer: string;
+  headerComponent: string;
+  headerFeature: string;
+  headerBusinessRules: string;
+  headerModel: string;
+  headerRole: string;
+  headerMethods: string;
+  headerRule: string;
 }

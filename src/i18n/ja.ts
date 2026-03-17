@@ -96,6 +96,28 @@ export const ja: LocaleMessages = {
     const: "エクスポート定数",
   },
 
+  features: {
+    title: "機能一覧",
+    description: "要件定義書との突き合わせ用に自動生成された機能一覧",
+    generatedNote: "> このドキュメントは archdoc により自動生成されました。要件定義書・設計書と突き合わせてカバレッジを確認してください。",
+    apiEndpoints: "APIエンドポイント",
+    useCases: "ユースケース / アプリケーションサービス",
+    domainModels: "ドメインモデル",
+    featureSummaryByLayer: "レイヤー別機能一覧",
+    businessRulesSummary: "ビジネスルール一覧",
+    headerMethod: "メソッド",
+    headerPath: "パス",
+    headerDescription: "説明",
+    headerLayer: "レイヤー",
+    headerComponent: "コンポーネント",
+    headerFeature: "機能",
+    headerBusinessRules: "ビジネスルール",
+    headerModel: "モデル",
+    headerRole: "ロール",
+    headerMethods: "メソッド",
+    headerRule: "ルール",
+  },
+
   categories: {
     entityAggregate: "エンティティ / 集約",
     valueObject: "値オブジェクト",
