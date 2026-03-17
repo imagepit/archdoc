@@ -1,0 +1,63 @@
+project:
+  name: Next.js Order System
+  description: Next.js App Router e-commerce system
+  sourceRoot: tests/fixtures/nextjs-project/src
+
+layers:
+  - name: Domain
+    nameJa: ドメイン層
+    path: tests/fixtures/nextjs-project/src/domain
+    type: domain
+    description: |
+      Business rules and domain model definitions.
+    responsibility: Define business rules and domain models
+    forbiddenImports: []
+    categories:
+      entities: Entity
+
+  - name: Application
+    nameJa: アプリケーション層
+    path: tests/fixtures/nextjs-project/src/application
+    type: application
+    description: |
+      Application use cases.
+    responsibility: Orchestrate domain operations
+    forbiddenImports: []
+    categories:
+      usecases: Use Case
+
+  - name: Infrastructure
+    nameJa: インフラストラクチャ層
+    path: tests/fixtures/nextjs-project/src/infrastructure
+    type: infrastructure
+    description: |
+      Technical implementations.
+    responsibility: Implement persistence and external services
+    forbiddenImports: []
+    categories:
+      repositories: Repository Implementation
+
+  - name: Lib
+    nameJa: 共通ライブラリ層
+    path: tests/fixtures/nextjs-project/src/lib
+    type: custom
+    description: |
+      Shared utilities and clients.
+    responsibility: Provide shared utilities
+    forbiddenImports: []
+    categories:
+      clients: Client
+
+  - name: Presentation
+    nameJa: プレゼンテーション層
+    path: tests/fixtures/nextjs-project/src/app
+    type: presentation
+    framework: nextjs
+    description: |
+      Next.js App Router pages and API routes.
+    responsibility: Handle HTTP requests and render pages
+    forbiddenImports: []
+    categories:
+      api: API Route
+      actions: Server Action
+      admin: Page

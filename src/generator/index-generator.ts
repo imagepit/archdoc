@@ -6,11 +6,19 @@ import type { LocaleMessages } from "../i18n/types.js";
 import { getMessages } from "../i18n/index.js";
 import { formatName, kindLabel, kindLegendRows, categoryLegendRows, type ObjectKind } from "./emoji.js";
 import { basename, relative, dirname } from "node:path";
+import type { ResponsibilityViolation } from "../analyzer/nextjs-responsibility-checker.js";
+import { generateResponsibilitySection } from "./responsibility-section.js";
+import type { LayerCycle } from "../analyzer/cycle-detector.js";
+import { generateCycleSection } from "./cycle-section.js";
 
 /** ダイアグラムレンダラーを含むindex.md生成オプション。 */
 export interface IndexGenerateOptions {
   renderer?: DiagramRenderer;
   messages?: LocaleMessages;
+  /** Next.js responsibility separation violations to include in output. */
+  responsibilityViolations?: ResponsibilityViolation[];
+  /** Detected circular layer dependencies to include in output. */
+  layerCycles?: LayerCycle[];
 }
 
 /**
@@ -126,6 +134,24 @@ export async function generateIndexMd(
         t.ddd.warnings.messages[w.warningType](w.propertyName),
       ]),
     );
+  }
+
+  // H3: Next.js Responsibility Separation Check
+  if (options?.responsibilityViolations && options.responsibilityViolations.length > 0) {
+    const locale = config.project.locale ?? "en";
+    const section = generateResponsibilitySection(options.responsibilityViolations, locale);
+    if (section) {
+      md.rawBlock(section);
+    }
+  }
+
+  // H3: Circular Layer Dependencies
+  if (options?.layerCycles && options.layerCycles.length > 0) {
+    const locale = config.project.locale ?? "en";
+    const section = generateCycleSection(options.layerCycles, locale);
+    if (section) {
+      md.rawBlock(section);
+    }
   }
 
   // === H2: Components ===

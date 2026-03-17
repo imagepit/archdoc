@@ -49,12 +49,15 @@ export function extractLayer(
   allLayers?: LayerConfig[],
   sourceRoot?: string,
 ): LayerExtraction {
-  const pattern = join(layer.path, "**/*.ts");
-  project.addSourceFilesAtPaths(pattern);
+  const tsPattern = join(layer.path, "**/*.ts");
+  const tsxPattern = join(layer.path, "**/*.tsx");
+  project.addSourceFilesAtPaths(tsPattern);
+  project.addSourceFilesAtPaths(tsxPattern);
 
   // Add sourceRoot-level files (e.g. app.ts) for mount prefix resolution
   if (layer.framework && sourceRoot) {
     project.addSourceFilesAtPaths(join(sourceRoot, "*.ts"));
+    project.addSourceFilesAtPaths(join(sourceRoot, "*.tsx"));
   }
 
   const sourceFiles = project
