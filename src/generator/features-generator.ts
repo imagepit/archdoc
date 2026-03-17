@@ -41,7 +41,7 @@ export function generateFeaturesMd(
       endpoints.map((ep) => [
         `\`${ep.method}\``,
         `\`${ep.path}\``,
-        ep.description || "—",
+        flattenForTable(ep.description),
         ep.layerName,
         `\`${ep.componentName}\``,
       ]),
@@ -57,7 +57,7 @@ export function generateFeaturesMd(
       useCases.map((uc) => [
         uc.name,
         `\`${uc.className}\``,
-        uc.description || "—",
+        flattenForTable(uc.description),
         uc.businessRules.length > 0 ? uc.businessRules.join("; ") : "—",
       ]),
     );
@@ -72,7 +72,7 @@ export function generateFeaturesMd(
       domainModels.map((dm) => [
         `\`${dm.name}\``,
         dm.role,
-        dm.description || "—",
+        flattenForTable(dm.description),
         dm.businessRules.length > 0 ? dm.businessRules.join("; ") : "—",
         dm.methods.length > 0 ? dm.methods.join(", ") : "—",
       ]),
@@ -92,7 +92,7 @@ export function generateFeaturesMd(
       publicMethods.map((pm) => [
         `\`${pm.className}\``,
         `\`${pm.methodName}\``,
-        pm.description || "—",
+        flattenForTable(pm.description),
       ]),
     );
   }
@@ -112,6 +112,15 @@ export function generateFeaturesMd(
   }
 
   return md.build();
+}
+
+/**
+ * Flatten multi-line text into a single line for Markdown table cells.
+ * Replaces newlines with spaces and collapses multiple spaces.
+ */
+function flattenForTable(text: string): string {
+  if (!text) return "—";
+  return text.replace(/\n/g, " ").replace(/\s{2,}/g, " ").trim() || "—";
 }
 
 // --- Data collection helpers ---
