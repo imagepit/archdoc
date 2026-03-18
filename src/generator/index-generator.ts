@@ -139,7 +139,8 @@ export async function generateIndexMd(
   // H3: Next.js Responsibility Separation Check
   if (options?.responsibilityViolations && options.responsibilityViolations.length > 0) {
     const locale = config.project.locale ?? "en";
-    const section = generateResponsibilitySection(options.responsibilityViolations, locale);
+    const appLayer = config.layers.find((l) => l.name === "App" || l.path.endsWith("/app") || l.path.endsWith("/app/"));
+    const section = generateResponsibilitySection(options.responsibilityViolations, locale, appLayer?.path);
     if (section) {
       md.rawBlock(section);
     }

@@ -1,5 +1,5 @@
 import { MarkdownBuilder } from "./markdown-builder.js";
-import { basename } from "node:path";
+import { basename, relative } from "node:path";
 import type { ResponsibilityViolation } from "../analyzer/nextjs-responsibility-checker.js";
 
 /** Severity display labels. */
@@ -32,6 +32,7 @@ const RULE_LABELS_JA: Record<string, string> = {
 export function generateResponsibilitySection(
   violations: ResponsibilityViolation[],
   locale: "en" | "ja" = "en",
+  appLayerPath?: string,
 ): string {
   if (violations.length === 0) return "";
 
@@ -70,7 +71,7 @@ export function generateResponsibilitySection(
       [headerSeverity, headerFile, headerDetail, headerRecommendation],
       ruleViolations.map((v) => [
         SEVERITY_LABELS[v.severity] ?? v.severity,
-        `\`${basename(v.filePath)}\``,
+        `\`${formatFilePath(v.filePath, appLayerPath)}\``,
         v.detail,
         v.recommendation,
       ]),
@@ -78,4 +79,11 @@ export function generateResponsibilitySection(
   }
 
   return md.build();
+}
+
+function formatFilePath(filePath: string, appLayerPath?: string): string {
+  if (!appLayerPath) return basename(filePath);
+  const idx = filePath.indexOf(`/${appLayerPath}/`);
+  if (idx === -1) return basename(filePath);
+  return filePath.slice(idx + 1 + appLayerPath.length + 1);
 }

@@ -7,6 +7,7 @@ import { classifyDddRoles, checkDddWarnings } from "../../analyzer/ddd-analyzer.
 import { generateIndexMd } from "../../generator/index-generator.js";
 import { generateLayerMd } from "../../generator/layer-generator.js";
 import { detectLayerCycles } from "../../analyzer/cycle-detector.js";
+import { checkResponsibilitySeparation } from "../../analyzer/nextjs-responsibility-checker.js";
 import { MermaidRenderer } from "../../diagram/mermaid-renderer.js";
 import { SvgRenderer } from "../../diagram/svg-renderer.js";
 import type { DiagramRenderer } from "../../diagram/diagram-renderer.js";
@@ -82,9 +83,26 @@ export function registerGenerateCommand(program: Command): void {
         console.log(chalk.yellow(`  ${layerCycles.length} circular dependency(ies) detected`));
       }
 
+      // Next.js responsibility separation check
+      const appLayer = config.layers.find((l) => l.name === "App" || l.path.endsWith("/app") || l.path.endsWith("/app/"));
+      const infraLayer = config.layers.find((l) => l.type === "infrastructure");
+      const domainLayer = config.layers.find((l) => l.type === "domain");
+      let responsibilityViolations;
+      if (appLayer) {
+        const appSourceFiles = project.getSourceFiles().filter((sf) => sf.getFilePath().includes(`/${appLayer.path}/`));
+        responsibilityViolations = checkResponsibilitySeparation(appSourceFiles, {
+          appLayerPath: appLayer.path,
+          infraLayerPath: infraLayer?.path,
+          domainLayerPath: domainLayer?.path,
+        });
+        if (responsibilityViolations.length > 0) {
+          console.log(chalk.yellow(`  ${responsibilityViolations.length} responsibility violation(s) detected`));
+        }
+      }
+
       const messages = getMessages(config.project.locale ?? "en");
 
-      const indexMd = await generateIndexMd(config, extractions, { renderer, messages, layerCycles });
+      const indexMd = await generateIndexMd(config, extractions, { renderer, messages, layerCycles, responsibilityViolations });
       writeFileSync(join(outputDir, "index.md"), indexMd);
       console.log(chalk.green(`  Created index.md`));
 
