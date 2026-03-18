@@ -6,6 +6,7 @@ import { analyzeCallerReferences } from "../../extractor/caller-analyzer.js";
 import { classifyDddRoles, checkDddWarnings } from "../../analyzer/ddd-analyzer.js";
 import { generateIndexMd } from "../../generator/index-generator.js";
 import { generateLayerMd } from "../../generator/layer-generator.js";
+import { detectLayerCycles } from "../../analyzer/cycle-detector.js";
 import { MermaidRenderer } from "../../diagram/mermaid-renderer.js";
 import { SvgRenderer } from "../../diagram/svg-renderer.js";
 import type { DiagramRenderer } from "../../diagram/diagram-renderer.js";
@@ -26,7 +27,7 @@ export function registerGenerateCommand(program: Command): void {
     .option("-c, --config <path>", "Path to layers.yaml", "layers.yaml")
     .option("-o, --output <dir>", "Output directory", "docs/architecture")
     .option("--layer <name>", "Generate only a specific layer")
-    .option("-d, --diagram <format>", "Diagram format: mermaid or svg (default: mermaid)", "mermaid")
+    .option("-d, --diagram <format>", "Diagram format: mermaid or svg (default: svg)", "svg")
     .action(async (options: { config: string; output: string; layer?: string; diagram: string }) => {
       const diagramFormat = options.diagram as DiagramFormat;
       if (diagramFormat !== "mermaid" && diagramFormat !== "svg") {
@@ -75,9 +76,15 @@ export function registerGenerateCommand(program: Command): void {
         ? new SvgRenderer(join(outputDir, "diagrams"), "diagrams")
         : new MermaidRenderer();
 
+      // Detect circular layer dependencies
+      const layerCycles = detectLayerCycles(extractions);
+      if (layerCycles.length > 0) {
+        console.log(chalk.yellow(`  ${layerCycles.length} circular dependency(ies) detected`));
+      }
+
       const messages = getMessages(config.project.locale ?? "en");
 
-      const indexMd = await generateIndexMd(config, extractions, { renderer, messages });
+      const indexMd = await generateIndexMd(config, extractions, { renderer, messages, layerCycles });
       writeFileSync(join(outputDir, "index.md"), indexMd);
       console.log(chalk.green(`  Created index.md`));
 

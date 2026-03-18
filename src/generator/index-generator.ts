@@ -173,28 +173,20 @@ export async function generateIndexMd(
 
     md.heading(3, `${layer.name} (${layer.nameJa})`);
 
-    const dirGroups = groupComponentsByDir(extraction, layer.path);
+    const fileGroups = groupComponentsByFile(extraction, layer.path);
 
-    if (dirGroups.size === 0) {
+    if (fileGroups.size === 0) {
       md.paragraph(t.index.noExportedComponents);
       continue;
     }
 
-    for (const [relDir, items] of dirGroups) {
-      if (relDir) {
-        const formattedDir = relDir
-          .split("/")
-          .map((seg) => seg.charAt(0).toUpperCase() + seg.slice(1))
-          .join("/");
-        md.heading(4, formattedDir);
-      }
-
+    for (const [relFile, items] of fileGroups) {
+      md.heading(4, relFile);
       md.table(
-        [t.index.headerComponent, t.index.headerKind, t.index.headerCategory, t.index.headerDescription],
+        [t.index.headerComponent, t.index.headerKind, t.index.headerDescription],
         items.map((item) => [
           formatComponentWithRole(item, t),
           kindLabel(item.kind),
-          item.category,
           truncate(firstLine(item.description), 60),
         ]),
       );
@@ -233,6 +225,7 @@ interface IndexComponentItem {
   category: string;
   description: string;
   dddRole?: DddRole;
+  relFilePath: string;
 }
 
 function groupComponentsByDir(
@@ -254,8 +247,9 @@ function groupComponentsByDir(
     if (seen.has(key)) return;
     seen.add(key);
     const dir = getRelativeDir(filePath, layerPath);
+    const relFilePath = getRelativeFilePath(filePath, layerPath);
     const items = map.get(dir) ?? [];
-    items.push({ name, kind, category, description, dddRole });
+    items.push({ name, kind, category, description, dddRole, relFilePath });
     map.set(dir, items);
   };
 
@@ -273,6 +267,44 @@ function getRelativeDir(filePath: string, layerPath: string): string {
   const relPath = relative(layerPath, filePath);
   const dir = dirname(relPath);
   return dir === "." ? "" : dir;
+}
+
+function getRelativeFilePath(filePath: string, layerPath: string): string {
+  return relative(layerPath, filePath);
+}
+
+function groupComponentsByFile(
+  extraction: LayerExtraction,
+  layerPath: string,
+): Map<string, IndexComponentItem[]> {
+  const map = new Map<string, IndexComponentItem[]>();
+  const seen = new Set<string>();
+
+  const addItem = (
+    name: string,
+    kind: ObjectKind,
+    filePath: string,
+    category: string,
+    description: string,
+    dddRole?: DddRole,
+  ) => {
+    const key = `${kind}:${name}:${category}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    const relFile = getRelativeFilePath(filePath, layerPath);
+    const items = map.get(relFile) ?? [];
+    items.push({ name, kind, category, description, dddRole, relFilePath: relFile });
+    map.set(relFile, items);
+  };
+
+  for (const c of extraction.classes) addItem(c.name, "class", c.filePath, c.category, c.description, c.dddRole);
+  for (const i of extraction.interfaces) addItem(i.name, "interface", i.filePath, i.category, i.description, i.dddRole);
+  for (const f of extraction.functions) addItem(f.name, "function", f.filePath, f.category, f.description);
+  for (const ta of extraction.typeAliases) addItem(ta.name, "type", ta.filePath, ta.category, ta.description);
+  for (const e of extraction.enums) addItem(e.name, "enum", e.filePath, e.category, e.description);
+  for (const c of extraction.constants) addItem(c.name, "const", c.filePath, c.category, c.description);
+
+  return map;
 }
 
 function formatComponentWithRole(item: IndexComponentItem, t: LocaleMessages): string {

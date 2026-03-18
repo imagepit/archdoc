@@ -28,6 +28,7 @@ export const en: LocaleMessages = {
     headerTargetLayer: "Target Layer",
     headerComponent: "Component",
     headerKind: "Kind",
+    headerFilePath: "File Path",
 
     labelName: "**Name**",
     labelDescription: "**Description**",

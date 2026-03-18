@@ -28,6 +28,7 @@ export const ja: LocaleMessages = {
     headerTargetLayer: "先レイヤー",
     headerComponent: "コンポーネント",
     headerKind: "種別",
+    headerFilePath: "ファイルパス",
 
     labelName: "**名前**",
     labelDescription: "**説明**",

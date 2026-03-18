@@ -61,6 +61,7 @@ export interface LocaleMessages {
     // Table headers - component overview
     headerComponent: string;
     headerKind: string;
+    headerFilePath: string;
 
     // Labels
     labelName: string;
