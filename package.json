@@ -38,6 +38,14 @@
   ],
   "author": "imagepit",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/imagepit/archdoc.git"
+  },
+  "homepage": "https://github.com/imagepit/archdoc#readme",
+  "bugs": {
+    "url": "https://github.com/imagepit/archdoc/issues"
+  },
   "packageManager": "pnpm@10.23.0",
   "dependencies": {
     "@viz-js/viz": "^3.25.0",
