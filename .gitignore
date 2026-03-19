@@ -2,3 +2,4 @@ node_modules/
 dist/
 .archdoc/
 *.tsbuildinfo
+.env.*
