@@ -64,6 +64,30 @@ export function buildCytoscapeHtml(
 
     #cy { position: fixed; top: 50px; left: 0; right: 0; bottom: 0; }
 
+    #legend {
+      position: fixed; top: 54px; right: 12px; z-index: 100;
+      background: rgba(255,255,255,0.95); padding: 10px 14px;
+      border-radius: 8px; font-size: 11px; color: #444;
+      border: 1px solid #e0e0e0; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      line-height: 1.8;
+    }
+    #legend .legend-title { font-weight: 600; font-size: 12px; margin-bottom: 4px; }
+    #legend .legend-item { display: flex; align-items: center; gap: 6px; }
+    #legend .legend-node {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid; vertical-align: middle; flex-shrink: 0;
+    }
+    #legend .legend-edge {
+      display: inline-block; width: 24px; height: 0;
+      border-top: 2px solid; vertical-align: middle; flex-shrink: 0;
+      position: relative;
+    }
+    #legend .legend-edge::after {
+      content: ''; position: absolute; right: -1px; top: -5px;
+      border: 4px solid transparent; border-left-width: 6px;
+      border-left-style: solid; border-left-color: inherit;
+    }
+
     #tooltip {
       display: none; position: fixed; z-index: 200;
       background: #333; color: #fff; padding: 8px 12px;
@@ -91,11 +115,25 @@ export function buildCytoscapeHtml(
   <div id="toolbar">
     <h1>${escapeHtml(config.project.name)}</h1>
     <input type="text" id="search" placeholder="Search components...">
+    <button class="btn" id="btn-zoom-in" title="Zoom in">+</button>
+    <button class="btn" id="btn-zoom-out" title="Zoom out">-</button>
     <button class="btn" id="btn-fit" title="Fit to screen">Fit</button>
     <button class="btn" id="btn-violations" title="Show only violations">Violations</button>
     <div class="layer-filters" id="layer-filters"></div>
   </div>
   <div id="cy"></div>
+  <div id="legend">
+    <div class="legend-title">Node Types</div>
+    <div class="legend-item"><span class="legend-node" style="border-color:#42a5f5;background:#e3f2fd;border-radius:3px;"></span> Class</div>
+    <div class="legend-item"><span class="legend-node" style="border-color:#ab47bc;background:#f3e5f5;border-style:dashed;border-radius:3px;"></span> Interface</div>
+    <div class="legend-item"><span class="legend-node" style="border-color:#66bb6a;background:#e8f5e9;border-radius:3px;"></span> Function</div>
+    <div class="legend-item"><span class="legend-node" style="border-color:#bdbdbd;background:#f5f5f5;border-radius:3px;border-width:1px;"></span> Type / Enum / Const</div>
+    <div class="legend-title" style="margin-top:6px;">Edge Types</div>
+    <div class="legend-item"><span class="legend-edge" style="border-color:#333;"></span><span style="margin-left:2px;">Dependency</span></div>
+    <div class="legend-item"><span class="legend-edge" style="border-color:#1565c0;"></span><span style="margin-left:2px;">Extends</span></div>
+    <div class="legend-item"><span class="legend-edge" style="border-color:#2e7d32;border-style:dashed;"></span><span style="margin-left:2px;">Implements</span></div>
+    <div class="legend-item"><span class="legend-edge" style="border-color:#ef5350;border-width:3px;"></span><span style="margin-left:2px;color:#ef5350;font-weight:600;">Violation</span></div>
+  </div>
   <div id="tooltip"></div>
   <div id="stats"></div>
 
@@ -198,17 +236,18 @@ export function buildCytoscapeHtml(
           'label': 'data(label)',
           'text-valign': 'center',
           'font-size': 10,
+          'font-weight': 'bold',
           'width': 'label',
           'height': 24,
           'padding': '4px',
-          'color': '#1565c0',
+          'color': '#111',
         }
       },
       // Interface nodes
       {
         selector: 'node[kind="interface"]',
         style: {
-          'shape': 'diamond',
+          'shape': 'round-rectangle',
           'background-color': '#f3e5f5',
           'border-color': '#ab47bc',
           'border-width': 2,
@@ -216,27 +255,29 @@ export function buildCytoscapeHtml(
           'label': 'data(label)',
           'text-valign': 'center',
           'font-size': 10,
+          'font-weight': 'bold',
           'width': 'label',
           'height': 24,
-          'padding': '6px',
-          'color': '#7b1fa2',
+          'padding': '4px',
+          'color': '#111',
         }
       },
       // Function nodes
       {
         selector: 'node[kind="function"]',
         style: {
-          'shape': 'ellipse',
+          'shape': 'round-rectangle',
           'background-color': '#e8f5e9',
           'border-color': '#66bb6a',
           'border-width': 1.5,
           'label': 'data(label)',
           'text-valign': 'center',
           'font-size': 9,
+          'font-weight': 'bold',
           'width': 'label',
           'height': 22,
           'padding': '3px',
-          'color': '#2e7d32',
+          'color': '#111',
         }
       },
       // Type/Enum/Const nodes
@@ -250,50 +291,51 @@ export function buildCytoscapeHtml(
           'label': 'data(label)',
           'text-valign': 'center',
           'font-size': 8,
+          'font-weight': 'bold',
           'width': 'label',
           'height': 20,
           'padding': '3px',
-          'color': '#616161',
+          'color': '#111',
         }
       },
       // Normal edges
       {
-        selector: 'edge[type="dependency"], edge[type="association"]',
+        selector: 'edge[type="dependency"], edge[type="association"], edge[type="import"]',
         style: {
-          'line-color': '#bbb',
-          'target-arrow-color': '#bbb',
+          'line-color': '#333',
+          'target-arrow-color': '#333',
           'target-arrow-shape': 'triangle',
           'curve-style': 'bezier',
-          'width': 1,
-          'arrow-scale': 0.7,
-          'opacity': 0.4,
+          'width': 1.5,
+          'arrow-scale': 1.2,
+          'opacity': 0.5,
         }
       },
       // Extends edges
       {
         selector: 'edge[type="extends"]',
         style: {
-          'line-color': '#42a5f5',
-          'target-arrow-color': '#42a5f5',
+          'line-color': '#1565c0',
+          'target-arrow-color': '#1565c0',
           'target-arrow-shape': 'triangle',
           'target-arrow-fill': 'hollow',
           'curve-style': 'bezier',
           'width': 2,
-          'arrow-scale': 1,
+          'arrow-scale': 1.4,
         }
       },
       // Implements edges
       {
         selector: 'edge[type="implements"]',
         style: {
-          'line-color': '#66bb6a',
-          'target-arrow-color': '#66bb6a',
+          'line-color': '#2e7d32',
+          'target-arrow-color': '#2e7d32',
           'target-arrow-shape': 'triangle',
           'target-arrow-fill': 'hollow',
           'line-style': 'dashed',
           'curve-style': 'bezier',
           'width': 2,
-          'arrow-scale': 1,
+          'arrow-scale': 1.4,
         }
       },
       // Forbidden edges (violations)
@@ -427,6 +469,14 @@ export function buildCytoscapeHtml(
       if (e.target === cy) {
         cy.elements().removeClass('faded connected highlighted');
       }
+    });
+
+    // --- Zoom buttons ---
+    document.getElementById('btn-zoom-in').addEventListener('click', () => {
+      cy.zoom({ level: cy.zoom() * 1.3, renderedPosition: { x: cy.width() / 2, y: cy.height() / 2 } });
+    });
+    document.getElementById('btn-zoom-out').addEventListener('click', () => {
+      cy.zoom({ level: cy.zoom() / 1.3, renderedPosition: { x: cy.width() / 2, y: cy.height() / 2 } });
     });
 
     // --- Fit button ---

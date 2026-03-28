@@ -1,5 +1,6 @@
 import type { LayerExtraction, DependencyInfo } from "../types/extracted.js";
 import type { ProjectConfig, LayerConfig } from "../types/config.js";
+import type { ResponsibilityViolation } from "../analyzer/nextjs-responsibility-checker.js";
 
 // --- Public types ---
 
@@ -319,32 +320,57 @@ export function buildCytoscapeElements(
     }
   }
 
-  // Import-level forbidden violations (layer-to-layer)
-  const forbiddenMap = new Map<string, { count: number; details: DependencyInfo[] }>();
+  // --- Import-level dependencies (file → component mapping) ---
+  // Build a filePath → component name lookup for resolving import targets
+  const fileToComponent = new Map<string, { name: string; layer: string }>();
   for (const ext of extractions) {
-    for (const dep of ext.dependencies) {
-      if (!dep.isForbidden) continue;
-      const key = `${dep.source}->${dep.target}`;
-      const existing = forbiddenMap.get(key);
-      if (existing) {
-        existing.count++;
-        existing.details.push(dep);
-      } else {
-        forbiddenMap.set(key, { count: 1, details: [dep] });
+    const allItems = [
+      ...ext.classes, ...ext.interfaces, ...ext.functions,
+      ...ext.typeAliases, ...ext.enums, ...ext.constants,
+    ];
+    for (const item of allItems) {
+      if (!item.isExported) continue;
+      // Normalize: strip leading "./" and extensions
+      const normalized = normalizePath(item.filePath);
+      if (!fileToComponent.has(normalized)) {
+        fileToComponent.set(normalized, { name: item.name, layer: ext.layerName });
       }
     }
   }
 
-  for (const [key, info] of forbiddenMap) {
-    const [source, target] = key.split("->");
-    const srcAnchor = findLayerAnchor(extractions, source);
-    const tgtAnchor = findLayerAnchor(extractions, target);
-    if (!srcAnchor || !tgtAnchor) continue;
-    addEdge(srcAnchor, tgtAnchor, "forbidden", true, {
-      count: info.count,
-      sourceFile: info.details[0]?.sourceFile,
-      importPath: info.details[0]?.importPath,
-    });
+  // Process all import dependencies
+  for (const ext of extractions) {
+    for (const dep of ext.dependencies) {
+      if (dep.type !== "import") continue;
+      if (dep.source === dep.target) continue; // skip same-layer
+
+      // Find source component by sourceFile
+      const srcComponent = dep.sourceFile ? findComponentByFile(fileToComponent, dep.sourceFile) : null;
+      // Find target component by importPath
+      const tgtComponent = dep.importPath ? findComponentByImport(fileToComponent, dep.importPath) : null;
+
+      if (srcComponent && tgtComponent && srcComponent !== tgtComponent) {
+        if (dep.isForbidden) {
+          addEdge(srcComponent, tgtComponent, "forbidden", true, {
+            sourceFile: dep.sourceFile,
+            importPath: dep.importPath,
+          });
+        } else {
+          addEdge(srcComponent, tgtComponent, "import", false);
+        }
+      } else if (dep.isForbidden) {
+        // Fallback: anchor to first component in each layer
+        const srcAnchor = findLayerAnchor(extractions, dep.source);
+        const tgtAnchor = findLayerAnchor(extractions, dep.target);
+        if (srcAnchor && tgtAnchor) {
+          addEdge(srcAnchor, tgtAnchor, "forbidden", true, {
+            count: 1,
+            sourceFile: dep.sourceFile,
+            importPath: dep.importPath,
+          });
+        }
+      }
+    }
   }
 
   return { nodes, edges };
@@ -362,6 +388,45 @@ function findLayerAnchor(extractions: LayerExtraction[], layerName: string): str
   if (!ext) return undefined;
   const first = ext.classes[0] ?? ext.interfaces[0] ?? ext.functions[0];
   return first?.name;
+}
+
+function normalizePath(filePath: string): string {
+  return filePath
+    .replace(/^\.\//, "")
+    .replace(/\.(ts|tsx|js|jsx)$/, "");
+}
+
+function findComponentByFile(
+  map: Map<string, { name: string; layer: string }>,
+  sourceFile: string,
+): string | null {
+  const normalized = normalizePath(sourceFile);
+  const entry = map.get(normalized);
+  if (entry) return entry.name;
+  // Try partial match (sourceFile may be relative from different roots)
+  for (const [key, val] of map) {
+    if (normalized.endsWith(key) || key.endsWith(normalized)) return val.name;
+  }
+  return null;
+}
+
+function findComponentByImport(
+  map: Map<string, { name: string; layer: string }>,
+  importPath: string,
+): string | null {
+  const normalized = normalizePath(importPath);
+  // Direct match
+  const entry = map.get(normalized);
+  if (entry) return entry.name;
+  // Partial match
+  for (const [key, val] of map) {
+    if (normalized.endsWith(key) || key.endsWith(normalized)) return val.name;
+    // Also check if the import path's last segment matches a file
+    const importBase = normalized.split("/").pop() ?? "";
+    const keyBase = key.split("/").pop() ?? "";
+    if (importBase && importBase === keyBase) return val.name;
+  }
+  return null;
 }
 
 /**
