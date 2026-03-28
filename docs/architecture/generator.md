@@ -294,6 +294,7 @@ Options for features generation.
 | `messages` | `LocaleMessages or undefined` | — | — |
 | `responsibilityViolations` | `ResponsibilityViolation[] or undefined` | — | Next.js responsibility separation violations to include in output. |
 | `layerCycles` | `LayerCycle[] or undefined` | — | Detected circular layer dependencies to include in output. |
+| `cytoscape` | `boolean or undefined` | — | Generate interactive Cytoscape.js component graph. |
 
 ### 📋 `GenerateOptions` インターフェース
 
@@ -541,13 +542,14 @@ Generate a Markdown section for Next.js responsibility separation violations.
 Returns empty string if no violations found.
 
 ```ts
-generateResponsibilitySection(violations: ResponsibilityViolation[], locale?: "en" | "ja"): string
+generateResponsibilitySection(violations: ResponsibilityViolation[], locale?: "en" | "ja", appLayerPath?: string | undefined): string
 ```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `violations` | `ResponsibilityViolation[]` | — |
 | `locale` | `"en" or "ja"` | — |
+| `appLayerPath` | `string or undefined` | — |
 
 **戻り値**: `string` 
 

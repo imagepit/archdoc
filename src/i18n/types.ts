@@ -31,6 +31,7 @@ export interface LocaleMessages {
     layers: string;
     layerList: string;
     layerDependency: string;
+    interactiveComponentGraph: string;
     importViolations: string;
     nonStandardWarnings: string;
     components: string;

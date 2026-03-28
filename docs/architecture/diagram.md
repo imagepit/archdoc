@@ -133,6 +133,23 @@ renderLayerDependency(extractions: LayerExtraction[], layers?: LayerConfig[] | u
 
 - `generateIndexMd()` — Generator (`index-generator.ts`) via `DiagramRenderer`
 
+#### `renderInteractiveOverview` メソッド
+
+```ts
+renderInteractiveOverview(config: ProjectConfig, extractions: LayerExtraction[]): Promise<string | null>
+```
+
+| 引数 | 型 | 説明 |
+| --- | --- | --- |
+| `config` | `ProjectConfig` | — |
+| `extractions` | `LayerExtraction[]` | — |
+
+**戻り値**: `Promise<string or null>` 
+
+**呼び出し元**
+
+- `generateIndexMd()` — Generator (`index-generator.ts`) via `DiagramRenderer`
+
 ### 🏗️ `SvgRenderer` クラス
 
 > **ファイル**: `svg-renderer.ts`
@@ -243,6 +260,57 @@ renderLayerDependency(extractions: LayerExtraction[], layers?: LayerConfig[] | u
 **呼び出し元**
 
 - `generateIndexMd()` — Generator (`index-generator.ts`) via `DiagramRenderer`
+
+#### `renderInteractiveOverview` メソッド
+
+```ts
+renderInteractiveOverview(config: ProjectConfig, extractions: LayerExtraction[]): Promise<string | null>
+```
+
+| 引数 | 型 | 説明 |
+| --- | --- | --- |
+| `config` | `ProjectConfig` | — |
+| `extractions` | `LayerExtraction[]` | — |
+
+**戻り値**: `Promise<string or null>` 
+
+**呼び出し元**
+
+- `generateIndexMd()` — Generator (`index-generator.ts`) via `DiagramRenderer`
+
+### 📋 `CytoscapeNode` インターフェース
+
+> **ファイル**: `cytoscape-data-builder.ts`
+> **型**: Other
+
+**プロパティ**
+
+| プロパティ | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `data` | `{ id: string; label: string; parent?: string; kind: string; category: string; layer: string; filePath: string; description: string; dddRole?: string; }` | ✓ | — |
+
+### 📋 `CytoscapeEdge` インターフェース
+
+> **ファイル**: `cytoscape-data-builder.ts`
+> **型**: Other
+
+**プロパティ**
+
+| プロパティ | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `data` | `{ id: string; source: string; target: string; type: string; isForbidden: boolean; count?: number; sourceFile?: string; importPath?: string; }` | ✓ | — |
+
+### 📋 `CytoscapeElements` インターフェース
+
+> **ファイル**: `cytoscape-data-builder.ts`
+> **型**: Other
+
+**プロパティ**
+
+| プロパティ | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `nodes` | `CytoscapeNode[]` | ✓ | — |
+| `edges` | `CytoscapeEdge[]` | ✓ | — |
 
 ### 📋 `DependencyGraph` インターフェース
 
@@ -377,6 +445,22 @@ renderLayerDependency(extractions: LayerExtraction[], layers?: LayerConfig[] | u
 
 **戻り値**: `Promise<string or null>` Markdownスニペット文字列、またはnull
 
+#### `renderInteractiveOverview` メソッド
+
+Cytoscape.jsインタラクティブ図のHTMLファイルを生成し、
+iframe埋め込み用のMarkdownスニペットを返す。
+
+```ts
+renderInteractiveOverview(config: ProjectConfig, extractions: LayerExtraction[]): Promise<string | null>
+```
+
+| 引数 | 型 | 説明 |
+| --- | --- | --- |
+| `config` | `ProjectConfig` | プロジェクト設定 |
+| `extractions` | `LayerExtraction[]` | 全レイヤーの抽出結果 |
+
+**戻り値**: `Promise<string or null>` Markdownスニペット文字列、またはnull
+
 ### 🔧 `buildC4ComponentDiagram` 関数
 
 > **ファイル**: `c4-builder.ts`
@@ -455,6 +539,50 @@ buildCategoryClassDiagrams(classes: ClassInfo[], interfaces: InterfaceInfo[]): s
 **呼び出し元**
 
 - `MermaidRenderer.renderDetailClassDiagram()` — Diagram (`mermaid-renderer.ts`)
+
+### 🔧 `buildCytoscapeElements` 関数
+
+> **ファイル**: `cytoscape-data-builder.ts`
+
+Build Cytoscape.js elements JSON from archdoc extraction data.
+
+```ts
+buildCytoscapeElements(config: ProjectConfig, extractions: LayerExtraction[]): CytoscapeElements
+```
+
+| 引数 | 型 | 説明 |
+| --- | --- | --- |
+| `config` | `ProjectConfig` | Project configuration |
+| `extractions` | `LayerExtraction[]` | All layer extraction results |
+
+**戻り値**: `CytoscapeElements` Cytoscape.js compatible elements
+
+**呼び出し元**
+
+- `buildCytoscapeHtml()` — Diagram (`cytoscape-html-builder.ts`)
+
+### 🔧 `buildCytoscapeHtml` 関数
+
+> **ファイル**: `cytoscape-html-builder.ts`
+
+Build a standalone HTML file with Cytoscape.js interactive component graph.
+The HTML is self-contained (CDN dependencies only) and can be opened directly in a browser.
+
+```ts
+buildCytoscapeHtml(config: ProjectConfig, extractions: LayerExtraction[]): string
+```
+
+| 引数 | 型 | 説明 |
+| --- | --- | --- |
+| `config` | `ProjectConfig` | Project configuration |
+| `extractions` | `LayerExtraction[]` | All layer extraction results |
+
+**戻り値**: `string` Complete HTML string
+
+**呼び出し元**
+
+- `MermaidRenderer.renderInteractiveOverview()` — Diagram (`mermaid-renderer.ts`)
+- `SvgRenderer.renderInteractiveOverview()` — Diagram (`svg-renderer.ts`)
 
 ### 🔧 `buildDependencyGraph` 関数
 

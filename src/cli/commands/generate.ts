@@ -29,7 +29,8 @@ export function registerGenerateCommand(program: Command): void {
     .option("-o, --output <dir>", "Output directory", "docs/architecture")
     .option("--layer <name>", "Generate only a specific layer")
     .option("-d, --diagram <format>", "Diagram format: mermaid or svg (default: svg)", "svg")
-    .action(async (options: { config: string; output: string; layer?: string; diagram: string }) => {
+    .option("--cytoscape", "Generate interactive Cytoscape.js component graph")
+    .action(async (options: { config: string; output: string; layer?: string; diagram: string; cytoscape?: boolean }) => {
       const diagramFormat = options.diagram as DiagramFormat;
       if (diagramFormat !== "mermaid" && diagramFormat !== "svg") {
         console.error(chalk.red(`Invalid diagram format "${options.diagram}". Use "mermaid" or "svg".`));
@@ -102,7 +103,7 @@ export function registerGenerateCommand(program: Command): void {
 
       const messages = getMessages(config.project.locale ?? "en");
 
-      const indexMd = await generateIndexMd(config, extractions, { renderer, messages, layerCycles, responsibilityViolations });
+      const indexMd = await generateIndexMd(config, extractions, { renderer, messages, layerCycles, responsibilityViolations, cytoscape: options.cytoscape });
       writeFileSync(join(outputDir, "index.md"), indexMd);
       console.log(chalk.green(`  Created index.md`));
 

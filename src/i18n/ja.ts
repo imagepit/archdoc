@@ -7,6 +7,7 @@ export const ja: LocaleMessages = {
     layers: "レイヤー",
     layerList: "レイヤー一覧",
     layerDependency: "レイヤー依存関係",
+    interactiveComponentGraph: "インタラクティブコンポーネント図",
     importViolations: "レイヤー間依存違反",
     nonStandardWarnings: "非標準レイヤー警告",
     components: "コンポーネント",

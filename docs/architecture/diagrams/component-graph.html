@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>archdoc - Component Graph</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.4/cytoscape.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; background: #fafafa; }
+
+    #toolbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: #fff; border-bottom: 1px solid #e0e0e0;
+      padding: 8px 16px; display: flex; align-items: center; gap: 12px;
+      flex-wrap: wrap; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    #toolbar h1 { font-size: 14px; font-weight: 600; color: #333; margin-right: 8px; white-space: nowrap; }
+    #toolbar input[type="text"] {
+      padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;
+      font-size: 13px; width: 180px; outline: none;
+    }
+    #toolbar input[type="text"]:focus { border-color: #1976d2; }
+    .btn {
+      padding: 4px 10px; border: 1px solid #ccc; border-radius: 4px;
+      background: #fff; cursor: pointer; font-size: 12px; white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .btn:hover { background: #f0f0f0; }
+    .btn.active { background: #ef5350; color: #fff; border-color: #ef5350; }
+    .layer-filters { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .layer-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 12px; font-size: 11px;
+      cursor: pointer; user-select: none; border: 1px solid;
+      transition: opacity 0.15s;
+    }
+    .layer-chip.hidden { opacity: 0.35; text-decoration: line-through; }
+    .layer-chip input { display: none; }
+
+    #cy { position: fixed; top: 50px; left: 0; right: 0; bottom: 0; }
+
+    #tooltip {
+      display: none; position: fixed; z-index: 200;
+      background: #333; color: #fff; padding: 8px 12px;
+      border-radius: 6px; font-size: 12px; max-width: 360px;
+      pointer-events: none; line-height: 1.5;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    #tooltip .tt-name { font-weight: 600; font-size: 13px; }
+    #tooltip .tt-kind { color: #90caf9; }
+    #tooltip .tt-layer { color: #a5d6a7; }
+    #tooltip .tt-file { color: #bbb; font-size: 11px; word-break: break-all; }
+    #tooltip .tt-desc { margin-top: 4px; color: #ddd; }
+    #tooltip .tt-forbidden { color: #ef5350; font-weight: 600; }
+
+    #stats {
+      position: fixed; bottom: 12px; left: 12px; z-index: 100;
+      background: rgba(255,255,255,0.9); padding: 6px 12px;
+      border-radius: 6px; font-size: 11px; color: #666;
+      border: 1px solid #e0e0e0;
+    }
+    #stats .violation-count { color: #ef5350; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div id="toolbar">
+    <h1>archdoc</h1>
+    <input type="text" id="search" placeholder="Search components...">
+    <button class="btn" id="btn-fit" title="Fit to screen">Fit</button>
+    <button class="btn" id="btn-violations" title="Show only violations">Violations</button>
+    <div class="layer-filters" id="layer-filters"></div>
+  </div>
+  <div id="cy"></div>
+  <div id="tooltip"></div>
+  <div id="stats"></div>
+
+  <script>
+    const elements = {"nodes":[{"data":{"id":"layer:Types","label":"Types (型定義層)","kind":"layer","category":"","layer":"Types","filePath":"src/types","description":"共通型定義の提供"}},{"data":{"id":"layer:Config","label":"Config (設定層)","kind":"layer","category":"","layer":"Config","filePath":"src/config","description":"設定ファイルの解析・バリデーション"}},{"data":{"id":"layer:Extractor","label":"Extractor (抽出層)","kind":"layer","category":"","layer":"Extractor","filePath":"src/extractor","description":"ソースコードの静的解析と情報抽出"}},{"data":{"id":"layer:Diagram","label":"Diagram (ダイアグラム層)","kind":"layer","category":"","layer":"Diagram","filePath":"src/diagram","description":"ダイアグラム生成"}},{"data":{"id":"layer:Generator","label":"Generator (生成層)","kind":"layer","category":"","layer":"Generator","filePath":"src/generator","description":"Markdownドキュメント生成"}},{"data":{"id":"layer:Drift","label":"Drift (ドリフト検出層)","kind":"layer","category":"","layer":"Drift","filePath":"src/drift","description":"設定と実態の乖離検出"}},{"data":{"id":"layer:Cli","label":"Cli (CLI層)","kind":"layer","category":"","layer":"Cli","filePath":"src/cli","description":"CLIインターフェースの提供"}},{"data":{"id":"CategoryOverride","label":"CategoryOverride","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/config.ts","description":"パターンベースのカテゴリ上書き設定。"}},{"data":{"id":"LayerConfig","label":"LayerConfig","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/config.ts","description":"単一アーキテクチャレイヤーの設定。"}},{"data":{"id":"ProjectConfig","label":"ProjectConfig","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/config.ts","description":"layers.yamlから読み込まれるプロジェクト設定。"}},{"data":{"id":"SpecDiff","label":"SpecDiff","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/drift.ts","description":"2つの仕様スナップショット間で検出された単一の差分。"}},{"data":{"id":"DriftResult","label":"DriftResult","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/drift.ts","description":"レイヤーのドリフト検出結果。"}},{"data":{"id":"DddWarning","label":"DddWarning","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"DDD設計原則に反する構造を検出した警告。"}},{"data":{"id":"PropertyInfo","label":"PropertyInfo","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"クラスまたはインターフェースから抽出されたプロパティ情報。"}},{"data":{"id":"ParameterInfo","label":"ParameterInfo","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"関数またはメソッドから抽出された引数情報。"}},{"data":{"id":"ThrowInfo","label":"ThrowInfo","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"JSDoc"}},{"data":{"id":"CallerReference","label":"CallerReference","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"このメソッドまたは関数を呼び出しているコンポーネントの参照情報。"}},{"data":{"id":"MethodInfo","label":"MethodInfo","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"シグネチャ・引数・ビジネスルールを含むメソッド情報。"}},{"data":{"id":"MethodSignatureInfo","label":"MethodSignatureInfo","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"インターフェース宣言から抽出されたメソッドシグネチャ。"}},{"data":{"id":"DependencyInfo","label":"DependencyInfo","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"レイヤー間のインポート依存関係（禁止インポート検出含む）。"}},{"data":{"id":"ClassInfo","label":"ClassInfo","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"プロパティ・メソッド・依存関係を含むクラス情報。"}},{"data":{"id":"InterfaceInfo","label":"InterfaceInfo","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"プロパティ・メソッドシグネチャを含むインターフェース情報。"}},{"data":{"id":"RouteCallInfo","label":"RouteCallInfo","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"Expressルートハンドラ内のメソッド呼び出し。"}},{"data":{"id":"RouteJSDocTag","label":"RouteJSDocTag","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"Expressルートハンドラから抽出されたJSDocタグ。"}},{"data":{"id":"RouteInfo","label":"RouteInfo","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"ミドルウェアとコールチェーンを含むExpressルート定義。"}},{"data":{"id":"FunctionInfo","label":"FunctionInfo","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"シグネチャ・引数・ルート情報を含む関数情報。"}},{"data":{"id":"TypeAliasInfo","label":"TypeAliasInfo","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"型エイリアスの抽出情報。"}},{"data":{"id":"EnumMemberInfo","label":"EnumMemberInfo","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"enum宣言の個別メンバー情報。"}},{"data":{"id":"EnumInfo","label":"EnumInfo","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"enum宣言の抽出情報。"}},{"data":{"id":"ConstInfo","label":"ConstInfo","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"エクスポートされた定数の抽出情報。"}},{"data":{"id":"ConstructorDep","label":"ConstructorDep","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"コールチェーン解析用のコンストラクタ依存パラメータ。"}},{"data":{"id":"MethodCall","label":"MethodCall","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"クラスメソッドまたは関数内での依存先への単一メソッド呼び出し。"}},{"data":{"id":"MethodCallChain","label":"MethodCallChain","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"単一メソッド内のすべての依存先呼び出し。"}},{"data":{"id":"ClassCallChain","label":"ClassCallChain","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"クラスまたは関数の完全なコールチェーン（依存先とメソッド呼び出しを含む）。"}},{"data":{"id":"CallChainEntry","label":"CallChainEntry","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"LayerExtractionに格納されるシリアライズ可能なコールチェーンエントリ。"}},{"data":{"id":"LayerExtraction","label":"LayerExtraction","parent":"layer:Types","kind":"interface","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"単一アーキテクチャレイヤーの完全な抽出結果。"}},{"data":{"id":"LayerType","label":"LayerType","parent":"layer:Types","kind":"type","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/config.ts","description":"DDDアーキテクチャで使用するレイヤー種別。"}},{"data":{"id":"DriftSeverity","label":"DriftSeverity","parent":"layer:Types","kind":"type","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/drift.ts","description":"仕様ドリフト検出の重大度レベル。"}},{"data":{"id":"DddRole","label":"DddRole","parent":"layer:Types","kind":"type","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"DDDにおけるドメインモデルの役割分類。"}},{"data":{"id":"DddWarningType","label":"DddWarningType","parent":"layer:Types","kind":"type","category":"Other","layer":"Types","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/types/extracted.ts","description":"DDD構造警告の種別。"}},{"data":{"id":"getDefaultCategories","label":"getDefaultCategories","parent":"layer:Config","kind":"function","category":"Other","layer":"Config","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/config/defaults.ts","description":"指定されたレイヤー種別に対応するデフォルトカテゴリマッピングを返す。"}},{"data":{"id":"loadConfig","label":"loadConfig","parent":"layer:Config","kind":"function","category":"Other","layer":"Config","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/config/loader.ts","description":"layers.yamlファイルからプロジェクト設定を読み込みバリデーションする。"}},{"data":{"id":"projectConfigSchema","label":"projectConfigSchema","parent":"layer:Config","kind":"const","category":"Other","layer":"Config","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/config/schema.ts","description":"layers.yamlプロジェクト設定のバリデーション用Zodスキーマ。"}},{"data":{"id":"ExpressExtractor","label":"ExpressExtractor","parent":"layer:Extractor","kind":"class","category":"Framework Extractor","layer":"Extractor","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/extractor/framework/express-extractor.ts","description":"FrameworkExtractorを実装するExpress.jsルート抽出器。"}},{"data":{"id":"NextjsExtractor","label":"NextjsExtractor","parent":"layer:Extractor","kind":"class","category":"Framework Extractor","layer":"Extractor","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/extractor/framework/nextjs-extractor.ts","description":"Next.js App Router route handler extractor."}},{"data":{"id":"ParsedJsDoc","label":"ParsedJsDoc","parent":"layer:Extractor","kind":"interface","category":"Other","layer":"Extractor","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/extractor/jsdoc-parser.ts","description":"説明文・引数・throws・ビジネスルールを含むJSDoc解析結果。"}},{"data":{"id":"FrameworkExtractor","label":"FrameworkExtractor","parent":"layer:Extractor","kind":"interface","category":"Framework Extractor","layer":"Extractor","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/extractor/framework/framework-extractor.ts","description":"フレームワーク固有のルート抽出用ストラテジーインターフェース。"}},{"data":{"id":"NextjsComponentInfo","label":"NextjsComponentInfo","parent":"layer:Extractor","kind":"interface","category":"Framework Extractor","layer":"Extractor","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/extractor/framework/nextjs-extractor.ts","description":"Metadata for a Next.js component file."}},{"data":{"id":"analyzeCallChains","label":"analyzeCallChains","parent":"layer:Extractor","kind":"function","category":"Other","layer":"Extractor","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/extractor/call-chain-analyzer.ts","description":"エクスポートされた全クラスのコンストラクタインジェクションによるコールチェーンを解析する。"}},{"data":{"id":"analyzeFunctionCallChains","label":"analyzeFunctionCallChains","parent":"layer:Extractor","kind":"function","category":"Other","layer":"Extractor","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/extractor/call-chain-analyzer.ts","description":"エクスポートされた全関数の引数ベースのコールチェーンを解析する。"}},{"data":{"id":"analyzeCallerReferences","label":"analyzeCallerReferences","parent":"layer:Extractor","kind":"function","category":"Other","layer":"Extractor","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/extractor/caller-analyzer.ts","description":"Post-process: analyze caller references for all methods and functions."}},{"data":{"id":"extractClass","label":"extractClass","parent":"layer:Extractor","kind":"function","category":"Other","layer":"Extractor","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/extractor/class-extractor.ts","description":"ts-morph ASTを使用してTypeScriptクラス宣言からメタデータを抽出する。"}},{"data":{"id":"extractConst","label":"extractConst","parent":"layer:Extractor","kind":"function","category":"Other","layer":"Extractor","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/extractor/const-extractor.ts","description":"エクスポートされた定数宣言からメタデータを抽出する。"}},{"data":{"id":"extractEnum","label":"extractEnum","parent":"layer:Extractor","kind":"function","category":"Other","layer":"Extractor","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/extractor/enum-extractor.ts","description":"TypeScript enum宣言からメタデータを抽出する。"}},{"data":{"id":"extractFunction","label":"extractFunction","parent":"layer:Extractor","kind":"function","category":"Other","layer":"Extractor","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/extractor/function-extractor.ts","description":"TypeScript関数宣言からメタデータを抽出する。"}},{"data":{"id":"analyzeImports","label":"analyzeImports","parent":"layer:Extractor","kind":"function","category":"Other","layer":"Extractor","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/extractor/import-analyzer.ts","description":"ソースファイルの全インポート文を解析し、対象レイヤーを特定する。"}},{"data":{"id":"findForbiddenImports","label":"findForbiddenImports","parent":"layer:Extractor","kind":"function","category":"Other","layer":"Extractor","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/extractor/import-analyzer.ts","description":"レイヤー設定に基づいて禁止されたクロスレイヤーインポートを検出する。"}},{"data":{"id":"extractInterface","label":"extractInterface","parent":"layer:Extractor","kind":"function","category":"Other","layer":"Extractor","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/extractor/interface-extractor.ts","description":"TypeScriptインターフェース宣言からメタデータを抽出する。"}},{"data":{"id":"parseJsDoc","label":"parseJsDoc","parent":"layer:Extractor","kind":"function","category":"Other","layer":"Extractor","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/extractor/jsdoc-parser.ts","description":"ts-morphノードからJSDocコメントを構造化データに変換する。"}},{"data":{"id":"mergeParamDescriptions","label":"mergeParamDescriptions","parent":"layer:Extractor","kind":"function","category":"Other","layer":"Extractor","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/extractor/jsdoc-parser.ts","description":"JSDoc"}},{"data":{"id":"createExtractorProject","label":"createExtractorProject","parent":"layer:Extractor","kind":"function","category":"Other","layer":"Extractor","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/extractor/project.ts","description":"ソースコード解析用のts-morph Projectインスタンスを作成する。"}},{"data":{"id":"extractLayer","label":"extractLayer","parent":"layer:Extractor","kind":"function","category":"Other","layer":"Extractor","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/extractor/project.ts","description":"単一アーキテクチャレイヤーから全コンポーネントを抽出する。"}},{"data":{"id":"extractTypeAlias","label":"extractTypeAlias","parent":"layer:Extractor","kind":"function","category":"Other","layer":"Extractor","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/extractor/type-alias-extractor.ts","description":"TypeScript型エイリアス宣言からメタデータを抽出する。"}},{"data":{"id":"createFrameworkExtractor","label":"createFrameworkExtractor","parent":"layer:Extractor","kind":"function","category":"Framework Extractor","layer":"Extractor","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/extractor/framework/index.ts","description":"レイヤー設定に基づいてFrameworkExtractorを生成するファクトリ関数。"}},{"data":{"id":"classifyNextjsComponent","label":"classifyNextjsComponent","parent":"layer:Extractor","kind":"function","category":"Framework Extractor","layer":"Extractor","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/extractor/framework/nextjs-extractor.ts","description":"Extract page and layout metadata from a Next.js App Router source file."}},{"data":{"id":"extractServerActions","label":"extractServerActions","parent":"layer:Extractor","kind":"function","category":"Framework Extractor","layer":"Extractor","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/extractor/framework/nextjs-extractor.ts","description":"Extract Server Action functions from a file with \"use server\" directive."}},{"data":{"id":"MermaidRenderer","label":"MermaidRenderer","parent":"layer:Diagram","kind":"class","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/mermaid-renderer.ts","description":"DiagramRendererのMermaid実装。"}},{"data":{"id":"SvgRenderer","label":"SvgRenderer","parent":"layer:Diagram","kind":"class","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/svg-renderer.ts","description":"DiagramRendererのSVG実装。"}},{"data":{"id":"CytoscapeNode","label":"CytoscapeNode","parent":"layer:Diagram","kind":"interface","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/cytoscape-data-builder.ts","description":""}},{"data":{"id":"CytoscapeEdge","label":"CytoscapeEdge","parent":"layer:Diagram","kind":"interface","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/cytoscape-data-builder.ts","description":""}},{"data":{"id":"CytoscapeElements","label":"CytoscapeElements","parent":"layer:Diagram","kind":"interface","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/cytoscape-data-builder.ts","description":""}},{"data":{"id":"DependencyGraph","label":"DependencyGraph","parent":"layer:Diagram","kind":"interface","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/dependency-graph.ts","description":"レイヤー間依存関係を表すグラフ構造。"}},{"data":{"id":"DependencyEdge","label":"DependencyEdge","parent":"layer:Diagram","kind":"interface","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/dependency-graph.ts","description":"依存関係グラフの単一有向辺。"}},{"data":{"id":"DiagramRenderer","label":"DiagramRenderer","parent":"layer:Diagram","kind":"interface","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/diagram-renderer.ts","description":"ダイアグラムレンダリングのストラテジーインターフェース。"}},{"data":{"id":"buildC4ComponentDiagram","label":"buildC4ComponentDiagram","parent":"layer:Diagram","kind":"function","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/c4-builder.ts","description":"プロジェクト設定からMermaid構文のC4コンポーネント図を生成する。"}},{"data":{"id":"buildClassDiagram","label":"buildClassDiagram","parent":"layer:Diagram","kind":"function","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/class-diagram-builder.ts","description":"メンバー情報を含む詳細なMermaidクラス図を生成する。"}},{"data":{"id":"buildCompactClassDiagram","label":"buildCompactClassDiagram","parent":"layer:Diagram","kind":"function","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/class-diagram-builder.ts","description":"レイヤー全体のコンパクトな概要クラス図を生成する。"}},{"data":{"id":"buildCategoryClassDiagrams","label":"buildCategoryClassDiagrams","parent":"layer:Diagram","kind":"function","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/class-diagram-builder.ts","description":"カテゴリ別に分割したクラス図を生成する。"}},{"data":{"id":"buildCytoscapeElements","label":"buildCytoscapeElements","parent":"layer:Diagram","kind":"function","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/cytoscape-data-builder.ts","description":"Build Cytoscape.js elements JSON from archdoc extraction data."}},{"data":{"id":"buildCytoscapeHtml","label":"buildCytoscapeHtml","parent":"layer:Diagram","kind":"function","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/cytoscape-html-builder.ts","description":"Build a standalone HTML file with Cytoscape.js interactive component graph."}},{"data":{"id":"buildDependencyGraph","label":"buildDependencyGraph","parent":"layer:Diagram","kind":"function","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/dependency-graph.ts","description":"レイヤー抽出結果と設定から依存関係グラフを構築する。"}},{"data":{"id":"buildLayerDotDiagram","label":"buildLayerDotDiagram","parent":"layer:Diagram","kind":"function","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/dot-class-builder.ts","description":"レイヤー全体のコンパクトな概要DOTダイアグラムを生成する。"}},{"data":{"id":"buildDetailDotDiagram","label":"buildDetailDotDiagram","parent":"layer:Diagram","kind":"function","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/dot-class-builder.ts","description":"クラス/インターフェースグループの完全なメンバー詳細を含むDOTダイアグラムを生成する。"}},{"data":{"id":"buildProjectOverviewMermaid","label":"buildProjectOverviewMermaid","parent":"layer:Diagram","kind":"function","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/project-overview-builder.ts","description":"全レイヤーにわたる全オブジェクトを表示するMermaidクラス図を生成する。"}},{"data":{"id":"buildProjectOverviewDot","label":"buildProjectOverviewDot","parent":"layer:Diagram","kind":"function","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/project-overview-builder.ts","description":"全レイヤーにわたる全オブジェクトを表示するDOTダイアグラムを生成する。"}},{"data":{"id":"buildLayerDependencyMermaid","label":"buildLayerDependencyMermaid","parent":"layer:Diagram","kind":"function","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/project-overview-builder.ts","description":"エントリーポイントからの依存フローを示すシンプルなMermaidフローチャートを生成する。"}},{"data":{"id":"buildLayerDependencyDot","label":"buildLayerDependencyDot","parent":"layer:Diagram","kind":"function","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/project-overview-builder.ts","description":"エントリーポイントからの依存フローを示すシンプルなDOTダイアグラムを生成する。"}},{"data":{"id":"buildRouteSequenceDiagram","label":"buildRouteSequenceDiagram","parent":"layer:Diagram","kind":"function","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/route-sequence-builder.ts","description":"単一ルートハンドラーのコールチェーンからMermaidシーケンス図を生成する。"}},{"data":{"id":"buildSequenceDiagram","label":"buildSequenceDiagram","parent":"layer:Diagram","kind":"function","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/sequence-diagram-builder.ts","description":"単一コールチェーンエントリからMermaidシーケンス図を生成する。"}},{"data":{"id":"buildMultiSequenceDiagrams","label":"buildMultiSequenceDiagrams","parent":"layer:Diagram","kind":"function","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/sequence-diagram-builder.ts","description":"複数コールチェーンからクラス名をキーとするシーケンス図を生成する。"}},{"data":{"id":"renderDotToSvg","label":"renderDotToSvg","parent":"layer:Diagram","kind":"function","category":"Other","layer":"Diagram","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/diagram/svg-renderer.ts","description":"DOTグラフ文字列をviz.jsでSVGにレンダリングする。"}},{"data":{"id":"MarkdownBuilder","label":"MarkdownBuilder","parent":"layer:Generator","kind":"class","category":"Other","layer":"Generator","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/generator/markdown-builder.ts","description":"Markdownドキュメントをプログラマティックに構築するFluentビルダー。"}},{"data":{"id":"FeaturesGenerateOptions","label":"FeaturesGenerateOptions","parent":"layer:Generator","kind":"interface","category":"Other","layer":"Generator","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/generator/features-generator.ts","description":"Options for features generation."}},{"data":{"id":"IndexGenerateOptions","label":"IndexGenerateOptions","parent":"layer:Generator","kind":"interface","category":"Other","layer":"Generator","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/generator/index-generator.ts","description":"ダイアグラムレンダラーを含むindex.md生成オプション。"}},{"data":{"id":"GenerateOptions","label":"GenerateOptions","parent":"layer:Generator","kind":"interface","category":"Other","layer":"Generator","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/generator/layer-generator.ts","description":"ダイアグラムレンダラーを含むレイヤードキュメント生成オプション。"}},{"data":{"id":"generateCycleSection","label":"generateCycleSection","parent":"layer:Generator","kind":"function","category":"Other","layer":"Generator","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/generator/cycle-section.ts","description":"Generate a Markdown section for layer circular dependency warnings."}},{"data":{"id":"kindEmoji","label":"kindEmoji","parent":"layer:Generator","kind":"function","category":"Other","layer":"Generator","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/generator/emoji.ts","description":"オブジェクト種別に対応する絵文字アイコンを返す。"}},{"data":{"id":"categoryEmoji","label":"categoryEmoji","parent":"layer:Generator","kind":"function","category":"Other","layer":"Generator","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/generator/emoji.ts","description":"ドメインカテゴリに対応する絵文字アイコンを返す。"}},{"data":{"id":"formatName","label":"formatName","parent":"layer:Generator","kind":"function","category":"Other","layer":"Generator","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/generator/emoji.ts","description":"カテゴリ絵文字プレフィックス付きのコンポーネント名を整形する。"}},{"data":{"id":"kindLabel","label":"kindLabel","parent":"layer:Generator","kind":"function","category":"Other","layer":"Generator","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/generator/emoji.ts","description":"絵文字と種別名を組み合わせた表示ラベルを返す。"}},{"data":{"id":"kindLegendRows","label":"kindLegendRows","parent":"layer:Generator","kind":"function","category":"Other","layer":"Generator","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/generator/emoji.ts","description":"全オブジェクト種別アイコンの凡例テーブル行を生成する。"}},{"data":{"id":"categoryLegendRows","label":"categoryLegendRows","parent":"layer:Generator","kind":"function","category":"Other","layer":"Generator","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/generator/emoji.ts","description":"全カテゴリアイコンの凡例テーブル行を生成する。"}},{"data":{"id":"generateFeaturesMd","label":"generateFeaturesMd","parent":"layer:Generator","kind":"function","category":"Other","layer":"Generator","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/generator/features-generator.ts","description":"Generate a feature list Markdown from extracted layer data."}},{"data":{"id":"generateIndexMd","label":"generateIndexMd","parent":"layer:Generator","kind":"function","category":"Other","layer":"Generator","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/generator/index-generator.ts","description":"プロジェクト全体の概要ドキュメントindex.mdを生成する。"}},{"data":{"id":"generateLayerMd","label":"generateLayerMd","parent":"layer:Generator","kind":"function","category":"Other","layer":"Generator","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/generator/layer-generator.ts","description":"単一アーキテクチャレイヤーのMarkdownドキュメントを生成する。"}},{"data":{"id":"generateResponsibilitySection","label":"generateResponsibilitySection","parent":"layer:Generator","kind":"function","category":"Other","layer":"Generator","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/generator/responsibility-section.ts","description":"Generate a Markdown section for Next.js responsibility separation violations."}},{"data":{"id":"ObjectKind","label":"ObjectKind","parent":"layer:Generator","kind":"type","category":"Other","layer":"Generator","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/generator/emoji.ts","description":"ドキュメント出力で使用するオブジェクト種別。"}},{"data":{"id":"formatDriftReport","label":"formatDriftReport","parent":"layer:Drift","kind":"function","category":"Other","layer":"Drift","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/drift/drift-reporter.ts","description":"ドリフト検出結果を人間が読みやすいテキストレポートに整形する。"}},{"data":{"id":"formatDriftReportMd","label":"formatDriftReportMd","parent":"layer:Drift","kind":"function","category":"Other","layer":"Drift","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/drift/drift-reporter.ts","description":"ドリフト検出結果をMarkdownレポートに整形する。"}},{"data":{"id":"compareSpecs","label":"compareSpecs","parent":"layer:Drift","kind":"function","category":"Other","layer":"Drift","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/drift/spec-comparator.ts","description":"2つのレイヤー抽出スナップショットを比較し、仕様ドリフトを検出する。"}},{"data":{"id":"saveSpec","label":"saveSpec","parent":"layer:Drift","kind":"function","category":"Other","layer":"Drift","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/drift/spec-store.ts","description":"レイヤー抽出スナップショットをJSONファイルに保存する。"}},{"data":{"id":"loadSpec","label":"loadSpec","parent":"layer:Drift","kind":"function","category":"Other","layer":"Drift","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/drift/spec-store.ts","description":"保存済みのレイヤー抽出スナップショットをJSONファイルから読み込む。"}},{"data":{"id":"createProgram","label":"createProgram","parent":"layer:Cli","kind":"function","category":"Other","layer":"Cli","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/cli/index.ts","description":"全CLIサブコマンドを登録したCommander.jsプログラムを作成する。"}},{"data":{"id":"registerDiagramCommand","label":"registerDiagramCommand","parent":"layer:Cli","kind":"function","category":"Command","layer":"Cli","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/cli/commands/diagram.ts","description":"単体ダイアグラム生成用の'diagram'サブコマンドを登録する。"}},{"data":{"id":"registerDriftCommand","label":"registerDriftCommand","parent":"layer:Cli","kind":"function","category":"Command","layer":"Cli","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/cli/commands/drift.ts","description":"仕様ドリフト検出用の'drift'サブコマンドを登録する。"}},{"data":{"id":"registerFeaturesCommand","label":"registerFeaturesCommand","parent":"layer:Cli","kind":"function","category":"Command","layer":"Cli","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/cli/commands/features.ts","description":"Register the 'features' subcommand for feature list generation."}},{"data":{"id":"registerGenerateCommand","label":"registerGenerateCommand","parent":"layer:Cli","kind":"function","category":"Command","layer":"Cli","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/cli/commands/generate.ts","description":"ドキュメント生成用の'generate'サブコマンドを登録する。"}},{"data":{"id":"registerInitCommand","label":"registerInitCommand","parent":"layer:Cli","kind":"function","category":"Command","layer":"Cli","filePath":"/Users/imagepit/Documents/imagepit/archdoc/src/cli/commands/init.ts","description":"layers.yaml初期化用の'init'サブコマンドを登録する。"}}],"edges":[{"data":{"id":"e1","source":"LayerConfig","target":"LayerType","type":"association","isForbidden":false}},{"data":{"id":"e2","source":"LayerConfig","target":"CategoryOverride","type":"association","isForbidden":false}},{"data":{"id":"e3","source":"ProjectConfig","target":"LayerConfig","type":"association","isForbidden":false}},{"data":{"id":"e4","source":"SpecDiff","target":"DriftSeverity","type":"association","isForbidden":false}},{"data":{"id":"e5","source":"DriftResult","target":"SpecDiff","type":"association","isForbidden":false}},{"data":{"id":"e6","source":"DddWarning","target":"DddRole","type":"association","isForbidden":false}},{"data":{"id":"e7","source":"DddWarning","target":"DddWarningType","type":"association","isForbidden":false}},{"data":{"id":"e8","source":"MethodInfo","target":"ParameterInfo","type":"association","isForbidden":false}},{"data":{"id":"e9","source":"MethodInfo","target":"ThrowInfo","type":"association","isForbidden":false}},{"data":{"id":"e10","source":"MethodInfo","target":"CallerReference","type":"association","isForbidden":false}},{"data":{"id":"e11","source":"MethodSignatureInfo","target":"ParameterInfo","type":"association","isForbidden":false}},{"data":{"id":"e12","source":"ClassInfo","target":"PropertyInfo","type":"association","isForbidden":false}},{"data":{"id":"e13","source":"ClassInfo","target":"MethodInfo","type":"association","isForbidden":false}},{"data":{"id":"e14","source":"ClassInfo","target":"DependencyInfo","type":"association","isForbidden":false}},{"data":{"id":"e15","source":"ClassInfo","target":"DddRole","type":"association","isForbidden":false}},{"data":{"id":"e16","source":"InterfaceInfo","target":"PropertyInfo","type":"association","isForbidden":false}},{"data":{"id":"e17","source":"InterfaceInfo","target":"MethodSignatureInfo","type":"association","isForbidden":false}},{"data":{"id":"e18","source":"InterfaceInfo","target":"DddRole","type":"association","isForbidden":false}},{"data":{"id":"e19","source":"RouteInfo","target":"RouteJSDocTag","type":"association","isForbidden":false}},{"data":{"id":"e20","source":"RouteInfo","target":"RouteCallInfo","type":"association","isForbidden":false}},{"data":{"id":"e21","source":"FunctionInfo","target":"ParameterInfo","type":"association","isForbidden":false}},{"data":{"id":"e22","source":"FunctionInfo","target":"ThrowInfo","type":"association","isForbidden":false}},{"data":{"id":"e23","source":"FunctionInfo","target":"CallerReference","type":"association","isForbidden":false}},{"data":{"id":"e24","source":"FunctionInfo","target":"RouteInfo","type":"association","isForbidden":false}},{"data":{"id":"e25","source":"TypeAliasInfo","target":"PropertyInfo","type":"association","isForbidden":false}},{"data":{"id":"e26","source":"EnumInfo","target":"EnumMemberInfo","type":"association","isForbidden":false}},{"data":{"id":"e27","source":"MethodCallChain","target":"MethodCall","type":"association","isForbidden":false}},{"data":{"id":"e28","source":"ClassCallChain","target":"ConstructorDep","type":"association","isForbidden":false}},{"data":{"id":"e29","source":"ClassCallChain","target":"MethodCallChain","type":"association","isForbidden":false}},{"data":{"id":"e30","source":"LayerExtraction","target":"ClassInfo","type":"association","isForbidden":false}},{"data":{"id":"e31","source":"LayerExtraction","target":"InterfaceInfo","type":"association","isForbidden":false}},{"data":{"id":"e32","source":"LayerExtraction","target":"FunctionInfo","type":"association","isForbidden":false}},{"data":{"id":"e33","source":"LayerExtraction","target":"TypeAliasInfo","type":"association","isForbidden":false}},{"data":{"id":"e34","source":"LayerExtraction","target":"EnumInfo","type":"association","isForbidden":false}},{"data":{"id":"e35","source":"LayerExtraction","target":"ConstInfo","type":"association","isForbidden":false}},{"data":{"id":"e36","source":"LayerExtraction","target":"DependencyInfo","type":"association","isForbidden":false}},{"data":{"id":"e37","source":"LayerExtraction","target":"CallChainEntry","type":"association","isForbidden":false}},{"data":{"id":"e38","source":"LayerExtraction","target":"DddWarning","type":"association","isForbidden":false}},{"data":{"id":"e39","source":"getDefaultCategories","target":"LayerType","type":"dependency","isForbidden":false}},{"data":{"id":"e40","source":"loadConfig","target":"ProjectConfig","type":"dependency","isForbidden":false}},{"data":{"id":"e41","source":"ExpressExtractor","target":"FrameworkExtractor","type":"implements","isForbidden":false}},{"data":{"id":"e42","source":"ExpressExtractor","target":"RouteInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e43","source":"ExpressExtractor","target":"FunctionInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e44","source":"NextjsExtractor","target":"FrameworkExtractor","type":"implements","isForbidden":false}},{"data":{"id":"e45","source":"NextjsExtractor","target":"RouteInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e46","source":"NextjsExtractor","target":"FunctionInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e47","source":"ParsedJsDoc","target":"ThrowInfo","type":"association","isForbidden":false}},{"data":{"id":"e48","source":"ParsedJsDoc","target":"DependencyInfo","type":"association","isForbidden":false}},{"data":{"id":"e49","source":"FrameworkExtractor","target":"RouteInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e50","source":"FrameworkExtractor","target":"FunctionInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e51","source":"analyzeCallChains","target":"ClassCallChain","type":"dependency","isForbidden":false}},{"data":{"id":"e52","source":"analyzeFunctionCallChains","target":"ClassCallChain","type":"dependency","isForbidden":false}},{"data":{"id":"e53","source":"analyzeCallerReferences","target":"LayerConfig","type":"dependency","isForbidden":false}},{"data":{"id":"e54","source":"analyzeCallerReferences","target":"LayerExtraction","type":"dependency","isForbidden":false}},{"data":{"id":"e55","source":"extractClass","target":"ClassInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e56","source":"extractConst","target":"ConstInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e57","source":"extractEnum","target":"EnumInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e58","source":"extractFunction","target":"FunctionInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e59","source":"analyzeImports","target":"LayerConfig","type":"dependency","isForbidden":false}},{"data":{"id":"e60","source":"analyzeImports","target":"DependencyInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e61","source":"findForbiddenImports","target":"LayerConfig","type":"dependency","isForbidden":false}},{"data":{"id":"e62","source":"findForbiddenImports","target":"DependencyInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e63","source":"extractInterface","target":"InterfaceInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e64","source":"parseJsDoc","target":"ParsedJsDoc","type":"dependency","isForbidden":false}},{"data":{"id":"e65","source":"mergeParamDescriptions","target":"ParameterInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e66","source":"extractLayer","target":"LayerConfig","type":"dependency","isForbidden":false}},{"data":{"id":"e67","source":"extractLayer","target":"LayerExtraction","type":"dependency","isForbidden":false}},{"data":{"id":"e68","source":"extractTypeAlias","target":"TypeAliasInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e69","source":"createFrameworkExtractor","target":"FrameworkExtractor","type":"dependency","isForbidden":false}},{"data":{"id":"e70","source":"classifyNextjsComponent","target":"NextjsComponentInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e71","source":"MermaidRenderer","target":"DiagramRenderer","type":"implements","isForbidden":false}},{"data":{"id":"e72","source":"MermaidRenderer","target":"LayerExtraction","type":"dependency","isForbidden":false}},{"data":{"id":"e73","source":"MermaidRenderer","target":"ClassInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e74","source":"MermaidRenderer","target":"InterfaceInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e75","source":"MermaidRenderer","target":"ClassCallChain","type":"dependency","isForbidden":false}},{"data":{"id":"e76","source":"MermaidRenderer","target":"RouteInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e77","source":"MermaidRenderer","target":"LayerConfig","type":"dependency","isForbidden":false}},{"data":{"id":"e78","source":"MermaidRenderer","target":"ProjectConfig","type":"dependency","isForbidden":false}},{"data":{"id":"e79","source":"SvgRenderer","target":"DiagramRenderer","type":"implements","isForbidden":false}},{"data":{"id":"e80","source":"SvgRenderer","target":"LayerExtraction","type":"dependency","isForbidden":false}},{"data":{"id":"e81","source":"SvgRenderer","target":"ClassInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e82","source":"SvgRenderer","target":"InterfaceInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e83","source":"SvgRenderer","target":"ClassCallChain","type":"dependency","isForbidden":false}},{"data":{"id":"e84","source":"SvgRenderer","target":"RouteInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e85","source":"SvgRenderer","target":"LayerConfig","type":"dependency","isForbidden":false}},{"data":{"id":"e86","source":"SvgRenderer","target":"ProjectConfig","type":"dependency","isForbidden":false}},{"data":{"id":"e87","source":"CytoscapeElements","target":"CytoscapeNode","type":"association","isForbidden":false}},{"data":{"id":"e88","source":"CytoscapeElements","target":"CytoscapeEdge","type":"association","isForbidden":false}},{"data":{"id":"e89","source":"DependencyGraph","target":"DependencyEdge","type":"association","isForbidden":false}},{"data":{"id":"e90","source":"DiagramRenderer","target":"LayerExtraction","type":"dependency","isForbidden":false}},{"data":{"id":"e91","source":"DiagramRenderer","target":"ClassInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e92","source":"DiagramRenderer","target":"InterfaceInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e93","source":"DiagramRenderer","target":"ClassCallChain","type":"dependency","isForbidden":false}},{"data":{"id":"e94","source":"DiagramRenderer","target":"RouteInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e95","source":"DiagramRenderer","target":"LayerConfig","type":"dependency","isForbidden":false}},{"data":{"id":"e96","source":"DiagramRenderer","target":"ProjectConfig","type":"dependency","isForbidden":false}},{"data":{"id":"e97","source":"buildC4ComponentDiagram","target":"ProjectConfig","type":"dependency","isForbidden":false}},{"data":{"id":"e98","source":"buildC4ComponentDiagram","target":"DependencyGraph","type":"dependency","isForbidden":false}},{"data":{"id":"e99","source":"buildClassDiagram","target":"LayerExtraction","type":"dependency","isForbidden":false}},{"data":{"id":"e100","source":"buildCompactClassDiagram","target":"LayerExtraction","type":"dependency","isForbidden":false}},{"data":{"id":"e101","source":"buildCategoryClassDiagrams","target":"ClassInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e102","source":"buildCategoryClassDiagrams","target":"InterfaceInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e103","source":"buildCytoscapeElements","target":"ProjectConfig","type":"dependency","isForbidden":false}},{"data":{"id":"e104","source":"buildCytoscapeElements","target":"LayerExtraction","type":"dependency","isForbidden":false}},{"data":{"id":"e105","source":"buildCytoscapeElements","target":"CytoscapeElements","type":"dependency","isForbidden":false}},{"data":{"id":"e106","source":"buildCytoscapeHtml","target":"ProjectConfig","type":"dependency","isForbidden":false}},{"data":{"id":"e107","source":"buildCytoscapeHtml","target":"LayerExtraction","type":"dependency","isForbidden":false}},{"data":{"id":"e108","source":"buildDependencyGraph","target":"ProjectConfig","type":"dependency","isForbidden":false}},{"data":{"id":"e109","source":"buildDependencyGraph","target":"LayerExtraction","type":"dependency","isForbidden":false}},{"data":{"id":"e110","source":"buildDependencyGraph","target":"DependencyGraph","type":"dependency","isForbidden":false}},{"data":{"id":"e111","source":"buildLayerDotDiagram","target":"LayerExtraction","type":"dependency","isForbidden":false}},{"data":{"id":"e112","source":"buildDetailDotDiagram","target":"ClassInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e113","source":"buildDetailDotDiagram","target":"InterfaceInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e114","source":"buildProjectOverviewMermaid","target":"LayerConfig","type":"dependency","isForbidden":false}},{"data":{"id":"e115","source":"buildProjectOverviewMermaid","target":"LayerExtraction","type":"dependency","isForbidden":false}},{"data":{"id":"e116","source":"buildProjectOverviewDot","target":"LayerConfig","type":"dependency","isForbidden":false}},{"data":{"id":"e117","source":"buildProjectOverviewDot","target":"LayerExtraction","type":"dependency","isForbidden":false}},{"data":{"id":"e118","source":"buildLayerDependencyMermaid","target":"LayerConfig","type":"dependency","isForbidden":false}},{"data":{"id":"e119","source":"buildLayerDependencyMermaid","target":"LayerExtraction","type":"dependency","isForbidden":false}},{"data":{"id":"e120","source":"buildLayerDependencyDot","target":"LayerConfig","type":"dependency","isForbidden":false}},{"data":{"id":"e121","source":"buildLayerDependencyDot","target":"LayerExtraction","type":"dependency","isForbidden":false}},{"data":{"id":"e122","source":"buildRouteSequenceDiagram","target":"RouteInfo","type":"dependency","isForbidden":false}},{"data":{"id":"e123","source":"buildSequenceDiagram","target":"ClassCallChain","type":"dependency","isForbidden":false}},{"data":{"id":"e124","source":"buildMultiSequenceDiagrams","target":"ClassCallChain","type":"dependency","isForbidden":false}},{"data":{"id":"e125","source":"IndexGenerateOptions","target":"DiagramRenderer","type":"association","isForbidden":false}},{"data":{"id":"e126","source":"GenerateOptions","target":"DiagramRenderer","type":"association","isForbidden":false}},{"data":{"id":"e127","source":"kindEmoji","target":"ObjectKind","type":"dependency","isForbidden":false}},{"data":{"id":"e128","source":"formatName","target":"ObjectKind","type":"dependency","isForbidden":false}},{"data":{"id":"e129","source":"kindLabel","target":"ObjectKind","type":"dependency","isForbidden":false}},{"data":{"id":"e130","source":"generateFeaturesMd","target":"ProjectConfig","type":"dependency","isForbidden":false}},{"data":{"id":"e131","source":"generateFeaturesMd","target":"LayerExtraction","type":"dependency","isForbidden":false}},{"data":{"id":"e132","source":"generateFeaturesMd","target":"FeaturesGenerateOptions","type":"dependency","isForbidden":false}},{"data":{"id":"e133","source":"generateIndexMd","target":"ProjectConfig","type":"dependency","isForbidden":false}},{"data":{"id":"e134","source":"generateIndexMd","target":"LayerExtraction","type":"dependency","isForbidden":false}},{"data":{"id":"e135","source":"generateIndexMd","target":"IndexGenerateOptions","type":"dependency","isForbidden":false}},{"data":{"id":"e136","source":"generateLayerMd","target":"LayerConfig","type":"dependency","isForbidden":false}},{"data":{"id":"e137","source":"generateLayerMd","target":"LayerExtraction","type":"dependency","isForbidden":false}},{"data":{"id":"e138","source":"generateLayerMd","target":"GenerateOptions","type":"dependency","isForbidden":false}},{"data":{"id":"e139","source":"formatDriftReport","target":"DriftResult","type":"dependency","isForbidden":false}},{"data":{"id":"e140","source":"formatDriftReportMd","target":"DriftResult","type":"dependency","isForbidden":false}},{"data":{"id":"e141","source":"compareSpecs","target":"DriftResult","type":"dependency","isForbidden":false}},{"data":{"id":"e142","source":"compareSpecs","target":"LayerExtraction","type":"dependency","isForbidden":false}},{"data":{"id":"e143","source":"saveSpec","target":"LayerExtraction","type":"dependency","isForbidden":false}},{"data":{"id":"e144","source":"loadSpec","target":"LayerExtraction","type":"dependency","isForbidden":false}}]};
+    const layerColors = {"Types":{"bg":"#e8eaf6","border":"#9fa8da"},"Config":{"bg":"#e8f5e9","border":"#a5d6a7"},"Extractor":{"bg":"#fff3e0","border":"#ffcc80"},"Diagram":{"bg":"#fce4ec","border":"#ef9a9a"},"Generator":{"bg":"#e0f7fa","border":"#80deea"},"Drift":{"bg":"#f3e5f5","border":"#ce93d8"},"Cli":{"bg":"#e8eaf6","border":"#9fa8da"}};
+
+    // --- Pre-calculate grid positions for each layer ---
+    const CELL_W = 160;   // grid cell width
+    const CELL_H = 50;    // grid cell height
+    const LAYER_PAD = 30; // padding inside layer box
+    const LAYER_GAP = 60; // gap between layer boxes
+    const COLS_PER_LAYER = 4; // columns per layer grid
+
+    // Group child nodes by layer
+    const layerNames = Object.keys(layerColors);
+    const layerChildren = {};
+    layerNames.forEach(n => { layerChildren[n] = []; });
+    for (const el of elements.nodes) {
+      if (el.data.kind !== 'layer' && el.data.layer) {
+        if (layerChildren[el.data.layer]) layerChildren[el.data.layer].push(el);
+      }
+    }
+
+    // Calculate layer box sizes and arrange in 2-column layout
+    const layerBoxes = {};
+    const LAYOUT_COLS = 2;
+    let colHeights = new Array(LAYOUT_COLS).fill(0);
+
+    for (const name of layerNames) {
+      const children = layerChildren[name];
+      const rows = Math.ceil(children.length / COLS_PER_LAYER) || 1;
+      const cols = Math.min(children.length, COLS_PER_LAYER);
+      const boxW = cols * CELL_W + LAYER_PAD * 2;
+      const boxH = rows * CELL_H + LAYER_PAD * 2 + 20; // +20 for label
+
+      // Pick the shortest column
+      let minCol = 0;
+      for (let c = 1; c < LAYOUT_COLS; c++) {
+        if (colHeights[c] < colHeights[minCol]) minCol = c;
+      }
+
+      const x = minCol * (COLS_PER_LAYER * CELL_W + LAYER_PAD * 2 + LAYER_GAP);
+      const y = colHeights[minCol];
+
+      layerBoxes[name] = { x, y, w: boxW, h: boxH };
+      colHeights[minCol] += boxH + LAYER_GAP;
+    }
+
+    // Assign positions to nodes
+    const positions = {};
+    for (const name of layerNames) {
+      const box = layerBoxes[name];
+      const children = layerChildren[name];
+
+      // Layer compound node: center of its box
+      positions['layer:' + name] = {
+        x: box.x + box.w / 2,
+        y: box.y + box.h / 2,
+      };
+
+      // Children in grid
+      for (let i = 0; i < children.length; i++) {
+        const col = i % COLS_PER_LAYER;
+        const row = Math.floor(i / COLS_PER_LAYER);
+        positions[children[i].data.id] = {
+          x: box.x + LAYER_PAD + col * CELL_W + CELL_W / 2,
+          y: box.y + LAYER_PAD + 20 + row * CELL_H + CELL_H / 2,
+        };
+      }
+    }
+
+    // Build Cytoscape stylesheet
+    const style = [
+      // Layer compound nodes
+      {
+        selector: 'node[kind="layer"]',
+        style: {
+          'shape': 'round-rectangle',
+          'background-opacity': 0.15,
+          'border-width': 2,
+          'label': 'data(label)',
+          'text-valign': 'top',
+          'text-halign': 'center',
+          'font-size': 13,
+          'font-weight': 'bold',
+          'padding': '10px',
+          'text-margin-y': -4,
+          'color': '#444',
+        }
+      },
+      // Class nodes
+      {
+        selector: 'node[kind="class"]',
+        style: {
+          'shape': 'round-rectangle',
+          'background-color': '#e3f2fd',
+          'border-color': '#42a5f5',
+          'border-width': 2,
+          'label': 'data(label)',
+          'text-valign': 'center',
+          'font-size': 10,
+          'width': 'label',
+          'height': 24,
+          'padding': '4px',
+          'color': '#1565c0',
+        }
+      },
+      // Interface nodes
+      {
+        selector: 'node[kind="interface"]',
+        style: {
+          'shape': 'diamond',
+          'background-color': '#f3e5f5',
+          'border-color': '#ab47bc',
+          'border-width': 2,
+          'border-style': 'dashed',
+          'label': 'data(label)',
+          'text-valign': 'center',
+          'font-size': 10,
+          'width': 'label',
+          'height': 24,
+          'padding': '6px',
+          'color': '#7b1fa2',
+        }
+      },
+      // Function nodes
+      {
+        selector: 'node[kind="function"]',
+        style: {
+          'shape': 'ellipse',
+          'background-color': '#e8f5e9',
+          'border-color': '#66bb6a',
+          'border-width': 1.5,
+          'label': 'data(label)',
+          'text-valign': 'center',
+          'font-size': 9,
+          'width': 'label',
+          'height': 22,
+          'padding': '3px',
+          'color': '#2e7d32',
+        }
+      },
+      // Type/Enum/Const nodes
+      {
+        selector: 'node[kind="type"], node[kind="enum"], node[kind="const"]',
+        style: {
+          'shape': 'round-rectangle',
+          'background-color': '#f5f5f5',
+          'border-color': '#bdbdbd',
+          'border-width': 1,
+          'label': 'data(label)',
+          'text-valign': 'center',
+          'font-size': 8,
+          'width': 'label',
+          'height': 20,
+          'padding': '3px',
+          'color': '#616161',
+        }
+      },
+      // Normal edges
+      {
+        selector: 'edge[type="dependency"], edge[type="association"]',
+        style: {
+          'line-color': '#bbb',
+          'target-arrow-color': '#bbb',
+          'target-arrow-shape': 'triangle',
+          'curve-style': 'bezier',
+          'width': 1,
+          'arrow-scale': 0.7,
+          'opacity': 0.4,
+        }
+      },
+      // Extends edges
+      {
+        selector: 'edge[type="extends"]',
+        style: {
+          'line-color': '#42a5f5',
+          'target-arrow-color': '#42a5f5',
+          'target-arrow-shape': 'triangle',
+          'target-arrow-fill': 'hollow',
+          'curve-style': 'bezier',
+          'width': 2,
+          'arrow-scale': 1,
+        }
+      },
+      // Implements edges
+      {
+        selector: 'edge[type="implements"]',
+        style: {
+          'line-color': '#66bb6a',
+          'target-arrow-color': '#66bb6a',
+          'target-arrow-shape': 'triangle',
+          'target-arrow-fill': 'hollow',
+          'line-style': 'dashed',
+          'curve-style': 'bezier',
+          'width': 2,
+          'arrow-scale': 1,
+        }
+      },
+      // Forbidden edges (violations)
+      {
+        selector: 'edge[type="forbidden"]',
+        style: {
+          'line-color': '#ef5350',
+          'target-arrow-color': '#ef5350',
+          'target-arrow-shape': 'triangle',
+          'curve-style': 'bezier',
+          'width': 4,
+          'arrow-scale': 1.2,
+          'label': 'data(count)',
+          'font-size': 12,
+          'font-weight': 'bold',
+          'color': '#ef5350',
+          'text-background-color': '#fff',
+          'text-background-opacity': 0.9,
+          'text-background-padding': '3px',
+          'text-background-shape': 'round-rectangle',
+          'z-index': 999,
+        }
+      },
+      // Highlighted node
+      {
+        selector: 'node.highlighted',
+        style: {
+          'border-color': '#ff9800',
+          'border-width': 4,
+          'z-index': 999,
+        }
+      },
+      // Selected node
+      {
+        selector: 'node:selected',
+        style: {
+          'border-color': '#1976d2',
+          'border-width': 4,
+          'z-index': 999,
+        }
+      },
+      // Faded elements
+      {
+        selector: '.faded',
+        style: { 'opacity': 0.15 }
+      },
+      // Connected elements on selection
+      {
+        selector: '.connected',
+        style: { 'opacity': 1 }
+      },
+    ];
+
+    // Apply per-layer colors to compound nodes
+    for (const [layerName, colors] of Object.entries(layerColors)) {
+      style.push({
+        selector: 'node[id="layer:' + layerName + '"]',
+        style: {
+          'background-color': colors.bg,
+          'border-color': colors.border,
+        }
+      });
+    }
+
+    // Initialize Cytoscape with preset (pre-calculated) layout
+    const cy = cytoscape({
+      container: document.getElementById('cy'),
+      elements: [...elements.nodes, ...elements.edges],
+      style: style,
+      layout: {
+        name: 'preset',
+        positions: (node) => positions[node.id()] || { x: 0, y: 0 },
+        padding: 30,
+      },
+      minZoom: 0.1,
+      maxZoom: 5,
+    });
+
+    // Fit after layout
+    cy.fit(undefined, 30);
+
+    // --- Tooltip ---
+    const tooltip = document.getElementById('tooltip');
+    cy.on('mouseover', 'node[kind!="layer"]', (e) => {
+      const d = e.target.data();
+      let html = '<div class="tt-name">' + esc(d.label) + '</div>';
+      html += '<span class="tt-kind">' + esc(d.kind) + '</span>';
+      html += ' | <span class="tt-layer">' + esc(d.layer) + '</span>';
+      if (d.category) html += ' | ' + esc(d.category);
+      html += '<div class="tt-file">' + esc(d.filePath) + '</div>';
+      if (d.description) html += '<div class="tt-desc">' + esc(d.description) + '</div>';
+      if (d.dddRole) html += '<div class="tt-desc">DDD: ' + esc(d.dddRole) + '</div>';
+      tooltip.innerHTML = html;
+      tooltip.style.display = 'block';
+    });
+
+    cy.on('mouseover', 'edge[type="forbidden"]', (e) => {
+      const d = e.target.data();
+      let html = '<div class="tt-forbidden">Forbidden Import Violation</div>';
+      html += '<div>' + esc(d.source) + ' -> ' + esc(d.target) + '</div>';
+      if (d.count) html += '<div>' + d.count + ' violation(s)</div>';
+      if (d.sourceFile) html += '<div class="tt-file">' + esc(d.sourceFile) + '</div>';
+      if (d.importPath) html += '<div class="tt-file">' + esc(d.importPath) + '</div>';
+      tooltip.innerHTML = html;
+      tooltip.style.display = 'block';
+    });
+
+    cy.on('mousemove', (e) => {
+      if (tooltip.style.display === 'block') {
+        tooltip.style.left = (e.originalEvent.clientX + 12) + 'px';
+        tooltip.style.top = (e.originalEvent.clientY + 12) + 'px';
+      }
+    });
+
+    cy.on('mouseout', () => { tooltip.style.display = 'none'; });
+
+    // --- Node selection: highlight connected ---
+    cy.on('tap', 'node[kind!="layer"]', (e) => {
+      const node = e.target;
+      cy.elements().removeClass('faded connected');
+      cy.elements().addClass('faded');
+      const connected = node.closedNeighborhood();
+      connected.removeClass('faded').addClass('connected');
+      connected.forEach(n => {
+        if (n.isNode() && n.parent().length) n.parent().removeClass('faded');
+      });
+      node.parent().removeClass('faded');
+    });
+
+    cy.on('tap', (e) => {
+      if (e.target === cy) {
+        cy.elements().removeClass('faded connected highlighted');
+      }
+    });
+
+    // --- Fit button ---
+    document.getElementById('btn-fit').addEventListener('click', () => {
+      cy.elements().removeClass('faded connected highlighted');
+      cy.fit(undefined, 30);
+    });
+
+    // --- Violations button ---
+    let violationsMode = false;
+    const btnViolations = document.getElementById('btn-violations');
+    btnViolations.addEventListener('click', () => {
+      violationsMode = !violationsMode;
+      btnViolations.classList.toggle('active', violationsMode);
+
+      if (violationsMode) {
+        const forbiddenEdges = cy.edges('[type="forbidden"]');
+        if (forbiddenEdges.length === 0) {
+          violationsMode = false;
+          btnViolations.classList.remove('active');
+          return;
+        }
+        cy.elements().addClass('faded');
+        forbiddenEdges.removeClass('faded');
+        forbiddenEdges.connectedNodes().removeClass('faded');
+        forbiddenEdges.connectedNodes().forEach(n => {
+          if (n.parent().length) n.parent().removeClass('faded');
+        });
+      } else {
+        cy.elements().removeClass('faded connected');
+      }
+    });
+
+    // --- Search ---
+    const searchInput = document.getElementById('search');
+    searchInput.addEventListener('input', () => {
+      const query = searchInput.value.trim().toLowerCase();
+      cy.elements().removeClass('highlighted faded');
+      if (!query) return;
+
+      const matched = cy.nodes('[kind!="layer"]').filter(n =>
+        n.data('label').toLowerCase().includes(query)
+      );
+
+      if (matched.length > 0) {
+        cy.elements().addClass('faded');
+        matched.removeClass('faded').addClass('highlighted');
+        matched.forEach(n => {
+          if (n.parent().length) n.parent().removeClass('faded');
+        });
+        cy.fit(matched, 60);
+      }
+    });
+
+    // --- Layer filter chips ---
+    const filtersContainer = document.getElementById('layer-filters');
+    const layerVisibility = {};
+    layerNames.forEach(name => { layerVisibility[name] = true; });
+
+    for (const name of layerNames) {
+      const colors = layerColors[name];
+      const chip = document.createElement('label');
+      chip.className = 'layer-chip';
+      chip.style.background = colors.bg;
+      chip.style.borderColor = colors.border;
+      chip.style.color = '#333';
+      chip.textContent = name;
+      chip.addEventListener('click', () => {
+        layerVisibility[name] = !layerVisibility[name];
+        chip.classList.toggle('hidden', !layerVisibility[name]);
+
+        const layerNode = cy.getElementById('layer:' + name);
+        const children = layerNode.children();
+        if (layerVisibility[name]) {
+          layerNode.style('display', 'element');
+          children.style('display', 'element');
+        } else {
+          layerNode.style('display', 'none');
+          children.style('display', 'none');
+        }
+      });
+      filtersContainer.appendChild(chip);
+    }
+
+    // --- Stats ---
+    const statsEl = document.getElementById('stats');
+    const totalNodes = cy.nodes('[kind!="layer"]').length;
+    const totalEdges = cy.edges().length;
+    const violationEdges = cy.edges('[type="forbidden"]').length;
+    let statsHtml = totalNodes + ' components | ' + totalEdges + ' relationships';
+    if (violationEdges > 0) {
+      statsHtml += ' | <span class="violation-count">' + violationEdges + ' violation(s)</span>';
+    }
+    statsEl.innerHTML = statsHtml;
+
+    function esc(s) { return s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }
+  </script>
+</body>
+</html>

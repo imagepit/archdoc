@@ -7,6 +7,7 @@ export const en: LocaleMessages = {
     layers: "Layers",
     layerList: "Layer List",
     layerDependency: "Layer Dependency",
+    interactiveComponentGraph: "Interactive Component Graph",
     importViolations: "Import Violations",
     nonStandardWarnings: "Non-Standard Layer Warnings",
     components: "Components",

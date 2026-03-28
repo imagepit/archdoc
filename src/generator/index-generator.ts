@@ -19,6 +19,8 @@ export interface IndexGenerateOptions {
   responsibilityViolations?: ResponsibilityViolation[];
   /** Detected circular layer dependencies to include in output. */
   layerCycles?: LayerCycle[];
+  /** Generate interactive Cytoscape.js component graph. */
+  cytoscape?: boolean;
 }
 
 /**
@@ -86,6 +88,15 @@ export async function generateIndexMd(
     const crossLayerDiagram = await options.renderer.renderProjectOverview(extractions, config.layers);
     if (crossLayerDiagram) {
       md.rawBlock(crossLayerDiagram);
+    }
+
+    // Interactive Cytoscape.js component graph
+    if (options.cytoscape && options.renderer.renderInteractiveOverview) {
+      const interactive = await options.renderer.renderInteractiveOverview(config, extractions);
+      if (interactive) {
+        md.heading(3, t.index.interactiveComponentGraph);
+        md.rawBlock(interactive);
+      }
     }
   }
 

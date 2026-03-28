@@ -1,5 +1,5 @@
 import type { LayerExtraction, ClassInfo, InterfaceInfo, RouteInfo, ClassCallChain } from "../types/extracted.js";
-import type { LayerConfig } from "../types/config.js";
+import type { LayerConfig, ProjectConfig } from "../types/config.js";
 
 /**
  * ダイアグラムレンダリングのストラテジーインターフェース。
@@ -59,4 +59,13 @@ export interface DiagramRenderer {
    * @returns Markdownスニペット文字列、またはnull
    */
   renderLayerDependency(extractions: LayerExtraction[], layers?: LayerConfig[]): Promise<string | null>;
+
+  /**
+   * Cytoscape.jsインタラクティブ図のHTMLファイルを生成し、
+   * iframe埋め込み用のMarkdownスニペットを返す。
+   * @param config - プロジェクト設定
+   * @param extractions - 全レイヤーの抽出結果
+   * @returns Markdownスニペット文字列、またはnull
+   */
+  renderInteractiveOverview?(config: ProjectConfig, extractions: LayerExtraction[]): Promise<string | null>;
 }
