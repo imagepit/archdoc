@@ -1,6 +1,7 @@
 import type { LayerExtraction, DependencyInfo } from "../types/extracted.js";
 import type { ProjectConfig, LayerConfig } from "../types/config.js";
 import type { ResponsibilityViolation } from "../analyzer/nextjs-responsibility-checker.js";
+import { relative, dirname } from "node:path";
 
 // --- Public types ---
 
@@ -58,10 +59,8 @@ export interface CytoscapeOptions {
 
 /**
  * Build Cytoscape.js elements JSON from archdoc extraction data.
- * @param config - Project configuration
- * @param extractions - All layer extraction results
- * @param options - Optional violations data
- * @returns Cytoscape.js compatible elements
+ * Uses file-path-based unique IDs to handle duplicate names (e.g. GET, POST in multiple route.ts).
+ * Creates nested sub-directory compound nodes for multi-level folder visualization.
  */
 export function buildCytoscapeElements(
   config: ProjectConfig,
@@ -70,12 +69,9 @@ export function buildCytoscapeElements(
 ): CytoscapeElements {
   const nodes: CytoscapeNode[] = [];
   const edges: CytoscapeEdge[] = [];
-  const seen = new Set<string>();
 
-  // Create layer group (compound) nodes
-  for (let i = 0; i < config.layers.length; i++) {
-    const layer = config.layers[i];
-    const color = LAYER_COLORS[i % LAYER_COLORS.length];
+  // --- Layer compound nodes ---
+  for (const layer of config.layers) {
     nodes.push({
       data: {
         id: `layer:${layer.name}`,
@@ -89,129 +85,156 @@ export function buildCytoscapeElements(
     });
   }
 
-  // Collect component nodes from extractions
+  // --- Build layer path lookup ---
+  const layerPathMap = new Map<string, string>();
+  for (const layer of config.layers) {
+    layerPathMap.set(layer.name, layer.path);
+  }
+
+  // --- Track all node IDs for edge resolution ---
+  const allNodeIds = new Set<string>();
+  // Map: component name → list of node IDs (for resolving edges to name-based references)
+  const nameToIds = new Map<string, string[]>();
+  // Map: filePath (normalized) → node ID
+  const fileToNodeId = new Map<string, string>();
+
+  // --- Sub-directory compound nodes (created on demand, nested) ---
+  const subDirNodes = new Set<string>();
+
+  const MAX_SUBDIR_DEPTH = 2;
+
+  function ensureSubDirChain(layerName: string, filePath: string): string {
+    const layerPath = layerPathMap.get(layerName) ?? "";
+    const relDir = extractRelativeDir(filePath, layerPath);
+    if (!relDir) return `layer:${layerName}`;
+
+    const parts = relDir.split("/");
+    // Limit depth: truncate to MAX_SUBDIR_DEPTH levels
+    const limitedParts = parts.slice(0, MAX_SUBDIR_DEPTH);
+    let parentId = `layer:${layerName}`;
+
+    for (let depth = 0; depth < limitedParts.length; depth++) {
+      const dirPath = limitedParts.slice(0, depth + 1).join("/");
+      const subDirId = `subdir:${layerName}:${dirPath}`;
+
+      if (!subDirNodes.has(subDirId)) {
+        subDirNodes.add(subDirId);
+        nodes.push({
+          data: {
+            id: subDirId,
+            label: limitedParts[depth],
+            parent: parentId,
+            kind: "subdir",
+            category: "",
+            layer: layerName,
+            filePath: "",
+            description: "",
+          },
+        });
+      }
+      parentId = subDirId;
+    }
+
+    return parentId;
+  }
+
+  /**
+   * Generate a unique node ID from component name + file path.
+   * For unique names across the project, just use the name.
+   * For duplicated names (GET, POST etc), append a path suffix.
+   */
+  function makeNodeId(name: string, filePath: string, layerName: string): string {
+    const layerPath = layerPathMap.get(layerName) ?? "";
+    const relDir = extractRelativeDir(filePath, layerPath);
+    // Use full path for unique ID (not limited by MAX_SUBDIR_DEPTH)
+    const pathSuffix = relDir ? relDir.replace(/\//g, "_") : "";
+    return pathSuffix ? `${name}__${pathSuffix}` : name;
+  }
+
+  function addNode(
+    name: string,
+    kind: string,
+    filePath: string,
+    layerName: string,
+    category: string,
+    description: string,
+    extra?: { dddRole?: string },
+  ): string {
+    const nodeId = makeNodeId(name, filePath, layerName);
+    if (allNodeIds.has(nodeId)) return nodeId;
+    allNodeIds.add(nodeId);
+
+    const ids = nameToIds.get(name) ?? [];
+    ids.push(nodeId);
+    nameToIds.set(name, ids);
+
+    const normalized = normalizePath(filePath);
+    if (!fileToNodeId.has(normalized)) {
+      fileToNodeId.set(normalized, nodeId);
+    }
+
+    const parentId = ensureSubDirChain(layerName, filePath);
+
+    nodes.push({
+      data: {
+        id: nodeId,
+        label: name,
+        parent: parentId,
+        kind,
+        category,
+        layer: layerName,
+        filePath,
+        description: firstLine(description),
+        dddRole: extra?.dddRole,
+      },
+    });
+
+    return nodeId;
+  }
+
+  // --- Collect all component nodes ---
   for (const ext of extractions) {
-    const parentId = `layer:${ext.layerName}`;
-
     for (const cls of ext.classes) {
-      if (!cls.isExported || seen.has(cls.name)) continue;
-      seen.add(cls.name);
-      nodes.push({
-        data: {
-          id: cls.name,
-          label: cls.name,
-          parent: parentId,
-          kind: "class",
-          category: cls.category,
-          layer: ext.layerName,
-          filePath: cls.filePath,
-          description: firstLine(cls.description),
-          dddRole: cls.dddRole,
-        },
-      });
+      if (!cls.isExported) continue;
+      addNode(cls.name, "class", cls.filePath, ext.layerName, cls.category, cls.description, { dddRole: cls.dddRole });
     }
-
     for (const iface of ext.interfaces) {
-      if (!iface.isExported || seen.has(iface.name)) continue;
-      seen.add(iface.name);
-      nodes.push({
-        data: {
-          id: iface.name,
-          label: iface.name,
-          parent: parentId,
-          kind: "interface",
-          category: iface.category,
-          layer: ext.layerName,
-          filePath: iface.filePath,
-          description: firstLine(iface.description),
-          dddRole: iface.dddRole,
-        },
-      });
+      if (!iface.isExported) continue;
+      addNode(iface.name, "interface", iface.filePath, ext.layerName, iface.category, iface.description, { dddRole: iface.dddRole });
     }
-
     for (const func of ext.functions) {
-      if (!func.isExported || seen.has(func.name)) continue;
-      seen.add(func.name);
-      nodes.push({
-        data: {
-          id: func.name,
-          label: func.name,
-          parent: parentId,
-          kind: "function",
-          category: func.category,
-          layer: ext.layerName,
-          filePath: func.filePath,
-          description: firstLine(func.description),
-        },
-      });
+      if (!func.isExported) continue;
+      addNode(func.name, "function", func.filePath, ext.layerName, func.category, func.description);
     }
-
     for (const ta of ext.typeAliases) {
-      if (!ta.isExported || seen.has(ta.name)) continue;
-      seen.add(ta.name);
-      nodes.push({
-        data: {
-          id: ta.name,
-          label: ta.name,
-          parent: parentId,
-          kind: "type",
-          category: ta.category,
-          layer: ext.layerName,
-          filePath: ta.filePath,
-          description: firstLine(ta.description),
-        },
-      });
+      if (!ta.isExported) continue;
+      addNode(ta.name, "type", ta.filePath, ext.layerName, ta.category, ta.description);
     }
-
     for (const en of ext.enums) {
-      if (!en.isExported || seen.has(en.name)) continue;
-      seen.add(en.name);
-      nodes.push({
-        data: {
-          id: en.name,
-          label: en.name,
-          parent: parentId,
-          kind: "enum",
-          category: en.category,
-          layer: ext.layerName,
-          filePath: en.filePath,
-          description: firstLine(en.description),
-        },
-      });
+      if (!en.isExported) continue;
+      addNode(en.name, "enum", en.filePath, ext.layerName, en.category, en.description);
     }
-
     for (const c of ext.constants) {
-      if (!c.isExported || seen.has(c.name)) continue;
-      seen.add(c.name);
-      nodes.push({
-        data: {
-          id: c.name,
-          label: c.name,
-          parent: parentId,
-          kind: "const",
-          category: c.category,
-          layer: ext.layerName,
-          filePath: c.filePath,
-          description: firstLine(c.description),
-        },
-      });
+      if (!c.isExported) continue;
+      addNode(c.name, "const", c.filePath, ext.layerName, c.category, c.description);
     }
   }
 
-  // Collect relationship edges
+  // --- Edge helpers ---
   const edgeSeen = new Set<string>();
   let edgeCounter = 0;
 
-  const addEdge = (
+  function addEdge(
     source: string,
     target: string,
     type: string,
     isForbidden: boolean,
     extra?: { count?: number; sourceFile?: string; importPath?: string },
-  ) => {
+  ) {
+    if (source === target) return;
     const key = `${source}->${target}:${type}`;
     if (edgeSeen.has(key)) return;
-    if (!seen.has(source) || !seen.has(target)) return;
+    if (!allNodeIds.has(source) || !allNodeIds.has(target)) return;
     edgeSeen.add(key);
     edgeCounter++;
     edges.push({
@@ -224,154 +247,147 @@ export function buildCytoscapeElements(
         ...extra,
       },
     });
-  };
+  }
 
-  // Build a node lookup map for type reference matching
-  const nodeNames = new Set(seen);
+  /** Resolve a component name to its node ID(s). Returns first match. */
+  function resolveNodeId(name: string): string | null {
+    const ids = nameToIds.get(name);
+    return ids?.[0] ?? null;
+  }
 
+  /** Resolve a component name from the same file context. */
+  function resolveNodeIdFromFile(name: string, contextFilePath: string, layerName: string): string {
+    // First try: exact path-qualified ID
+    const layerPath = layerPathMap.get(layerName) ?? "";
+    const relDir = extractRelativeDir(contextFilePath, layerPath);
+    const pathSuffix = relDir ? relDir.replace(/\//g, "_") : "";
+    const qualifiedId = pathSuffix ? `${name}__${pathSuffix}` : name;
+    if (allNodeIds.has(qualifiedId)) return qualifiedId;
+    // Fallback: first by name
+    return resolveNodeId(name) ?? name;
+  }
+
+  // --- Collect relationship edges ---
   for (const ext of extractions) {
-    // --- Class relationships ---
     for (const cls of ext.classes) {
       if (!cls.isExported) continue;
+      const srcId = resolveNodeIdFromFile(cls.name, cls.filePath, ext.layerName);
 
-      // extends / implements
       if (cls.extendsClass) {
-        addEdge(cls.name, cls.extendsClass, "extends", false);
+        const tgt = resolveNodeId(cls.extendsClass);
+        if (tgt) addEdge(srcId, tgt, "extends", false);
       }
       for (const impl of cls.implementsInterfaces) {
-        addEdge(cls.name, impl, "implements", false);
+        const tgt = resolveNodeId(impl);
+        if (tgt) addEdge(srcId, tgt, "implements", false);
       }
 
-      // Property type references → association
       for (const prop of cls.properties) {
-        for (const name of nodeNames) {
+        for (const [name, ids] of nameToIds) {
           if (name === cls.name) continue;
           if (typeReferences(prop.type, name)) {
-            addEdge(cls.name, name, "association", false);
+            addEdge(srcId, ids[0], "association", false);
           }
         }
       }
 
-      // Method parameter & return type references → dependency
       for (const method of cls.methods) {
-        for (const name of nodeNames) {
+        for (const [name, ids] of nameToIds) {
           if (name === cls.name) continue;
           if (typeReferences(method.returnType, name)) {
-            addEdge(cls.name, name, "dependency", false);
+            addEdge(srcId, ids[0], "dependency", false);
           }
           for (const param of method.parameters) {
             if (typeReferences(param.type, name)) {
-              addEdge(cls.name, name, "dependency", false);
+              addEdge(srcId, ids[0], "dependency", false);
             }
           }
         }
       }
     }
 
-    // --- Interface relationships ---
     for (const iface of ext.interfaces) {
       if (!iface.isExported) continue;
+      const srcId = resolveNodeIdFromFile(iface.name, iface.filePath, ext.layerName);
 
       for (const ext2 of iface.extendsInterfaces) {
-        addEdge(iface.name, ext2, "extends", false);
+        const tgt = resolveNodeId(ext2);
+        if (tgt) addEdge(srcId, tgt, "extends", false);
       }
 
-      // Property type references → association
       for (const prop of iface.properties) {
-        for (const name of nodeNames) {
+        for (const [name, ids] of nameToIds) {
           if (name === iface.name) continue;
           if (typeReferences(prop.type, name)) {
-            addEdge(iface.name, name, "association", false);
+            addEdge(srcId, ids[0], "association", false);
           }
         }
       }
 
-      // Method parameter & return type references → dependency
       for (const method of iface.methods) {
-        for (const name of nodeNames) {
+        for (const [name, ids] of nameToIds) {
           if (name === iface.name) continue;
           if (typeReferences(method.returnType, name)) {
-            addEdge(iface.name, name, "dependency", false);
+            addEdge(srcId, ids[0], "dependency", false);
           }
           for (const param of method.parameters) {
             if (typeReferences(param.type, name)) {
-              addEdge(iface.name, name, "dependency", false);
+              addEdge(srcId, ids[0], "dependency", false);
             }
           }
         }
       }
     }
 
-    // --- Function parameter & return type references ---
     for (const func of ext.functions) {
       if (!func.isExported) continue;
-      for (const name of nodeNames) {
+      const srcId = resolveNodeIdFromFile(func.name, func.filePath, ext.layerName);
+      for (const [name, ids] of nameToIds) {
         if (name === func.name) continue;
         if (typeReferences(func.returnType, name)) {
-          addEdge(func.name, name, "dependency", false);
+          addEdge(srcId, ids[0], "dependency", false);
         }
         for (const param of func.parameters) {
           if (typeReferences(param.type, name)) {
-            addEdge(func.name, name, "dependency", false);
+            addEdge(srcId, ids[0], "dependency", false);
           }
         }
       }
     }
 
-    // --- Constructor injection dependencies ---
     for (const chain of ext.callChains) {
-      if (!nodeNames.has(chain.className)) continue;
+      const srcId = resolveNodeId(chain.className);
+      if (!srcId) continue;
       for (const dep of chain.constructorDeps) {
-        addEdge(chain.className, dep.typeName, "dependency", false);
+        const tgt = resolveNodeId(dep.typeName);
+        if (tgt) addEdge(srcId, tgt, "dependency", false);
       }
     }
   }
 
-  // --- Import-level dependencies (file → component mapping) ---
-  // Build a filePath → component name lookup for resolving import targets
-  const fileToComponent = new Map<string, { name: string; layer: string }>();
-  for (const ext of extractions) {
-    const allItems = [
-      ...ext.classes, ...ext.interfaces, ...ext.functions,
-      ...ext.typeAliases, ...ext.enums, ...ext.constants,
-    ];
-    for (const item of allItems) {
-      if (!item.isExported) continue;
-      // Normalize: strip leading "./" and extensions
-      const normalized = normalizePath(item.filePath);
-      if (!fileToComponent.has(normalized)) {
-        fileToComponent.set(normalized, { name: item.name, layer: ext.layerName });
-      }
-    }
-  }
-
-  // Process all import dependencies
+  // --- Import-level dependencies ---
   for (const ext of extractions) {
     for (const dep of ext.dependencies) {
       if (dep.type !== "import") continue;
-      if (dep.source === dep.target) continue; // skip same-layer
+      if (dep.source === dep.target) continue;
 
-      // Find source component by sourceFile
-      const srcComponent = dep.sourceFile ? findComponentByFile(fileToComponent, dep.sourceFile) : null;
-      // Find target component by importPath
-      const tgtComponent = dep.importPath ? findComponentByImport(fileToComponent, dep.importPath) : null;
+      const srcNodeId = dep.sourceFile ? findNodeByFile(fileToNodeId, dep.sourceFile) : null;
+      const tgtNodeId = dep.importPath ? findNodeByImport(fileToNodeId, dep.importPath) : null;
 
-      if (srcComponent && tgtComponent && srcComponent !== tgtComponent) {
+      if (srcNodeId && tgtNodeId && srcNodeId !== tgtNodeId) {
         if (dep.isForbidden) {
-          addEdge(srcComponent, tgtComponent, "forbidden", true, {
+          addEdge(srcNodeId, tgtNodeId, "forbidden", true, {
             sourceFile: dep.sourceFile,
             importPath: dep.importPath,
           });
         } else {
-          addEdge(srcComponent, tgtComponent, "import", false);
+          addEdge(srcNodeId, tgtNodeId, "import", false);
         }
       } else if (dep.isForbidden) {
-        // Fallback: anchor to first component in each layer
-        const srcAnchor = findLayerAnchor(extractions, dep.source);
-        const tgtAnchor = findLayerAnchor(extractions, dep.target);
+        const srcAnchor = findLayerAnchor(nameToIds, extractions, dep.source);
+        const tgtAnchor = findLayerAnchor(nameToIds, extractions, dep.target);
         if (srcAnchor && tgtAnchor) {
           addEdge(srcAnchor, tgtAnchor, "forbidden", true, {
-            count: 1,
             sourceFile: dep.sourceFile,
             importPath: dep.importPath,
           });
@@ -380,33 +396,29 @@ export function buildCytoscapeElements(
     }
   }
 
-  // --- Responsibility separation violations → forbidden edges ---
+  // --- Responsibility separation violations ---
   if (options?.responsibilityViolations) {
     for (const v of options.responsibilityViolations) {
       if (v.rule !== "app-to-infra" && v.rule !== "app-to-domain") continue;
 
-      // Find source component from violation filePath
-      const srcComponent = findComponentByFile(fileToComponent, v.filePath);
-
-      // Extract import path from detail (format: "imports `@/path/to/module`" or "imports `../../path`")
+      const srcNodeId = findNodeByFile(fileToNodeId, v.filePath);
       const importMatch = v.detail.match(/imports\s+`([^`]+)`/);
       const importPath = importMatch?.[1];
-      const tgtComponent = importPath ? findComponentByImport(fileToComponent, importPath) : null;
+      const tgtNodeId = importPath ? findNodeByImport(fileToNodeId, importPath) : null;
 
-      if (srcComponent && tgtComponent && srcComponent !== tgtComponent) {
-        addEdge(srcComponent, tgtComponent, "forbidden", true, {
+      if (srcNodeId && tgtNodeId && srcNodeId !== tgtNodeId) {
+        addEdge(srcNodeId, tgtNodeId, "forbidden", true, {
           sourceFile: v.filePath,
           importPath: importPath,
         });
-      } else if (srcComponent) {
-        // Fallback: connect to first component in the target layer
+      } else if (srcNodeId) {
         const targetLayerName = v.rule === "app-to-infra"
           ? extractions.find(e => config.layers.find(l => l.name === e.layerName && l.type === "infrastructure"))?.layerName
           : extractions.find(e => config.layers.find(l => l.name === e.layerName && l.type === "domain"))?.layerName;
         if (targetLayerName) {
-          const anchor = findLayerAnchor(extractions, targetLayerName);
+          const anchor = findLayerAnchor(nameToIds, extractions, targetLayerName);
           if (anchor) {
-            addEdge(srcComponent, anchor, "forbidden", true, {
+            addEdge(srcNodeId, anchor, "forbidden", true, {
               sourceFile: v.filePath,
               importPath: importPath,
             });
@@ -426,11 +438,20 @@ function firstLine(text: string): string {
   return text.split("\n")[0].trim();
 }
 
-function findLayerAnchor(extractions: LayerExtraction[], layerName: string): string | undefined {
-  const ext = extractions.find((e) => e.layerName === layerName);
-  if (!ext) return undefined;
-  const first = ext.classes[0] ?? ext.interfaces[0] ?? ext.functions[0];
-  return first?.name;
+/**
+ * Extract relative directory from filePath based on layerPath.
+ * e.g., filePath="/proj/src/app/api/courses/route.ts", layerPath="src/app" → "api/courses"
+ */
+function extractRelativeDir(filePath: string, layerPath: string): string {
+  const normalizedLayerPath = layerPath.replace(/^\/+|\/+$/g, "");
+  const idx = filePath.indexOf(normalizedLayerPath);
+  if (idx === -1) return "";
+
+  const rest = filePath.substring(idx + normalizedLayerPath.length + 1);
+  const parts = rest.split("/");
+  if (parts.length <= 1) return "";
+  // Return all directories except the filename
+  return parts.slice(0, -1).join("/");
 }
 
 function normalizePath(filePath: string): string {
@@ -439,45 +460,49 @@ function normalizePath(filePath: string): string {
     .replace(/\.(ts|tsx|js|jsx)$/, "");
 }
 
-function findComponentByFile(
-  map: Map<string, { name: string; layer: string }>,
+function findNodeByFile(
+  map: Map<string, string>,
   sourceFile: string,
 ): string | null {
   const normalized = normalizePath(sourceFile);
   const entry = map.get(normalized);
-  if (entry) return entry.name;
-  // Try partial match (sourceFile may be relative from different roots)
+  if (entry) return entry;
   for (const [key, val] of map) {
-    if (normalized.endsWith(key) || key.endsWith(normalized)) return val.name;
+    if (normalized.endsWith(key) || key.endsWith(normalized)) return val;
   }
   return null;
 }
 
-function findComponentByImport(
-  map: Map<string, { name: string; layer: string }>,
+function findNodeByImport(
+  map: Map<string, string>,
   importPath: string,
 ): string | null {
-  // Strip path alias prefix (@/ or ~/)
   let normalized = normalizePath(importPath);
   normalized = normalized.replace(/^@\//, "src/").replace(/^~\//, "src/");
 
-  // Direct match
   const entry = map.get(normalized);
-  if (entry) return entry.name;
-  // Partial match
+  if (entry) return entry;
   for (const [key, val] of map) {
-    if (normalized.endsWith(key) || key.endsWith(normalized)) return val.name;
-    // Also check if the import path's last segment matches a file
+    if (normalized.endsWith(key) || key.endsWith(normalized)) return val;
     const importBase = normalized.split("/").pop() ?? "";
     const keyBase = key.split("/").pop() ?? "";
-    if (importBase && importBase === keyBase) return val.name;
+    if (importBase && importBase === keyBase) return val;
   }
   return null;
 }
 
-/**
- * Check if a type string references a given name (word-boundary match).
- */
+function findLayerAnchor(
+  nameToIds: Map<string, string[]>,
+  extractions: LayerExtraction[],
+  layerName: string,
+): string | null {
+  const ext = extractions.find((e) => e.layerName === layerName);
+  if (!ext) return null;
+  const first = ext.classes[0] ?? ext.interfaces[0] ?? ext.functions[0];
+  if (!first) return null;
+  return nameToIds.get(first.name)?.[0] ?? null;
+}
+
 function typeReferences(typeStr: string, name: string): boolean {
   if (!typeStr) return false;
   const regex = new RegExp(`\\b${escapeRegex(name)}\\b`);

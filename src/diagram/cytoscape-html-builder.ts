@@ -63,6 +63,11 @@ export function buildCytoscapeHtml(
     .layer-chip.hidden { opacity: 0.35; text-decoration: line-through; }
     .layer-chip input { display: none; }
 
+    .edge-toggles { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; border-left: 1px solid #e0e0e0; padding-left: 10px; margin-left: 2px; }
+    .edge-toggle { display: flex; align-items: center; gap: 3px; font-size: 11px; cursor: pointer; user-select: none; }
+    .edge-toggle input { width: 13px; height: 13px; cursor: pointer; }
+    .edge-toggle .et-line { display: inline-block; width: 16px; height: 0; border-top: 2px solid; vertical-align: middle; }
+
     #cy { position: fixed; top: 50px; left: 0; right: 0; bottom: 0; }
 
     #legend {
@@ -120,6 +125,12 @@ export function buildCytoscapeHtml(
     <button class="btn" id="btn-zoom-out" title="Zoom out">-</button>
     <button class="btn" id="btn-fit" title="Fit to screen">Fit</button>
     <button class="btn" id="btn-violations" title="Show only violations">Violations</button>
+    <div class="edge-toggles">
+      <label class="edge-toggle"><input type="checkbox" id="toggle-dep" checked><span class="et-line" style="border-color:#333;"></span>Dep</label>
+      <label class="edge-toggle"><input type="checkbox" id="toggle-extends" checked><span class="et-line" style="border-color:#1565c0;"></span>Ext</label>
+      <label class="edge-toggle"><input type="checkbox" id="toggle-implements" checked><span class="et-line" style="border-color:#2e7d32;border-style:dashed;"></span>Impl</label>
+      <label class="edge-toggle"><input type="checkbox" id="toggle-forbidden" checked><span class="et-line" style="border-color:#ef5350;border-width:3px;"></span>Viol</label>
+    </div>
     <div class="layer-filters" id="layer-filters"></div>
   </div>
   <div id="cy"></div>
@@ -142,69 +153,150 @@ export function buildCytoscapeHtml(
     const elements = ${JSON.stringify(elements)};
     const layerColors = ${JSON.stringify(layerColorMap)};
 
-    // --- Pre-calculate grid positions for each layer ---
-    const CELL_W = 160;   // grid cell width
-    const CELL_H = 50;    // grid cell height
-    const LAYER_PAD = 30; // padding inside layer box
-    const LAYER_GAP = 60; // gap between layer boxes
-    const COLS_PER_LAYER = 4; // columns per layer grid
+    // --- Pre-calculate grid positions with nested sub-directory grouping ---
+    const CELL_W = 140;
+    const CELL_H = 36;
+    const LAYER_PAD = 12;
+    const LAYER_GAP = 30;
+    const SUBDIR_PAD = 6;
+    const SUBDIR_GAP = 6;
+    const SUBDIR_LABEL_H = 16;
+    const COLS_PER_GROUP = 4;
 
-    // Group child nodes by layer
     const layerNames = Object.keys(layerColors);
-    const layerChildren = {};
-    layerNames.forEach(n => { layerChildren[n] = []; });
+
+    // Build a tree of subdir nodes: parentId → children (subdir + component nodes)
+    const childrenOf = {};  // parentId → [node elements]
+    const subdirSet = new Set();
     for (const el of elements.nodes) {
-      if (el.data.kind !== 'layer' && el.data.layer) {
-        if (layerChildren[el.data.layer]) layerChildren[el.data.layer].push(el);
+      if (el.data.kind === 'subdir') subdirSet.add(el.data.id);
+    }
+    for (const el of elements.nodes) {
+      if (el.data.kind === 'layer') continue;
+      const pid = el.data.parent || '';
+      if (!childrenOf[pid]) childrenOf[pid] = [];
+      childrenOf[pid].push(el);
+    }
+
+    // Recursively calculate the size of a group (subdir or layer root)
+    // Returns { w, h } and stores layout info in layoutMap
+    const layoutMap = {}; // groupId → { x, y, w, h, childPositions: [{id, x, y}], subLayouts: [...] }
+
+    function calcGroupLayout(groupId) {
+      const children = childrenOf[groupId] || [];
+      const subdirChildren = children.filter(c => c.data.kind === 'subdir');
+      const leafChildren = children.filter(c => c.data.kind !== 'subdir');
+
+      // Leaf nodes: arrange in grid
+      const leafRows = Math.ceil(leafChildren.length / COLS_PER_GROUP) || 0;
+      const leafCols = Math.min(leafChildren.length, COLS_PER_GROUP);
+      const leafW = leafCols * CELL_W;
+      const leafH = leafRows * CELL_H;
+
+      // Subdir children: calculate each recursively, then stack in 2 columns
+      const subLayouts = [];
+      for (const sd of subdirChildren.sort((a, b) => a.data.label.localeCompare(b.data.label))) {
+        const sub = calcGroupLayout(sd.data.id);
+        subLayouts.push({ id: sd.data.id, ...sub });
+      }
+
+      // Stack subdirs in 2-column masonry
+      const SD_COLS = 2;
+      const sdColH = new Array(SD_COLS).fill(0);
+      let sdMaxColW = 0;
+      for (const sl of subLayouts) {
+        let minC = 0;
+        for (let c = 1; c < SD_COLS; c++) { if (sdColH[c] < sdColH[minC]) minC = c; }
+        sl.col = minC;
+        sl.colY = sdColH[minC];
+        sdColH[minC] += sl.h + SUBDIR_GAP;
+        sdMaxColW = Math.max(sdMaxColW, sl.w);
+      }
+
+      const subdirsW = subLayouts.length > 0 ? sdMaxColW * Math.min(SD_COLS, subLayouts.length) + (Math.min(SD_COLS, subLayouts.length) - 1) * SUBDIR_GAP : 0;
+      const subdirsH = Math.max(0, ...sdColH) - (subLayouts.length > 0 ? SUBDIR_GAP : 0);
+
+      // Total group size: leaf grid on top, subdirs below (or vice versa)
+      const innerW = Math.max(leafW, subdirsW);
+      const innerH = leafH + (leafH > 0 && subdirsH > 0 ? SUBDIR_GAP : 0) + subdirsH;
+
+      const totalW = innerW + SUBDIR_PAD * 2;
+      const totalH = innerH + SUBDIR_PAD * 2 + SUBDIR_LABEL_H;
+
+      return {
+        w: totalW,
+        h: totalH,
+        leafChildren,
+        subLayouts,
+        sdMaxColW: sdMaxColW || 0,
+      };
+    }
+
+    // Position nodes recursively
+    const positions = {};
+
+    function positionGroup(groupId, layout, ox, oy) {
+      // Group compound node
+      positions[groupId] = { x: ox + layout.w / 2, y: oy + layout.h / 2 };
+
+      let cy = oy + SUBDIR_PAD + SUBDIR_LABEL_H;
+
+      // Leaf nodes in grid
+      for (let i = 0; i < layout.leafChildren.length; i++) {
+        const col = i % COLS_PER_GROUP;
+        const row = Math.floor(i / COLS_PER_GROUP);
+        positions[layout.leafChildren[i].data.id] = {
+          x: ox + SUBDIR_PAD + col * CELL_W + CELL_W / 2,
+          y: cy + row * CELL_H + CELL_H / 2,
+        };
+      }
+
+      const leafRows = Math.ceil(layout.leafChildren.length / COLS_PER_GROUP) || 0;
+      cy += leafRows * CELL_H;
+      if (leafRows > 0 && layout.subLayouts.length > 0) cy += SUBDIR_GAP;
+
+      // Sub-directory groups
+      for (const sl of layout.subLayouts) {
+        const sdX = ox + SUBDIR_PAD + sl.col * (layout.sdMaxColW + SUBDIR_GAP);
+        const sdY = cy + sl.colY;
+        positionGroup(sl.id, sl, sdX, sdY);
       }
     }
 
-    // Calculate layer box sizes and arrange in 2-column layout
-    const layerBoxes = {};
+    // Calculate layout for each layer: first pass to get sizes
     const LAYOUT_COLS = 2;
-    let colHeights = new Array(LAYOUT_COLS).fill(0);
-
+    const layerLayouts = [];
     for (const name of layerNames) {
-      const children = layerChildren[name];
-      const rows = Math.ceil(children.length / COLS_PER_LAYER) || 1;
-      const cols = Math.min(children.length, COLS_PER_LAYER);
-      const boxW = cols * CELL_W + LAYER_PAD * 2;
-      const boxH = rows * CELL_H + LAYER_PAD * 2 + 20; // +20 for label
+      const layerId = 'layer:' + name;
+      const layout = calcGroupLayout(layerId);
+      layerLayouts.push({ name, layerId, layout, w: layout.w, h: layout.h });
+    }
 
-      // Pick the shortest column
+    // Find max width per column for alignment
+    // Sort layers into columns by shortest-column-first, then compute max width per column
+    const colHeights = new Array(LAYOUT_COLS).fill(0);
+    const colMaxW = new Array(LAYOUT_COLS).fill(0);
+    const layerPlacements = [];
+
+    for (const ll of layerLayouts) {
       let minCol = 0;
       for (let c = 1; c < LAYOUT_COLS; c++) {
         if (colHeights[c] < colHeights[minCol]) minCol = c;
       }
-
-      const x = minCol * (COLS_PER_LAYER * CELL_W + LAYER_PAD * 2 + LAYER_GAP);
-      const y = colHeights[minCol];
-
-      layerBoxes[name] = { x, y, w: boxW, h: boxH };
-      colHeights[minCol] += boxH + LAYER_GAP;
+      layerPlacements.push({ ...ll, col: minCol, colY: colHeights[minCol] });
+      colHeights[minCol] += ll.h + LAYER_GAP;
+      colMaxW[minCol] = Math.max(colMaxW[minCol], ll.w);
     }
 
-    // Assign positions to nodes
-    const positions = {};
-    for (const name of layerNames) {
-      const box = layerBoxes[name];
-      const children = layerChildren[name];
+    // Compute column X offsets from max widths
+    const colX = [0];
+    for (let c = 1; c < LAYOUT_COLS; c++) {
+      colX[c] = colX[c - 1] + colMaxW[c - 1] + LAYER_GAP;
+    }
 
-      // Layer compound node: center of its box
-      positions['layer:' + name] = {
-        x: box.x + box.w / 2,
-        y: box.y + box.h / 2,
-      };
-
-      // Children in grid
-      for (let i = 0; i < children.length; i++) {
-        const col = i % COLS_PER_LAYER;
-        const row = Math.floor(i / COLS_PER_LAYER);
-        positions[children[i].data.id] = {
-          x: box.x + LAYER_PAD + col * CELL_W + CELL_W / 2,
-          y: box.y + LAYER_PAD + 20 + row * CELL_H + CELL_H / 2,
-        };
-      }
+    // Position all layers
+    for (const lp of layerPlacements) {
+      positionGroup(lp.layerId, lp.layout, colX[lp.col], lp.colY);
     }
 
     // Build Cytoscape stylesheet
@@ -224,6 +316,28 @@ export function buildCytoscapeHtml(
           'padding': '10px',
           'text-margin-y': -4,
           'color': '#444',
+        }
+      },
+      // Sub-directory compound nodes
+      {
+        selector: 'node[kind="subdir"]',
+        style: {
+          'shape': 'round-rectangle',
+          'background-color': '#fff',
+          'background-opacity': 0.6,
+          'border-width': 1,
+          'border-color': '#ccc',
+          'border-style': 'dashed',
+          'label': 'data(label)',
+          'text-valign': 'top',
+          'text-halign': 'left',
+          'font-size': 10,
+          'font-weight': 'normal',
+          'font-style': 'italic',
+          'padding': '6px',
+          'text-margin-y': -2,
+          'text-margin-x': 4,
+          'color': '#888',
         }
       },
       // Class nodes
@@ -550,16 +664,32 @@ export function buildCytoscapeHtml(
         chip.classList.toggle('hidden', !layerVisibility[name]);
 
         const layerNode = cy.getElementById('layer:' + name);
-        const children = layerNode.children();
+        const descendants = layerNode.descendants();
         if (layerVisibility[name]) {
           layerNode.style('display', 'element');
-          children.style('display', 'element');
+          descendants.style('display', 'element');
         } else {
           layerNode.style('display', 'none');
-          children.style('display', 'none');
+          descendants.style('display', 'none');
         }
       });
       filtersContainer.appendChild(chip);
+    }
+
+    // --- Edge type toggles ---
+    const edgeTypeMap = {
+      'toggle-dep': ['dependency', 'association', 'import'],
+      'toggle-extends': ['extends'],
+      'toggle-implements': ['implements'],
+      'toggle-forbidden': ['forbidden'],
+    };
+    for (const [id, types] of Object.entries(edgeTypeMap)) {
+      document.getElementById(id).addEventListener('change', (e) => {
+        const show = e.target.checked;
+        for (const t of types) {
+          cy.edges('[type="' + t + '"]').style('display', show ? 'element' : 'none');
+        }
+      });
     }
 
     // --- Stats ---

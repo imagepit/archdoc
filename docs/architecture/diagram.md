@@ -561,6 +561,8 @@ buildCategoryClassDiagrams(classes: ClassInfo[], interfaces: InterfaceInfo[]): s
 > **ファイル**: `cytoscape-data-builder.ts`
 
 Build Cytoscape.js elements JSON from archdoc extraction data.
+Uses file-path-based unique IDs to handle duplicate names (e.g. GET, POST in multiple route.ts).
+Creates nested sub-directory compound nodes for multi-level folder visualization.
 
 ```ts
 buildCytoscapeElements(config: ProjectConfig, extractions: LayerExtraction[], options?: CytoscapeOptions | undefined): CytoscapeElements
@@ -568,11 +570,11 @@ buildCytoscapeElements(config: ProjectConfig, extractions: LayerExtraction[], op
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
-| `config` | `ProjectConfig` | Project configuration |
-| `extractions` | `LayerExtraction[]` | All layer extraction results |
-| `options` | `CytoscapeOptions or undefined` | Optional violations data |
+| `config` | `ProjectConfig` | — |
+| `extractions` | `LayerExtraction[]` | — |
+| `options` | `CytoscapeOptions or undefined` | — |
 
-**戻り値**: `CytoscapeElements` Cytoscape.js compatible elements
+**戻り値**: `CytoscapeElements` 
 
 **呼び出し元**
 
