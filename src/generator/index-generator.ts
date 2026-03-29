@@ -92,7 +92,9 @@ export async function generateIndexMd(
 
     // Interactive Cytoscape.js component graph
     if (options.cytoscape && options.renderer.renderInteractiveOverview) {
-      const interactive = await options.renderer.renderInteractiveOverview(config, extractions);
+      const interactive = await options.renderer.renderInteractiveOverview(config, extractions, {
+        responsibilityViolations: options.responsibilityViolations,
+      });
       if (interactive) {
         md.heading(3, t.index.interactiveComponentGraph);
         md.rawBlock(interactive);

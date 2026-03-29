@@ -101,8 +101,8 @@ export class SvgRenderer implements DiagramRenderer {
     return `![Layer Dependency](${this.relativeDir}/${filename})`;
   }
 
-  async renderInteractiveOverview(config: ProjectConfig, extractions: LayerExtraction[]): Promise<string | null> {
-    const html = buildCytoscapeHtml(config, extractions);
+  async renderInteractiveOverview(config: ProjectConfig, extractions: LayerExtraction[], options?: import("./cytoscape-data-builder.js").CytoscapeOptions): Promise<string | null> {
+    const html = buildCytoscapeHtml(config, extractions, options);
     const filename = "component-graph.html";
     writeFileSync(join(this.diagramDir, filename), html);
 

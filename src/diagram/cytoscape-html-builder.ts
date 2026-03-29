@@ -1,6 +1,6 @@
 import type { ProjectConfig } from "../types/config.js";
 import type { LayerExtraction } from "../types/extracted.js";
-import { buildCytoscapeElements, CYTOSCAPE_LAYER_COLORS } from "./cytoscape-data-builder.js";
+import { buildCytoscapeElements, CYTOSCAPE_LAYER_COLORS, type CytoscapeOptions } from "./cytoscape-data-builder.js";
 
 /**
  * Build a standalone HTML file with Cytoscape.js interactive component graph.
@@ -12,8 +12,9 @@ import { buildCytoscapeElements, CYTOSCAPE_LAYER_COLORS } from "./cytoscape-data
 export function buildCytoscapeHtml(
   config: ProjectConfig,
   extractions: LayerExtraction[],
+  options?: CytoscapeOptions,
 ): string {
-  const elements = buildCytoscapeElements(config, extractions);
+  const elements = buildCytoscapeElements(config, extractions, options);
 
   // Build layer color map for styling
   const layerColorMap: Record<string, { bg: string; border: string }> = {};

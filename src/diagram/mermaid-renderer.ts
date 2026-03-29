@@ -53,8 +53,8 @@ export class MermaidRenderer implements DiagramRenderer {
     return wrapMermaid(diagram);
   }
 
-  async renderInteractiveOverview(config: ProjectConfig, extractions: LayerExtraction[]): Promise<string | null> {
-    const html = buildCytoscapeHtml(config, extractions);
+  async renderInteractiveOverview(config: ProjectConfig, extractions: LayerExtraction[], options?: import("./cytoscape-data-builder.js").CytoscapeOptions): Promise<string | null> {
+    const html = buildCytoscapeHtml(config, extractions, options);
     const filename = "component-graph.html";
 
     // MermaidRenderer has no diagramDir, so write alongside the output

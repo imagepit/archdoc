@@ -1,5 +1,6 @@
 import type { LayerExtraction, ClassInfo, InterfaceInfo, RouteInfo, ClassCallChain } from "../types/extracted.js";
 import type { LayerConfig, ProjectConfig } from "../types/config.js";
+import type { CytoscapeOptions } from "./cytoscape-data-builder.js";
 
 /**
  * ダイアグラムレンダリングのストラテジーインターフェース。
@@ -67,5 +68,5 @@ export interface DiagramRenderer {
    * @param extractions - 全レイヤーの抽出結果
    * @returns Markdownスニペット文字列、またはnull
    */
-  renderInteractiveOverview?(config: ProjectConfig, extractions: LayerExtraction[]): Promise<string | null>;
+  renderInteractiveOverview?(config: ProjectConfig, extractions: LayerExtraction[], options?: CytoscapeOptions): Promise<string | null>;
 }

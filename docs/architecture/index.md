@@ -279,6 +279,7 @@ description: archdoc DDDレイヤードアーキテクチャ概要
 | `CytoscapeNode` | 📋 interface | — |
 | `CytoscapeEdge` | 📋 interface | — |
 | `CytoscapeElements` | 📋 interface | — |
+| `CytoscapeOptions` | 📋 interface | Options for buildCytoscapeElements. |
 | `buildCytoscapeElements` | 🔧 function | Build Cytoscape.js elements JSON from archdoc extraction da… |
 
 #### dependency-graph.ts

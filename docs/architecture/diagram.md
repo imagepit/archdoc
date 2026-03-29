@@ -136,13 +136,14 @@ renderLayerDependency(extractions: LayerExtraction[], layers?: LayerConfig[] | u
 #### `renderInteractiveOverview` メソッド
 
 ```ts
-renderInteractiveOverview(config: ProjectConfig, extractions: LayerExtraction[]): Promise<string | null>
+renderInteractiveOverview(config: ProjectConfig, extractions: LayerExtraction[], options?: import("/Users/imagepit/Documents/imagepit/archdoc/src/diagram/cytoscape-data-builder").CytoscapeOptions | undefined): Promise<string | null>
 ```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `config` | `ProjectConfig` | — |
 | `extractions` | `LayerExtraction[]` | — |
+| `options` | `import("/Users/imagepit/Documents/imagepit/archdoc/src/diagram/cytoscape-data-builder").CytoscapeOptions or undefined` | — |
 
 **戻り値**: `Promise<string or null>` 
 
@@ -264,13 +265,14 @@ renderLayerDependency(extractions: LayerExtraction[], layers?: LayerConfig[] | u
 #### `renderInteractiveOverview` メソッド
 
 ```ts
-renderInteractiveOverview(config: ProjectConfig, extractions: LayerExtraction[]): Promise<string | null>
+renderInteractiveOverview(config: ProjectConfig, extractions: LayerExtraction[], options?: import("/Users/imagepit/Documents/imagepit/archdoc/src/diagram/cytoscape-data-builder").CytoscapeOptions | undefined): Promise<string | null>
 ```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `config` | `ProjectConfig` | — |
 | `extractions` | `LayerExtraction[]` | — |
+| `options` | `import("/Users/imagepit/Documents/imagepit/archdoc/src/diagram/cytoscape-data-builder").CytoscapeOptions or undefined` | — |
 
 **戻り値**: `Promise<string or null>` 
 
@@ -311,6 +313,19 @@ renderInteractiveOverview(config: ProjectConfig, extractions: LayerExtraction[])
 | --- | --- | --- | --- |
 | `nodes` | `CytoscapeNode[]` | ✓ | — |
 | `edges` | `CytoscapeEdge[]` | ✓ | — |
+
+### 📋 `CytoscapeOptions` インターフェース
+
+> **ファイル**: `cytoscape-data-builder.ts`
+> **型**: Other
+
+Options for buildCytoscapeElements.
+
+**プロパティ**
+
+| プロパティ | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `responsibilityViolations` | `ResponsibilityViolation[] or undefined` | — | — |
 
 ### 📋 `DependencyGraph` インターフェース
 
@@ -451,13 +466,14 @@ Cytoscape.jsインタラクティブ図のHTMLファイルを生成し、
 iframe埋め込み用のMarkdownスニペットを返す。
 
 ```ts
-renderInteractiveOverview(config: ProjectConfig, extractions: LayerExtraction[]): Promise<string | null>
+renderInteractiveOverview(config: ProjectConfig, extractions: LayerExtraction[], options?: CytoscapeOptions | undefined): Promise<string | null>
 ```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `config` | `ProjectConfig` | プロジェクト設定 |
 | `extractions` | `LayerExtraction[]` | 全レイヤーの抽出結果 |
+| `options` | `CytoscapeOptions or undefined` | — |
 
 **戻り値**: `Promise<string or null>` Markdownスニペット文字列、またはnull
 
@@ -547,13 +563,14 @@ buildCategoryClassDiagrams(classes: ClassInfo[], interfaces: InterfaceInfo[]): s
 Build Cytoscape.js elements JSON from archdoc extraction data.
 
 ```ts
-buildCytoscapeElements(config: ProjectConfig, extractions: LayerExtraction[]): CytoscapeElements
+buildCytoscapeElements(config: ProjectConfig, extractions: LayerExtraction[], options?: CytoscapeOptions | undefined): CytoscapeElements
 ```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `config` | `ProjectConfig` | Project configuration |
 | `extractions` | `LayerExtraction[]` | All layer extraction results |
+| `options` | `CytoscapeOptions or undefined` | Optional violations data |
 
 **戻り値**: `CytoscapeElements` Cytoscape.js compatible elements
 
@@ -569,13 +586,14 @@ Build a standalone HTML file with Cytoscape.js interactive component graph.
 The HTML is self-contained (CDN dependencies only) and can be opened directly in a browser.
 
 ```ts
-buildCytoscapeHtml(config: ProjectConfig, extractions: LayerExtraction[]): string
+buildCytoscapeHtml(config: ProjectConfig, extractions: LayerExtraction[], options?: CytoscapeOptions | undefined): string
 ```
 
 | 引数 | 型 | 説明 |
 | --- | --- | --- |
 | `config` | `ProjectConfig` | Project configuration |
 | `extractions` | `LayerExtraction[]` | All layer extraction results |
+| `options` | `CytoscapeOptions or undefined` | — |
 
 **戻り値**: `string` Complete HTML string
 

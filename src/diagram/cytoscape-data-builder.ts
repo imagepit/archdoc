@@ -51,15 +51,22 @@ export { LAYER_COLORS as CYTOSCAPE_LAYER_COLORS };
 
 // --- Public API ---
 
+/** Options for buildCytoscapeElements. */
+export interface CytoscapeOptions {
+  responsibilityViolations?: ResponsibilityViolation[];
+}
+
 /**
  * Build Cytoscape.js elements JSON from archdoc extraction data.
  * @param config - Project configuration
  * @param extractions - All layer extraction results
+ * @param options - Optional violations data
  * @returns Cytoscape.js compatible elements
  */
 export function buildCytoscapeElements(
   config: ProjectConfig,
   extractions: LayerExtraction[],
+  options?: CytoscapeOptions,
 ): CytoscapeElements {
   const nodes: CytoscapeNode[] = [];
   const edges: CytoscapeEdge[] = [];
@@ -373,6 +380,42 @@ export function buildCytoscapeElements(
     }
   }
 
+  // --- Responsibility separation violations → forbidden edges ---
+  if (options?.responsibilityViolations) {
+    for (const v of options.responsibilityViolations) {
+      if (v.rule !== "app-to-infra" && v.rule !== "app-to-domain") continue;
+
+      // Find source component from violation filePath
+      const srcComponent = findComponentByFile(fileToComponent, v.filePath);
+
+      // Extract import path from detail (format: "imports `@/path/to/module`" or "imports `../../path`")
+      const importMatch = v.detail.match(/imports\s+`([^`]+)`/);
+      const importPath = importMatch?.[1];
+      const tgtComponent = importPath ? findComponentByImport(fileToComponent, importPath) : null;
+
+      if (srcComponent && tgtComponent && srcComponent !== tgtComponent) {
+        addEdge(srcComponent, tgtComponent, "forbidden", true, {
+          sourceFile: v.filePath,
+          importPath: importPath,
+        });
+      } else if (srcComponent) {
+        // Fallback: connect to first component in the target layer
+        const targetLayerName = v.rule === "app-to-infra"
+          ? extractions.find(e => config.layers.find(l => l.name === e.layerName && l.type === "infrastructure"))?.layerName
+          : extractions.find(e => config.layers.find(l => l.name === e.layerName && l.type === "domain"))?.layerName;
+        if (targetLayerName) {
+          const anchor = findLayerAnchor(extractions, targetLayerName);
+          if (anchor) {
+            addEdge(srcComponent, anchor, "forbidden", true, {
+              sourceFile: v.filePath,
+              importPath: importPath,
+            });
+          }
+        }
+      }
+    }
+  }
+
   return { nodes, edges };
 }
 
@@ -414,7 +457,10 @@ function findComponentByImport(
   map: Map<string, { name: string; layer: string }>,
   importPath: string,
 ): string | null {
-  const normalized = normalizePath(importPath);
+  // Strip path alias prefix (@/ or ~/)
+  let normalized = normalizePath(importPath);
+  normalized = normalized.replace(/^@\//, "src/").replace(/^~\//, "src/");
+
   // Direct match
   const entry = map.get(normalized);
   if (entry) return entry.name;
